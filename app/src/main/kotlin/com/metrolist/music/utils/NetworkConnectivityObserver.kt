@@ -9,7 +9,6 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
-import android.net.NetworkRequest
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
 
@@ -26,40 +25,38 @@ class NetworkConnectivityObserver(context: Context) {
 
     private val networkCallback = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
-            _networkStatus.trySend(isCurrentlyConnected())
+            publishCurrentStatus()
         }
 
         override fun onLost(network: Network) {
-            _networkStatus.trySend(isCurrentlyConnected())
+            publishCurrentStatus()
         }
 
         override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
-            _networkStatus.trySend(isCurrentlyConnected())
+            publishCurrentStatus()
         }
     }
 
     init {
-        val request = NetworkRequest.Builder()
-            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-            .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED)
-            .build()
-        
         try {
-            connectivityManager.registerNetworkCallback(request, networkCallback)
-        } catch (e: Exception) {
-            // Fallback: assume connected if registration fails
-            _networkStatus.trySend(true)
+            connectivityManager.registerDefaultNetworkCallback(networkCallback)
+        } catch (_: Exception) {
+            publishCurrentStatus()
         }
-        
-        // Send initial state
-        val isInitiallyConnected = isCurrentlyConnected()
-        _networkStatus.trySend(isInitiallyConnected)
+
+        publishCurrentStatus()
     }
 
     fun unregister() {
-        connectivityManager.unregisterNetworkCallback(networkCallback)
+        runCatching {
+            connectivityManager.unregisterNetworkCallback(networkCallback)
+        }
     }
-    
+
+    private fun publishCurrentStatus() {
+        _networkStatus.trySend(isCurrentlyConnected())
+    }
+
     /**
      * Check current connectivity state synchronously
      */
@@ -68,9 +65,11 @@ class NetworkConnectivityObserver(context: Context) {
             val activeNetwork = connectivityManager.activeNetwork
             val networkCapabilities = connectivityManager.getNetworkCapabilities(activeNetwork)
             
-            // Check if we have internet capability
-            networkCapabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
-        } catch (e: Exception) {
+            networkCapabilities?.let { capabilities ->
+                capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+                    capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+            } == true
+        } catch (_: Exception) {
             false
         }
     }

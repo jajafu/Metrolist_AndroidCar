@@ -94,8 +94,12 @@ constructor(
                 return@Factory dataSpec
             }
 
-            songUrlCache[mediaId]?.takeIf { it.second < System.currentTimeMillis() }?.let {
-                return@Factory dataSpec.withUri(it.first.toUri())
+            val now = System.currentTimeMillis()
+            songUrlCache[mediaId]?.let { (url, expiresAtMs) ->
+                if (expiresAtMs > now) {
+                    return@Factory dataSpec.withUri(url.toUri())
+                }
+                songUrlCache.remove(mediaId)
             }
 
             val playbackData = runBlocking(Dispatchers.IO) {
@@ -172,7 +176,8 @@ constructor(
                 "${it}&range=0-${actualContentLength}"
             }
 
-            songUrlCache[mediaId] = streamUrl to playbackData.streamExpiresInSeconds * 1000L
+            songUrlCache[mediaId] =
+                streamUrl to System.currentTimeMillis() + (playbackData.streamExpiresInSeconds * 1000L)
             dataSpec.withUri(streamUrl.toUri())
         }
 

@@ -88,6 +88,7 @@ import com.metrolist.music.LocalPlayerConnection
 import com.metrolist.music.R
 import com.metrolist.music.constants.CropAlbumArtKey
 import com.metrolist.music.constants.DarkModeKey
+import com.metrolist.music.constants.LandscapeMiniPlayerHeight
 import com.metrolist.music.constants.MiniPlayerHeight
 import com.metrolist.music.constants.PureBlackMiniPlayerKey
 import com.metrolist.music.constants.SwipeSensitivityKey
@@ -229,6 +230,9 @@ private fun NewMiniPlayer(
     val windowInfo = LocalWindowInfo.current
     val configuration = LocalConfiguration.current
     val density = LocalDensity.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val sizeScale = if (isLandscape) 2f else 1f
+    val miniPlayerHeight = if (isLandscape) LandscapeMiniPlayerHeight else MiniPlayerHeight
     val isTabletLandscape =
         remember(windowInfo.containerSize.width, configuration.orientation) {
             (windowInfo.containerSize.width / density.density) >= 600f && configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
@@ -309,9 +313,9 @@ private fun NewMiniPlayer(
         modifier =
             modifier
                 .fillMaxWidth()
-                .height(MiniPlayerHeight)
+                .height(miniPlayerHeight)
                 .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))
-                .padding(horizontal = 12.dp)
+                .padding(horizontal = 12.dp * sizeScale)
                 .let { baseModifier ->
                     if (swipeThumbnail) {
                         baseModifier.pointerInput(Unit) {
@@ -379,12 +383,12 @@ private fun NewMiniPlayer(
         Box(
             modifier =
                 Modifier
-                    .then(if (isTabletLandscape) Modifier.width(500.dp).align(Alignment.Center) else Modifier.fillMaxWidth())
-                    .height(64.dp)
+                    .then(if (isTabletLandscape) Modifier.width(1000.dp).align(Alignment.Center) else Modifier.fillMaxWidth())
+                    .height(miniPlayerHeight)
                     .offset { IntOffset(offsetXAnimatable.value.roundToInt(), 0) }
-                    .clip(RoundedCornerShape(32.dp))
+                    .clip(RoundedCornerShape(32.dp * sizeScale))
                     .background(color = backgroundColor)
-                    .border(1.dp, outlineColor.copy(alpha = 0.3f), RoundedCornerShape(32.dp))
+                    .border(1.dp * sizeScale, outlineColor, RoundedCornerShape(32.dp * sizeScale))
                     .clickable(
                         interactionSource = interactionSource,
                         indication = LocalIndication.current,
@@ -430,7 +434,7 @@ private fun NewMiniPlayer(
             }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp, vertical = 8.dp),
+                modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp * sizeScale, vertical = 8.dp * sizeScale),
             ) {
                 // Play button with progress - isolated composable
                 NewMiniPlayerPlayButton(
@@ -443,19 +447,21 @@ private fun NewMiniPlayer(
                     primaryColor = primaryColor,
                     outlineColor = outlineColor,
                     listenTogetherManager = listenTogetherManager,
+                    sizeScale = sizeScale,
                 )
 
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(16.dp * sizeScale))
 
                 // Song info - isolated composable
                 NewMiniPlayerSongInfo(
                     mediaMetadata = mediaMetadata,
                     onSurfaceColor = onSurfaceColor,
                     errorColor = errorColor,
+                    sizeScale = sizeScale,
                     modifier = Modifier.weight(1f),
                 )
 
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(12.dp * sizeScale))
 
                 // Cast indicator
                 if (isCasting) {
@@ -463,9 +469,9 @@ private fun NewMiniPlayer(
                         painter = painterResource(R.drawable.cast_connected),
                         contentDescription = "Casting",
                         tint = primaryColor,
-                        modifier = Modifier.size(20.dp),
+                        modifier = Modifier.size(20.dp * sizeScale),
                     )
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(12.dp * sizeScale))
                 }
 
 // Subscribe button - isolated composable
@@ -476,10 +482,11 @@ private fun NewMiniPlayer(
                         primaryColor = primaryColor,
                         outlineColor = outlineColor,
                         onSurfaceColor = onSurfaceColor,
+                        sizeScale = sizeScale,
                     )
                 }
 
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(8.dp * sizeScale))
 
 // Add to playlist button - isolated composable
                 mediaMetadata?.let { metadata ->
@@ -495,10 +502,11 @@ private fun NewMiniPlayer(
                         },
                         outlineColor = outlineColor,
                         onSurfaceColor = onSurfaceColor,
+                        sizeScale = sizeScale,
                     )
                 }
 
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(8.dp * sizeScale))
 
 // Favorite button - isolated composable
                 mediaMetadata?.let { FavoriteButton(
@@ -506,6 +514,7 @@ private fun NewMiniPlayer(
                     errorColor = errorColor,
                     outlineColor = outlineColor,
                     onSurfaceColor = onSurfaceColor,
+                    sizeScale = sizeScale,
                 )
                 }
             }
@@ -528,6 +537,7 @@ private fun NewMiniPlayerPlayButton(
     primaryColor: Color,
     outlineColor: Color,
     listenTogetherManager: ListenTogetherManager?,
+    sizeScale: Float,
 ) {
     val isPlaying by playerConnection.isPlaying.collectAsState()
     val castIsPlaying by castHandler?.castIsPlaying?.collectAsState() ?: remember { mutableStateOf(false) }
@@ -536,13 +546,13 @@ private fun NewMiniPlayerPlayButton(
     val isMuted by playerConnection.isMuted.collectAsStateWithLifecycle()
 
     val trackColor = outlineColor.copy(alpha = 0.2f)
-    val strokeWidth = 3.dp
+    val strokeWidth = 3.dp * sizeScale
 
     Box(
         contentAlignment = Alignment.Center,
         modifier =
             Modifier
-                .size(48.dp)
+                .size(48.dp * sizeScale)
                 .drawWithContent {
                     drawContent()
                     // Draw progress arc - this reads progressState.progress during draw phase only
@@ -580,9 +590,9 @@ private fun NewMiniPlayerPlayButton(
             contentAlignment = Alignment.Center,
             modifier =
                 Modifier
-                    .size(40.dp)
+                    .size(40.dp * sizeScale)
                     .clip(CircleShape)
-                    .border(1.dp, outlineColor.copy(alpha = 0.3f), CircleShape)
+                    .border(1.dp * sizeScale, outlineColor, CircleShape)
                     .clickable {
                         if (isListenTogetherGuest) {
                             playerConnection.toggleMute()
@@ -634,7 +644,7 @@ private fun NewMiniPlayerPlayButton(
                         ),
                     contentDescription = null,
                     tint = Color.White,
-                    modifier = Modifier.size(20.dp),
+                    modifier = Modifier.size(20.dp * sizeScale),
                 )
             }
         }
@@ -649,6 +659,7 @@ private fun NewMiniPlayerSongInfo(
     mediaMetadata: MediaMetadata?,
     onSurfaceColor: Color,
     errorColor: Color,
+    sizeScale: Float,
     modifier: Modifier = Modifier,
 ) {
     val error by LocalPlayerConnection.current?.error?.collectAsState() ?: remember { mutableStateOf(null) }
@@ -661,7 +672,7 @@ private fun NewMiniPlayerSongInfo(
             Text(
                 text = metadata.title,
                 color = onSurfaceColor,
-                fontSize = 14.sp,
+                fontSize = 14.sp * sizeScale,
                 fontWeight = FontWeight.Medium,
                 maxLines = 1,
                 overflow = TextOverflow.Clip,
@@ -676,7 +687,7 @@ private fun NewMiniPlayerSongInfo(
                      Text(
                          text = metadata.artists.joinToArtistString(" ${stringResource(R.string.and)} ") { it.name },
                          color = onSurfaceColor.copy(alpha = 0.7f),
-                        fontSize = 12.sp,
+                        fontSize = 12.sp * sizeScale,
                         maxLines = 1,
                         overflow = TextOverflow.Clip,
                         modifier = Modifier.basicMarquee(iterations = 1, initialDelayMillis = 3000, velocity = 30.dp),
@@ -688,7 +699,7 @@ private fun NewMiniPlayerSongInfo(
                 Text(
                     text = stringResource(R.string.error_playing),
                     color = errorColor,
-                    fontSize = 10.sp,
+                    fontSize = 10.sp * sizeScale,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -739,6 +750,9 @@ private fun LegacyMiniPlayer(
     val windowInfo = LocalWindowInfo.current
     val configuration = LocalConfiguration.current
     val density = LocalDensity.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val sizeScale = if (isLandscape) 2f else 1f
+    val miniPlayerHeight = if (isLandscape) LandscapeMiniPlayerHeight else MiniPlayerHeight
     val isTabletLandscape =
         remember(windowInfo.containerSize.width, configuration.orientation) {
             (windowInfo.containerSize.width / density.density) >= 600f && configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
@@ -766,8 +780,8 @@ private fun LegacyMiniPlayer(
     Box(
         modifier =
             modifier
-                .then(if (isTabletLandscape) Modifier.width(500.dp) else Modifier.fillMaxWidth())
-                .height(MiniPlayerHeight)
+                .then(if (isTabletLandscape) Modifier.width(1000.dp) else Modifier.fillMaxWidth())
+                .height(miniPlayerHeight)
                 .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))
                 .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
                 .background(
@@ -844,7 +858,7 @@ private fun LegacyMiniPlayer(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .height(2.dp)
+                    .height(2.dp * sizeScale)
                     .align(Alignment.BottomCenter)
                     .drawWithContent {
                         val progress = progressState.progress
@@ -859,14 +873,15 @@ private fun LegacyMiniPlayer(
                 Modifier
                     .fillMaxSize()
                     .offset { IntOffset(offsetXAnimatable.value.roundToInt(), 0) }
-                    .padding(end = 12.dp),
+                    .padding(end = 12.dp * sizeScale),
         ) {
             Box(Modifier.weight(1f)) {
                 mediaMetadata?.let {
                     LegacyMiniMediaInfo(
                         mediaMetadata = it,
                         pureBlack = pureBlack,
-                        modifier = Modifier.padding(horizontal = 6.dp),
+                        sizeScale = sizeScale,
+                        modifier = Modifier.padding(horizontal = 6.dp * sizeScale),
                     )
                 }
             }
@@ -877,13 +892,19 @@ private fun LegacyMiniPlayer(
                 castHandler = castHandler,
                 playerConnection = playerConnection,
                 listenTogetherManager = listenTogetherManager,
+                sizeScale = sizeScale,
             )
 
             IconButton(
+                modifier = Modifier.size(48.dp * sizeScale),
                 enabled = canSkipNext && !isListenTogetherGuest,
                 onClick = if (isListenTogetherGuest) ({}) else ({ playerConnection.seekToNext() }),
             ) {
-                Icon(painter = painterResource(R.drawable.skip_next), contentDescription = null)
+                Icon(
+                    painter = painterResource(R.drawable.skip_next),
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp * sizeScale),
+                )
             }
         }
 
@@ -893,7 +914,7 @@ private fun LegacyMiniPlayer(
                 modifier =
                     Modifier
                         .align(if (offsetXAnimatable.value > 0) Alignment.CenterStart else Alignment.CenterEnd)
-                        .padding(horizontal = 16.dp),
+                        .padding(horizontal = 16.dp * sizeScale),
             ) {
                 Icon(
                     painter =
@@ -905,7 +926,7 @@ private fun LegacyMiniPlayer(
                         primaryColor.copy(
                             alpha = (offsetXAnimatable.value.absoluteValue / autoSwipeThreshold).coerceIn(0f, 1f),
                         ),
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier.size(24.dp * sizeScale),
                 )
             }
         }
@@ -919,6 +940,7 @@ private fun LegacyPlayPauseButton(
     castHandler: CastConnectionHandler?,
     playerConnection: PlayerConnection,
     listenTogetherManager: ListenTogetherManager?,
+    sizeScale: Float,
 ) {
     val isPlaying by playerConnection.isPlaying.collectAsState()
     val castIsPlaying by castHandler?.castIsPlaying?.collectAsState() ?: remember { mutableStateOf(false) }
@@ -927,6 +949,7 @@ private fun LegacyPlayPauseButton(
     val isMuted by playerConnection.isMuted.collectAsStateWithLifecycle()
 
     IconButton(
+        modifier = Modifier.size(48.dp * sizeScale),
         onClick = {
             if (isListenTogetherGuest) {
                 playerConnection.toggleMute()
@@ -953,6 +976,7 @@ private fun LegacyPlayPauseButton(
                     },
                 ),
             contentDescription = null,
+            modifier = Modifier.size(24.dp * sizeScale),
         )
     }
 }
@@ -961,6 +985,7 @@ private fun LegacyPlayPauseButton(
 private fun LegacyMiniMediaInfo(
     mediaMetadata: MediaMetadata,
     pureBlack: Boolean,
+    sizeScale: Float,
     modifier: Modifier = Modifier,
 ) {
     val error by LocalPlayerConnection.current?.error?.collectAsState() ?: remember { mutableStateOf(null) }
@@ -973,8 +998,8 @@ private fun LegacyMiniMediaInfo(
         Box(
             modifier =
                 Modifier
-                    .padding(6.dp)
-                    .size(48.dp)
+                    .padding(6.dp * sizeScale)
+                    .size(48.dp * sizeScale)
                     .clip(RoundedCornerShape(ThumbnailCornerRadius)),
         ) {
             Box(
@@ -1021,12 +1046,12 @@ private fun LegacyMiniMediaInfo(
             modifier =
                 Modifier
                     .weight(1f)
-                    .padding(horizontal = 6.dp),
+                    .padding(horizontal = 6.dp * sizeScale),
         ) {
             Text(
                 text = mediaMetadata.title,
                 color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 16.sp,
+                fontSize = 16.sp * sizeScale,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -1037,7 +1062,7 @@ private fun LegacyMiniMediaInfo(
                  Text(
                      text = mediaMetadata.artists.joinToArtistString(" ${stringResource(R.string.and)} ") { it.name },
                      color = MaterialTheme.colorScheme.secondary,
-                    fontSize = 12.sp,
+                    fontSize = 12.sp * sizeScale,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -1057,6 +1082,7 @@ private fun SubscribeButton(
     primaryColor: Color,
     outlineColor: Color,
     onSurfaceColor: Color,
+    sizeScale: Float,
 ) {
     val database = LocalDatabase.current
     val libraryArtist by database.artist(artistId).collectAsStateWithLifecycle(initialValue = null)
@@ -1067,11 +1093,11 @@ private fun SubscribeButton(
         contentAlignment = Alignment.Center,
         modifier =
             Modifier
-                .size(40.dp)
+                .size(40.dp * sizeScale)
                 .clip(CircleShape)
                 .border(
-                    width = 1.dp,
-                    color = if (isSubscribed) primaryColor.copy(alpha = 0.5f) else outlineColor.copy(alpha = 0.3f),
+                    width = 1.dp * sizeScale,
+                    color = if (isSubscribed) primaryColor.copy(alpha = 0.5f) else outlineColor,
                     shape = CircleShape,
                 ).background(
                     color = if (isSubscribed) primaryColor.copy(alpha = 0.1f) else Color.Transparent,
@@ -1100,7 +1126,7 @@ private fun SubscribeButton(
             painter = painterResource(if (isSubscribed) R.drawable.subscribed else R.drawable.subscribe),
             contentDescription = null,
             tint = if (isSubscribed) primaryColor else onSurfaceColor.copy(alpha = 0.7f),
-            modifier = Modifier.size(20.dp),
+            modifier = Modifier.size(20.dp * sizeScale),
         )
     }
 }
@@ -1110,6 +1136,7 @@ private fun AddToPlaylistButton(
     onClick: () -> Unit,
     outlineColor: Color,
     onSurfaceColor: Color,
+    sizeScale: Float,
 )
 
 {
@@ -1118,11 +1145,11 @@ private fun AddToPlaylistButton(
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
-            .size(40.dp)
+            .size(40.dp * sizeScale)
             .clip(CircleShape)
             .border(
-                width = 1.dp,
-                color = outlineColor.copy(alpha = 0.3f),
+                width = 1.dp * sizeScale,
+                color = outlineColor,
                 shape = CircleShape,
             )
             .background(
@@ -1135,7 +1162,7 @@ private fun AddToPlaylistButton(
             painter = painterResource(R.drawable.add),
             contentDescription = contentDescription,
             tint = onSurfaceColor.copy(alpha = 0.7f),
-            modifier = Modifier.size(20.dp),
+            modifier = Modifier.size(20.dp * sizeScale),
         )
     }
 }
@@ -1146,6 +1173,7 @@ private fun FavoriteButton(
     errorColor: Color,
     outlineColor: Color,
     onSurfaceColor: Color,
+    sizeScale: Float,
 ) {
     val database = LocalDatabase.current
     val playerConnection = LocalPlayerConnection.current ?: return
@@ -1158,11 +1186,11 @@ private fun FavoriteButton(
         contentAlignment = Alignment.Center,
         modifier =
             Modifier
-                .size(40.dp)
+                .size(40.dp * sizeScale)
                 .clip(CircleShape)
                 .border(
-                    width = 1.dp,
-                    color = if (isLiked) errorColor.copy(alpha = 0.5f) else outlineColor.copy(alpha = 0.3f),
+                    width = 1.dp * sizeScale,
+                    color = if (isLiked) errorColor.copy(alpha = 0.5f) else outlineColor,
                     shape = CircleShape,
                 ).background(
                     color = if (isLiked) errorColor.copy(alpha = 0.1f) else Color.Transparent,
@@ -1173,7 +1201,7 @@ private fun FavoriteButton(
             painter = painterResource(if (isLiked) R.drawable.favorite else R.drawable.favorite_border),
             contentDescription = null,
             tint = if (isLiked) errorColor else onSurfaceColor.copy(alpha = 0.7f),
-            modifier = Modifier.size(20.dp),
+            modifier = Modifier.size(20.dp * sizeScale),
         )
     }
 }
