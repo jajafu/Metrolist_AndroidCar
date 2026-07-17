@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -34,6 +35,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -72,6 +75,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.materialkolor.PaletteStyle
 import com.materialkolor.rememberDynamicColorScheme
+import com.metrolist.music.LocalPlayerAwareWindowInsets
 import com.metrolist.music.R
 import com.metrolist.music.constants.DarkModeKey
 import com.metrolist.music.constants.DynamicThemeKey
@@ -240,6 +244,11 @@ fun LandscapeThemeLayout(
     Row(
         modifier = Modifier
             .fillMaxSize()
+            .windowInsetsPadding(
+                LocalPlayerAwareWindowInsets.current.only(
+                    WindowInsetsSides.Horizontal + WindowInsetsSides.Top + WindowInsetsSides.Bottom
+                )
+            )
             .padding(innerPadding)
     ) {
         Column(
@@ -268,7 +277,6 @@ fun LandscapeThemeLayout(
             modifier = Modifier
                 .weight(0.6f)
                 .fillMaxHeight()
-                .verticalScroll(rememberScrollState())
                 .padding(end = 16.dp, top = 16.dp, bottom = 16.dp)
         ) {
             ThemeControls(
@@ -277,10 +285,10 @@ fun LandscapeThemeLayout(
                 pureBlack = pureBlack,
                 onPureBlackChange = onPureBlackChange,
                 selectedThemeColor = selectedThemeColor,
-                onSelectedThemeColorChange = onSelectedThemeColorChange
+                onSelectedThemeColorChange = onSelectedThemeColorChange,
+                modifier = Modifier.fillMaxHeight(),
+                scrollContent = true
             )
-
-            Spacer(modifier = Modifier.height(80.dp))
         }
     }
 }
@@ -292,10 +300,12 @@ fun ThemeControls(
     pureBlack: Boolean,
     onPureBlackChange: (Boolean) -> Unit,
     selectedThemeColor: Color,
-    onSelectedThemeColorChange: (Color) -> Unit
+    onSelectedThemeColorChange: (Color) -> Unit,
+    modifier: Modifier = Modifier,
+    scrollContent: Boolean = false
 ) {
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
         shape = RoundedCornerShape(24.dp),
@@ -305,7 +315,15 @@ fun ThemeControls(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
-            modifier = Modifier.padding(20.dp),
+            modifier = Modifier
+                .then(
+                    if (scrollContent) {
+                        Modifier.verticalScroll(rememberScrollState())
+                    } else {
+                        Modifier
+                    }
+                )
+                .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {

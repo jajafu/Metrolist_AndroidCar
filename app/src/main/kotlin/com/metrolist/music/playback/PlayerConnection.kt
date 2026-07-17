@@ -28,7 +28,6 @@ import com.metrolist.music.extensions.currentMetadata
 import com.metrolist.music.extensions.getCurrentQueueIndex
 import com.metrolist.music.extensions.getQueueWindows
 import com.metrolist.music.extensions.metadata
-import com.metrolist.music.extensions.togglePlayPause
 import com.metrolist.music.playback.MusicService.MusicBinder
 import com.metrolist.music.playback.queues.Queue
 import com.metrolist.music.utils.dataStore
@@ -340,7 +339,11 @@ class PlayerConnection(
                     castHandler.play()
                 }
             } else {
-                player.togglePlayPause()
+                if (player.playWhenReady) {
+                    player.pause()
+                } else {
+                    play()
+                }
             }
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "Error in togglePlayPause")
@@ -356,6 +359,7 @@ class PlayerConnection(
             if (castHandler?.isCasting?.value == true) {
                 castHandler.play()
             } else {
+                service.resetPlaybackRecoveryForUserAction()
                 if (player.playbackState == Player.STATE_IDLE) {
                     player.prepare()
                 }
@@ -406,6 +410,7 @@ class PlayerConnection(
                 castHandler.skipToNext()
                 return
             }
+            service.resetPlaybackRecoveryForUserAction()
             player.seekToNext()
             if (player.playbackState == Player.STATE_IDLE || player.playbackState == Player.STATE_ENDED) {
                 player.prepare()
@@ -427,6 +432,8 @@ class PlayerConnection(
                 castHandler.skipToPrevious()
                 return
             }
+
+            service.resetPlaybackRecoveryForUserAction()
 
             // Logic to mimic standard seekToPrevious behavior but with explicit callbacks
             // If we are more than 3 seconds in, just restart the song

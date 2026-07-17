@@ -27,10 +27,12 @@ import com.metrolist.kugou.KuGou
 import com.metrolist.lastfm.LastFM
 import com.metrolist.music.BuildConfig
 import com.metrolist.music.constants.*
+import com.metrolist.music.db.MusicDatabase
 import com.metrolist.music.di.ApplicationScope
 import com.metrolist.music.extensions.toEnum
 import com.metrolist.music.extensions.toInetSocketAddress
 import com.metrolist.music.utils.CrashHandler
+import com.metrolist.music.utils.LikedSongsBackupManager
 import com.metrolist.music.utils.YTPlayerUtils
 import com.metrolist.music.utils.cipher.CipherDeobfuscator
 import com.metrolist.music.utils.dataStore
@@ -64,6 +66,9 @@ class App :
     @ApplicationScope
     lateinit var applicationScope: CoroutineScope
 
+    @Inject
+    lateinit var database: MusicDatabase
+
     override fun onCreate() {
         super.onCreate()
 
@@ -83,6 +88,10 @@ class App :
         // Plant logging BEFORE cipher init so the synchronous config-store load
         // (bundled asset + cached overlay) is captured, not just the async remote refresh.
         Timber.plant(Timber.DebugTree())
+
+        applicationScope.launch(Dispatchers.IO) {
+            LikedSongsBackupManager(this@App, database).restoreAndObserve()
+        }
 
         // Initialize cipher deobfuscator for WEB_REMIX streaming
         CipherDeobfuscator.initialize(this)

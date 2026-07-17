@@ -124,12 +124,12 @@ android {
 
     flavorDimensions += listOf("variant")
     productFlavors {
-        // FOSS - Updater, but no gcast
+        // FOSS - no updater for this customized build, no gcast
         create("foss") {
             dimension = "variant"
             isDefault = true
             buildConfigField("Boolean", "CAST_AVAILABLE", "false")
-            buildConfigField("Boolean", "UPDATER_AVAILABLE", "true")
+            buildConfigField("Boolean", "UPDATER_AVAILABLE", "false")
         }
 
         // GMS - Updater and gcast
