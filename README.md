@@ -47,7 +47,7 @@ Screenshots are available in the repository's [`fastlane/metadata/android`](fast
 
 The generated APK is `app/build/outputs/apk/foss/debug/app-foss-debug.apk`.
 
-GitHub Actions builds and lints only this FOSS debug variant. Successful runs on the main branch upload the APK as a workflow artifact and publish it to a versioned GitHub Release. The workflow does not build GMS, Izzy or release variants and does not require release-signing secrets. CI uses a temporary debug key, so an APK from a newer run may require uninstalling an APK installed from an older run.
+The GitHub Actions workflow is run manually and builds and lints only this FOSS debug variant. A successful manual run from the main branch uploads the APK as a workflow artifact and publishes it to a versioned GitHub Release. The workflow does not run automatically on pushes or pull requests, does not build GMS, Izzy or release variants, and does not require release-signing secrets. CI uses a temporary debug key, so an APK from a newer run may require uninstalling an APK installed from an older run.
 
 ## Original project and acknowledgements
 
