@@ -5,6 +5,7 @@
 
 package com.metrolist.music.ui.screens.search
 
+import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -56,6 +57,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -88,6 +90,7 @@ import com.metrolist.music.LocalPlayerConnection
 import com.metrolist.music.R
 import com.metrolist.music.constants.AutoRadioQueueKey
 import com.metrolist.music.constants.HideVideoSongsKey
+import com.metrolist.music.constants.LandscapeMiniPlayerHeight
 import com.metrolist.music.constants.MiniPlayerBottomSpacing
 import com.metrolist.music.constants.MiniPlayerHeight
 import com.metrolist.music.constants.NavigationBarHeight
@@ -127,6 +130,13 @@ fun OnlineSearchResult(
     val menuState = LocalMenuState.current
     val playerConnection = LocalPlayerConnection.current ?: return
     val haptic = LocalHapticFeedback.current
+    val configuration = LocalConfiguration.current
+    val miniPlayerHeight =
+        if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            LandscapeMiniPlayerHeight
+        } else {
+            MiniPlayerHeight
+        }
     val isPlaying by playerConnection.isEffectivelyPlaying.collectAsStateWithLifecycle()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsStateWithLifecycle()
 
@@ -550,7 +560,7 @@ fun OnlineSearchResult(
                     }
 
                     item(key = "bottom_spacer") {
-                        Spacer(modifier = Modifier.height(MiniPlayerHeight + MiniPlayerBottomSpacing + NavigationBarHeight))
+                        Spacer(modifier = Modifier.height(miniPlayerHeight + MiniPlayerBottomSpacing + NavigationBarHeight))
                     }
                 }
             }

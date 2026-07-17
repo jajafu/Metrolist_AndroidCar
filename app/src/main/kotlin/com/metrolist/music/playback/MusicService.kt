@@ -55,6 +55,7 @@ import androidx.media3.common.Timeline
 import androidx.media3.common.audio.SonicAudioProcessor
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSource
+import androidx.media3.datasource.DataSpec
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.HttpDataSource
 import androidx.media3.datasource.ResolvingDataSource
@@ -147,6 +148,7 @@ import com.metrolist.music.constants.MediaSessionConstants.CommandToggleLike
 import com.metrolist.music.constants.MediaSessionConstants.CommandToggleRepeatMode
 import com.metrolist.music.constants.MediaSessionConstants.CommandToggleShuffle
 import com.metrolist.music.constants.MediaSessionConstants.CommandToggleStartRadio
+import com.metrolist.music.constants.MaxSongCacheSizeKey
 import com.metrolist.music.constants.PauseListenHistoryKey
 import com.metrolist.music.constants.PauseOnMute
 import com.metrolist.music.constants.PersistentQueueKey
@@ -305,6 +307,9 @@ class MusicService :
     private var crossfadeDuration = 5000f
     private var crossfadeGapless = true
     private var crossfadeTriggerJob: Job? = null
+    private var nextTracksPrefetchJob: Job? = null
+    @Volatile
+    private var nextTracksPrefetchIds: List<String> = emptyList()
 
     private val secondaryPlayerListener =
         object : Player.Listener {
@@ -490,6 +495,10 @@ class MusicService :
     private var cachedShufflePlaylistFirst = false
     @Volatile
     private var cachedAutoLoadMore = true
+    @Volatile
+    private var cachedEnableSongCache = true
+    @Volatile
+    private var cachedMaxSongCacheSize = 1024
 
     // URL cache for stream URLs - class-level so it can be invalidated on errors
     private val songUrlCache = Collections.synchronizedMap(
@@ -622,6 +631,8 @@ class MusicService :
         // never calls dataStore.get() (which does runBlocking internally).
         // This consolidates ~15 main-thread-blocking DataStore reads into 1.
         startupPrefs = runBlocking(Dispatchers.IO) { dataStore.data.first() }
+        cachedEnableSongCache = startupPrefs!![EnableSongCacheKey] ?: true
+        cachedMaxSongCacheSize = startupPrefs!![MaxSongCacheSizeKey] ?: 1024
 
         // 3. Connect the processor to the service
         // handled in createExoPlayer
@@ -771,6 +782,11 @@ class MusicService :
                 isNetworkConnected.value = isConnected
                 if (isConnected && waitingForNetworkConnection.value) {
                     triggerRetry()
+                }
+                if (isConnected) {
+                    scheduleNextTracksPrefetch(force = true)
+                } else {
+                    cancelNextTracksPrefetch()
                 }
                 if (isConnected && DiscordRpcManager.isReady()) {
                     Timber.tag("DiscordSvc").i("Network reconnected, syncing RPC")
@@ -1170,6 +1186,21 @@ class MusicService :
         scope.launch {
             dataStore.data.map { it[AutoLoadMoreKey] ?: true }.distinctUntilChanged().collect { cachedAutoLoadMore = it }
         }
+        scope.launch {
+            dataStore.data
+                .map { prefs ->
+                    (prefs[EnableSongCacheKey] ?: true) to (prefs[MaxSongCacheSizeKey] ?: 1024)
+                }.distinctUntilChanged()
+                .collect { (enabled, maxSize) ->
+                    cachedEnableSongCache = enabled
+                    cachedMaxSongCacheSize = maxSize
+                    if (enabled && maxSize != 0) {
+                        scheduleNextTracksPrefetch(force = true)
+                    } else {
+                        cancelNextTracksPrefetch()
+                    }
+                }
+        }
         // Keep YTPlayerUtils in sync with the stream source toggles (Settings → Stream sources).
         // Map to the derived set + distinctUntilChanged so an unrelated preference write doesn't
         // rebuild the set and rewrite the @Volatile field on every DataStore emission.
@@ -1551,6 +1582,19 @@ class MusicService :
         }
     }
 
+    fun resetPlaybackRecoveryForUserAction() {
+        retryJob?.cancel()
+        retryJob = null
+        waitingForNetworkConnection.value = false
+        pausedDueToNetworkError = false
+        retryCount = 0
+        currentMediaIdRetryCount.clear()
+        recentlyFailedSongs.clear()
+        if (::connectivityObserver.isInitialized) {
+            isNetworkConnected.value = connectivityObserver.isCurrentlyConnected()
+        }
+    }
+
     private fun skipOnError() {
         /**
          * Auto skip to the next media item on error.
@@ -1758,6 +1802,124 @@ class MusicService :
         }
     }
 
+    private fun cancelNextTracksPrefetch() {
+        nextTracksPrefetchJob?.cancel()
+        nextTracksPrefetchJob = null
+        nextTracksPrefetchIds = emptyList()
+    }
+
+    private fun scheduleNextTracksPrefetch(force: Boolean = false) {
+        if (!::player.isInitialized ||
+            !cachedEnableSongCache ||
+            cachedMaxSongCacheSize == 0 ||
+            !isNetworkConnected.value ||
+            castConnectionHandler?.isCasting?.value == true ||
+            player.repeatMode == REPEAT_MODE_ONE
+        ) {
+            cancelNextTracksPrefetch()
+            return
+        }
+
+        val timeline = player.currentTimeline
+        val currentIndex = player.currentMediaItemIndex
+        if (timeline.isEmpty || currentIndex == C.INDEX_UNSET) {
+            cancelNextTracksPrefetch()
+            return
+        }
+
+        val nextItems = mutableListOf<MediaItem>()
+        val visitedIndices = mutableSetOf(currentIndex)
+        var index = currentIndex
+        while (nextItems.size < NEXT_TRACK_PREFETCH_COUNT) {
+            val nextIndex =
+                timeline.getNextWindowIndex(
+                    index,
+                    player.repeatMode,
+                    player.shuffleModeEnabled,
+                )
+            if (nextIndex == C.INDEX_UNSET || !visitedIndices.add(nextIndex)) break
+            nextItems += player.getMediaItemAt(nextIndex)
+            index = nextIndex
+        }
+
+        val targetItems = nextItems.distinctBy { it.mediaId }.take(NEXT_TRACK_PREFETCH_COUNT)
+        val targetIds = targetItems.map { it.mediaId }
+        if (targetIds.isEmpty()) {
+            cancelNextTracksPrefetch()
+            return
+        }
+        if (!force && targetIds == nextTracksPrefetchIds && nextTracksPrefetchJob?.isActive == true) return
+
+        nextTracksPrefetchJob?.cancel()
+        nextTracksPrefetchIds = targetIds
+        nextTracksPrefetchJob =
+            scope.launch(Dispatchers.IO) {
+                delay(NEXT_TRACK_PREFETCH_DELAY_MS)
+                val dataSourceFactory = createDataSourceFactory()
+                for (item in targetItems) {
+                    if (!isActive ||
+                        !cachedEnableSongCache ||
+                        cachedMaxSongCacheSize == 0 ||
+                        !isNetworkConnected.value ||
+                        castConnectionHandler?.isCasting?.value == true ||
+                        nextTracksPrefetchIds != targetIds
+                    ) {
+                        break
+                    }
+
+                    try {
+                        prefetchTrackStart(item.mediaId, dataSourceFactory)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        Timber.tag(TAG).w(e, "Failed to prefetch ${item.mediaId}")
+                    }
+                }
+            }
+    }
+
+    private suspend fun prefetchTrackStart(
+        mediaId: String,
+        dataSourceFactory: DataSource.Factory,
+    ) {
+        val contentLength = database.format(mediaId).first()?.contentLength
+        val prefetchLength = contentLength?.coerceAtMost(NEXT_TRACK_PREFETCH_LENGTH) ?: NEXT_TRACK_PREFETCH_LENGTH
+        if (prefetchLength <= 0L ||
+            downloadCache.isCached(mediaId, 0, prefetchLength) ||
+            playerCache.isCached(mediaId, 0, prefetchLength)
+        ) {
+            return
+        }
+
+        val dataSource = dataSourceFactory.createDataSource()
+        val dataSpec =
+            DataSpec
+                .Builder()
+                .setUri(mediaId.toUri())
+                .setKey(mediaId)
+                .setLength(prefetchLength)
+                .build()
+        val buffer = ByteArray(PREFETCH_READ_BUFFER_SIZE)
+        var remaining = prefetchLength
+
+        try {
+            dataSource.open(dataSpec)
+            while (remaining > 0 && coroutineContext.isActive) {
+                val bytesRead =
+                    dataSource.read(
+                        buffer,
+                        0,
+                        minOf(buffer.size.toLong(), remaining).toInt(),
+                    )
+                if (bytesRead == C.RESULT_END_OF_INPUT) break
+                remaining -= bytesRead
+            }
+            Timber.tag(TAG).d("Prefetched ${prefetchLength - remaining} bytes for $mediaId")
+        } finally {
+            dataSource.close()
+        }
+    }
+
     fun playQueue(
         queue: Queue,
         playWhenReady: Boolean = true,
@@ -1770,6 +1932,8 @@ class MusicService :
             }
             return
         }
+
+        resetPlaybackRecoveryForUserAction()
 
         currentQueue = queue
         queueTitle = null
@@ -2677,6 +2841,9 @@ class MusicService :
         if (events.containsAny(EVENT_TIMELINE_CHANGED, EVENT_POSITION_DISCONTINUITY)) {
             currentMediaMetadata.value = player.currentMetadata
         }
+        if (events.containsAny(EVENT_TIMELINE_CHANGED, Player.EVENT_MEDIA_ITEM_TRANSITION)) {
+            scheduleNextTracksPrefetch()
+        }
 
         if (events.containsAny(Player.EVENT_IS_PLAYING_CHANGED)) {
             updateWidgetUI(player.isPlaying)
@@ -2732,6 +2899,7 @@ class MusicService :
         if (cachedPersistentQueue) {
             saveQueueToDisk()
         }
+        scheduleNextTracksPrefetch(force = true)
     }
 
     override fun onRepeatModeChanged(repeatMode: Int) {
@@ -2745,6 +2913,7 @@ class MusicService :
         if (cachedPersistentQueue) {
             saveQueueToDisk()
         }
+        scheduleNextTracksPrefetch(force = true)
     }
 
     /**
@@ -3334,34 +3503,46 @@ class MusicService :
         }
     }
 
-    private fun createCacheDataSource(): CacheDataSource.Factory =
-        CacheDataSource
+    private fun createCacheDataSource(): DataSource.Factory {
+        val networkDataSourceFactory =
+            DefaultDataSource.Factory(
+                this,
+                OkHttpDataSource.Factory(
+                    OkHttpClient
+                        .Builder()
+                        .proxy(YouTube.proxy)
+                        .proxyAuthenticator { _, response ->
+                            YouTube.proxyAuth?.let { auth ->
+                                response.request
+                                    .newBuilder()
+                                    .header("Proxy-Authorization", auth)
+                                    .build()
+                            } ?: response.request
+                        }.build(),
+                ),
+            )
+        val playerCacheDataSourceFactory =
+            CacheDataSource
+                .Factory()
+                .setCache(playerCache)
+                .setUpstreamDataSourceFactory(networkDataSourceFactory)
+                .setFlags(FLAG_IGNORE_CACHE_ON_ERROR)
+        val playerCacheAwareUpstream =
+            DataSource.Factory {
+                if (cachedEnableSongCache && cachedMaxSongCacheSize != 0) {
+                    playerCacheDataSourceFactory.createDataSource()
+                } else {
+                    networkDataSourceFactory.createDataSource()
+                }
+            }
+
+        return CacheDataSource
             .Factory()
             .setCache(downloadCache)
-            .setUpstreamDataSourceFactory(
-                CacheDataSource
-                    .Factory()
-                    .setCache(playerCache)
-                    .setUpstreamDataSourceFactory(
-                        DefaultDataSource.Factory(
-                            this,
-                            OkHttpDataSource.Factory(
-                                OkHttpClient
-                                    .Builder()
-                                    .proxy(YouTube.proxy)
-                                    .proxyAuthenticator { _, response ->
-                                        YouTube.proxyAuth?.let { auth ->
-                                            response.request
-                                                .newBuilder()
-                                                .header("Proxy-Authorization", auth)
-                                                .build()
-                                        } ?: response.request
-                                    }.build(),
-                            ),
-                        ),
-                    ),
-            ).setCacheWriteDataSinkFactory(null)
+            .setUpstreamDataSourceFactory(playerCacheAwareUpstream)
+            .setCacheWriteDataSinkFactory(null)
             .setFlags(FLAG_IGNORE_CACHE_ON_ERROR)
+    }
 
     private var isSilenceSkipping = false
 
@@ -3647,8 +3828,6 @@ class MusicService :
             val shouldBypassCache = bypassCacheForQualityChange.contains(mediaId)
 
             if (!shouldBypassCache) {
-                val usePlayerCache = dataStore.get(EnableSongCacheKey, true)
-
                 val contentLength =
                     runBlocking(Dispatchers.IO) {
                         database.song(mediaId).first()?.format?.contentLength
@@ -3665,7 +3844,10 @@ class MusicService :
                     return@Factory dataSpec
                 }
 
-                if (usePlayerCache && playerCache.isCached(mediaId, dataSpec.position, requiredLength)) {
+                if (cachedEnableSongCache &&
+                    cachedMaxSongCacheSize != 0 &&
+                    playerCache.isCached(mediaId, dataSpec.position, requiredLength)
+                ) {
                     recoverSongDeduped(mediaId)
                     return@Factory dataSpec
                 }
@@ -4803,6 +4985,10 @@ class MusicService :
         const val NOTIFICATION_ID = 888
         const val ERROR_CODE_NO_STREAM = 1000001
         const val CHUNK_LENGTH = 512 * 1024L
+        const val NEXT_TRACK_PREFETCH_COUNT = 3
+        const val NEXT_TRACK_PREFETCH_LENGTH = CHUNK_LENGTH
+        const val NEXT_TRACK_PREFETCH_DELAY_MS = 500L
+        const val PREFETCH_READ_BUFFER_SIZE = 64 * 1024
         const val PERSISTENT_QUEUE_FILE = "persistent_queue.data"
         const val PERSISTENT_AUTOMIX_FILE = "persistent_automix.data"
         const val PERSISTENT_PLAYER_STATE_FILE = "persistent_player_state.data"

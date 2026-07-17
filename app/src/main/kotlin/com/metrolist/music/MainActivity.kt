@@ -138,6 +138,7 @@ import com.metrolist.music.constants.EnableHighRefreshRateKey
 import com.metrolist.music.constants.EnableLandscapeScalingKey
 import com.metrolist.music.constants.ExperimentalLyricsKey
 import com.metrolist.music.constants.LastSeenVersionKey
+import com.metrolist.music.constants.LandscapeMiniPlayerHeight
 import com.metrolist.music.constants.ListenTogetherInTopBarKey
 import com.metrolist.music.constants.ListenTogetherUsernameKey
 import com.metrolist.music.constants.LyricsProviderOrderKey
@@ -775,6 +776,7 @@ class MainActivity : ComponentActivity() {
 
                 val isLandscape = configuration.containerDpSize.width > configuration.containerDpSize.height
                 val isTablet = configuration.containerDpSize.width >= 600.dp
+                val miniPlayerHeight = if (isLandscape) LandscapeMiniPlayerHeight else MiniPlayerHeight
 
                 val showRail = (isLandscape || isTablet) && !inSearchScreen
 
@@ -798,7 +800,7 @@ class MainActivity : ComponentActivity() {
                             bottomInset +
                                 (if (!showRail && shouldShowNavigationBar) navPadding else 0.dp) +
                                 (if (useNewMiniPlayerDesign) MiniPlayerBottomSpacing else 0.dp) +
-                                MiniPlayerHeight,
+                                miniPlayerHeight,
                         expandedBound = maxHeight,
                     )
 
@@ -814,12 +816,13 @@ class MainActivity : ComponentActivity() {
                         shouldShowNavigationBar,
                         playerBottomSheetState.isDismissed,
                         showRail,
+                        miniPlayerHeight,
                     ) {
                         var bottom = bottomInset
                         if (shouldShowNavigationBar && !showRail) {
                             bottom += NavigationBarHeight
                         }
-                        if (!playerBottomSheetState.isDismissed) bottom += MiniPlayerHeight
+                        if (!playerBottomSheetState.isDismissed) bottom += miniPlayerHeight
                         windowsInsets
                             .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top)
                             .add(WindowInsets(top = AppBarHeight, bottom = bottom))
