@@ -1,6 +1,6 @@
 # Metrolist Android Car
 
-Metrolist Android Car is a customized Android Auto-oriented fork of [Metrolist](https://github.com/MetrolistGroup/Metrolist), an open-source YouTube Music client for Android.
+Metrolist Android Car is a customized Android Car-oriented fork of [Metrolist](https://github.com/MetrolistGroup/Metrolist), an open-source YouTube Music client for Android.
 
 This fork is maintained by [jajafu](https://github.com/jajafu) and focuses on a more readable and practical in-car playback experience.
 
@@ -10,9 +10,11 @@ This fork is maintained by [jajafu](https://github.com/jajafu) and focuses on a 
 - Fixed scrolling for the Theme and Color settings in landscape orientation.
 - Increased dark-mode contrast by changing adjustment-button outlines to pure white.
 - Increased the cached playback queue to three tracks.
+- Removed the sleep button from the playback cover and enlarged the other buttons.
 
 ## Features
 
+- Independent volume control. Unlike standard YouTube Music which only follows system volume, this app allows separate music volume adjustment to reduce interference with navigation guidance.
 - Stream music and videos from YouTube Music.
 - Background playback and offline downloads.
 - Skip silence, sleep timer, audio normalization, tempo and pitch control.
