@@ -1,10 +1,6 @@
-name: Build Foss Debug
+name: Build & Release Foss Debug
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -81,7 +77,7 @@ jobs:
           retention-days: 14
 
   release:
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
     permissions:
