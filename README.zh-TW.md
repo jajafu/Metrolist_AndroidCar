@@ -44,7 +44,9 @@ Metrolist Android Car 是 [Metrolist](https://github.com/MetrolistGroup/Metrolis
    ./gradlew :app:assembleFossDebug
    ```
 
-產生的 APK 位於 `app/build/outputs/apk/` 目錄。
+產生的 APK 位於 `app/build/outputs/apk/foss/debug/app-foss-debug.apk`。
+
+GitHub Actions 只建置及檢查這個 FOSS debug 版本，並將 APK 上傳為 workflow artifact；不會建置 GMS、Izzy 或 release 版本，也不會建立 GitHub Release 或要求正式簽章 Secrets。CI 使用臨時 debug 金鑰，因此安裝不同次執行產生的 APK 時，可能需要先移除舊版。
 
 ## 原始專案與致謝
 

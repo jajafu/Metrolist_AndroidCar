@@ -24,7 +24,7 @@ Metrolist_AndroidCar 是一個使用 Kotlin 開發的第三方 YouTube Music 客
 6. 在所有程式碼貢獻中，優先考量效能、電池續航力與可維護性。隨時考量變更對整體使用者體驗與應用程式效能的影響。
 7. 如有任何疑問，請詢問人類貢獻者。切勿在未經釐清的情況下假設需求或實作細節。
 8. 若未按照下一節的說明測試你的變更，將受到人類貢獻者的指正，並可能被要求重做。務必在要求最終審查前徹底測試你的變更。
-9. 只有修改 App 程式碼、資源、依賴或建置／部署設定時，才將 App 軟體版本號的第三段加 1，如 `0.1.0` 要變成 `0.1.1`
+9. 只有修改 App 程式碼、資源或依賴時，才將 App 軟體版本號的第三段加 1，如 `0.1.0` 要變成 `0.1.1`。單純修改文件或 GitHub Actions workflow 時不要提升版本號。
 
 ## 建置與測試變更
 
@@ -35,4 +35,5 @@ Metrolist_AndroidCar 是一個使用 Kotlin 開發的第三方 YouTube Music 客
 ```
 
 2. 若建置未成功，請檢視錯誤訊息、修正程式碼問題，然後再次嘗試建置。
-3. 建置成功後，可在模擬器或實體裝置上測試變更。安裝位於 `app/build/outputs/apk/universalFoss/debug/app-universal-foss-debug.apk` 的 APK，並請人類協助測試你修改的特定功能。
+3. 建置成功後，可在模擬器或實體裝置上測試變更。安裝位於 `app/build/outputs/apk/foss/debug/app-foss-debug.apk` 的 APK，並請人類協助測試你修改的特定功能。
+4. GitHub Actions 只建置並上傳 Foss Debug APK，不建置 GMS、Izzy 或 Release 版本，也不建立 GitHub Release。不得為此 workflow 加入正式簽章金鑰或簽章用 GitHub Secrets。

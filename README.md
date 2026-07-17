@@ -45,7 +45,9 @@ Screenshots are available in the repository's [`fastlane/metadata/android`](fast
    ./gradlew :app:assembleFossDebug
    ```
 
-The generated APK is placed under `app/build/outputs/apk/`.
+The generated APK is `app/build/outputs/apk/foss/debug/app-foss-debug.apk`.
+
+GitHub Actions builds and lints only this FOSS debug variant and uploads it as a workflow artifact. It does not build GMS, Izzy or release variants, publish a GitHub Release, or require release-signing secrets. CI uses a temporary debug key, so an APK from a newer run may require uninstalling an APK installed from an older run.
 
 ## Original project and acknowledgements
 
