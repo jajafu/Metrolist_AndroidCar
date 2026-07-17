@@ -300,7 +300,6 @@ fun LibraryMixScreen(
 
                     is Artist -> matchesNormalizedQuery(normalizedQuery, item.artist.name)
                     is Playlist -> matchesNormalizedQuery(normalizedQuery, item.playlist.name)
-                    else -> true
                 }
             }
 
@@ -759,7 +758,6 @@ fun LibraryMixScreen(
                                 )
                             }
 
-                            else -> {}
                         }
                     }
 
@@ -1037,7 +1035,6 @@ fun LibraryMixScreen(
                                 )
                             }
 
-                            else -> {}
                         }
                     }
 
