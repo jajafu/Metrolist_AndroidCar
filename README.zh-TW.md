@@ -1,6 +1,6 @@
 # Metrolist Android Car
 
-Metrolist Android Car 是 [Metrolist](https://github.com/MetrolistGroup/Metrolist) 的 Android Auto 導向客製分支。Metrolist 是一個開源的 Android YouTube Music 用戶端。
+Metrolist Android Car 是 [Metrolist](https://github.com/MetrolistGroup/Metrolist) 的 Android車機導向客製分支。Metrolist 是一個開源的 Android YouTube Music 用戶端。
 
 本分支由 [jajafu](https://github.com/jajafu) 維護，主要改善車載使用時的播放介面、可讀性與操作體驗。
 
@@ -10,9 +10,10 @@ Metrolist Android Car 是 [Metrolist](https://github.com/MetrolistGroup/Metrolis
 - 修正橫式畫面下 Theme 與 Color 設定頁無法滑動的問題。
 - 暗黑模式下，將調整按鈕外框改為純白色，增加對比度。
 - 將快取播放列表增加為 3 首歌曲。
+- 撥放封面下刪除睡眠按鈕，放大其他按鈕。
 
 ## 功能
-
+- 獨立調整播放音量。一般 YouTube Music 僅跟隨系統音量，無法獨立控制。本軟體可獨立設定音樂音量，降低對導航語音的干擾。
 - 播放 YouTube Music 音樂與影片。
 - 背景播放與離線下載。
 - 跳過靜音、睡眠計時、音量正常化、速度與音調調整。
