@@ -37,7 +37,21 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Generate CI debug keystore
+        run: |
+          keytool -genkeypair -v \
+            -keystore app/ci-debug.keystore \
+            -storepass android \
+            -alias androiddebugkey \
+            -keypass android \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -dname "CN=Metrolist CI,O=Metrolist,C=US"
+
       - name: Build Debug APK
+        env:
+          METROLIST_DEBUG_KEYSTORE_PATH: ci-debug.keystore
         run: ./gradlew :app:assembleFossDebug --console=plain --warning-mode summary
 
       - name: Locate and rename APK
