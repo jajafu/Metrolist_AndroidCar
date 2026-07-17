@@ -55,10 +55,17 @@ fun MetrolistTheme(
 
     // Apply pureBlack modification if needed, similar to original logic
     val colorScheme = remember(baseColorScheme, pureBlack, darkTheme) {
-        if (darkTheme && pureBlack) {
-            baseColorScheme.pureBlack(true)
+        val backgroundColorScheme =
+            if (darkTheme && pureBlack) {
+                baseColorScheme.pureBlack(true)
+            } else {
+                baseColorScheme
+            }
+
+        if (darkTheme) {
+            backgroundColorScheme.copy(outline = Color.White)
         } else {
-            baseColorScheme
+            backgroundColorScheme
         }
     }
 
