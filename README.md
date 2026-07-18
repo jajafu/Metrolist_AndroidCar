@@ -13,6 +13,7 @@ This fork is maintained by [jajafu](https://github.com/jajafu) and focuses on a 
 - Increased dark-mode contrast by changing adjustment-button outlines to pure white.
 - Increased the cached playback queue to three tracks.
 - Removed the sleep button from the playback cover and enlarged the other buttons.
+- Stored favorite music records in the Download directory for direct access after reinstall, no import/export needed.
 
 ## Features
 
@@ -26,28 +27,6 @@ This fork is maintained by [jajafu](https://github.com/jajafu) and focuses on a 
 - Listen together with other users.
 - Material 3 interface with light, dark, black, dynamic and preset color themes.
 - Android Auto-focused layout and playback controls.
-
-## Screenshots
-
-Screenshots are available in the repository's [`fastlane/metadata/android`](fastlane/metadata/android) directory.
-
-## Build from source
-
-1. Clone this repository, including its submodules:
-
-   ```bash
-   git clone --recurse-submodules https://github.com/jajafu/Metrolist_AndroidCar.git
-   ```
-
-2. Build the FOSS debug variant:
-
-   ```bash
-   ./gradlew :app:assembleFossDebug
-   ```
-
-The generated APK is `app/build/outputs/apk/foss/debug/app-foss-debug.apk`.
-
-The GitHub Actions workflow is run manually and builds and lints only this FOSS debug variant. A successful manual run from the main branch uploads the APK as a workflow artifact and publishes it to a versioned GitHub Release. The workflow does not run automatically on pushes or pull requests, does not build GMS, Izzy or release variants, and does not require release-signing secrets. CI uses a temporary debug key, so an APK from a newer run may require uninstalling an APK installed from an older run.
 
 ## Original project and acknowledgements
 
