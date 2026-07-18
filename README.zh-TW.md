@@ -13,6 +13,7 @@ Metrolist Android Car 是 [Metrolist](https://github.com/MetrolistGroup/Metrolis
 - 暗黑模式下，將調整按鈕外框改為純白色，增加對比度。
 - 將快取播放列表增加為 3 首歌曲。
 - 撥放封面下刪除睡眠按鈕，放大其他按鈕。
+- 將收藏音樂記錄放到 Download 目錄下，方便重新安裝直接調用，無須匯入匯出。
 
 ## 功能
 - 獨立調整播放音量。一般 YouTube Music 僅跟隨系統音量，無法獨立控制。本軟體可獨立設定音樂音量，降低對導航語音的干擾。
@@ -25,28 +26,6 @@ Metrolist Android Car 是 [Metrolist](https://github.com/MetrolistGroup/Metrolis
 - 與其他使用者一起聆聽。
 - Material 3 介面，支援亮色、暗色、全黑、動態與預設配色主題。
 - 針對 Android Auto 調整版面與播放控制。
-
-## 截圖
-
-截圖位於 repository 的 [`fastlane/metadata/android`](fastlane/metadata/android) 目錄。
-
-## 從原始碼建置
-
-1. 連同 submodule 複製本 repository：
-
-   ```bash
-   git clone --recurse-submodules https://github.com/jajafu/Metrolist_AndroidCar.git
-   ```
-
-2. 建置 FOSS debug 版本：
-
-   ```bash
-   ./gradlew :app:assembleFossDebug
-   ```
-
-產生的 APK 位於 `app/build/outputs/apk/foss/debug/app-foss-debug.apk`。
-
-GitHub Actions workflow 由使用者手動執行，且只建置及檢查這個 FOSS debug 版本。從 main 分支手動執行並建置成功後，會將 APK 上傳為 workflow artifact，並發布至依版本命名的 GitHub Release。它不會在 push 或 pull request 時自動執行，不會建置 GMS、Izzy 或 release build variant，也不需要正式簽章 Secrets。CI 使用臨時 debug 金鑰，因此安裝不同次執行產生的 APK 時，可能需要先移除舊版。
 
 ## 原始專案與致謝
 

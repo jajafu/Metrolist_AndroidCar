@@ -28,6 +28,12 @@ Metrolist_AndroidCar 是一個使用 Kotlin 開發的第三方 YouTube Music 客
 
 ## 建置與測試變更
 
+0. 初次建置前，連同 submodule 複製本 repository：
+
+   ```bash
+   git clone --recurse-submodules https://github.com/jajafu/Metrolist_AndroidCar.git
+   ```
+
 1. 修改程式碼後，應建置應用程式以確保無編譯錯誤。請在專案根目錄執行以下指令：
 
 ```bash
@@ -36,4 +42,4 @@ Metrolist_AndroidCar 是一個使用 Kotlin 開發的第三方 YouTube Music 客
 
 2. 若建置未成功，請檢視錯誤訊息、修正程式碼問題，然後再次嘗試建置。
 3. 建置成功後，可在模擬器或實體裝置上測試變更。安裝位於 `app/build/outputs/apk/foss/debug/app-foss-debug.apk` 的 APK，並請人類協助測試你修改的特定功能。
-4. GitHub Actions workflow 只允許手動執行，且只建置 Foss Debug APK，不得在 push 或 pull request 時自動建置，也不建置 GMS、Izzy 或 Release build variant。從 main 分支手動執行並建置成功後，可將 Foss Debug APK 上傳為 workflow artifact 並發布至 GitHub Release，但不得加入正式簽章金鑰或簽章用 GitHub Secrets。
+4. GitHub Actions workflow 只允許手動執行，且只建置 Foss Debug APK，不得在 push 或 pull request 時自動建置，也不建置 GMS、Izzy 或 Release build variant。從 main 分支手動執行並建置成功後，可將 Foss Debug APK 上傳為 workflow artifact 並發布至 GitHub Release，但不得加入正式簽章金鑰或簽章用 GitHub Secrets。CI 使用臨時 debug 金鑰，因此安裝不同次執行產生的 APK 時，可能需要先移除舊版。
