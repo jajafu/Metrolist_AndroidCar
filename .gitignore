@@ -108,6 +108,7 @@ app/src/main/java/com/metrolist/music/listentogether/proto/*
 app/src/main/cpp/coverart/
 
 # Agents dir
+.codex-remote-attachments/
 .claude
 .antigravity*
 .gemini
