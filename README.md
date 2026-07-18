@@ -18,11 +18,11 @@ This fork is maintained by [jajafu](https://github.com/jajafu) and focuses on a 
 ## Features
 
 - Independent volume control. Unlike standard YouTube Music which only follows system volume, this app allows separate music volume adjustment to reduce interference with navigation guidance.
-- Stream music and videos from YouTube Music.
+- Stream music from YouTube Music.
 - Background playback and offline downloads.
 - Skip silence, sleep timer, audio normalization, tempo and pitch control.
 - Synced lyrics and lyrics translation.
-- Search for songs, albums, artists, videos and playlists.
+- Search for songs, albums, artists and playlists.
 - Library, local playlist and account synchronization.
 - Listen together with other users.
 - Material 3 interface with light, dark, black, dynamic and preset color themes.
