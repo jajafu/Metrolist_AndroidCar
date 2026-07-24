@@ -40,6 +40,8 @@ The manually triggered GitHub Actions workflow builds only the FOSS release APK 
 
 The in-app updater checks [this repository's releases](https://github.com/jajafu/Metrolist_AndroidCar/releases) and opens the matching APK download for confirmation. Android still requires the user to approve installation.
 
+The first installation from an earlier Debug APK requires uninstalling that Debug package because it uses a different application ID. Subsequent FOSS Release APKs use the same signing key and can update in place.
+
 ## Original project and acknowledgements
 
 This project is a modified version of [Metrolist](https://github.com/MetrolistGroup/Metrolist). The original authors, contributors and copyright notices remain acknowledged in the source tree and [`LICENSE`](LICENSE).
