@@ -40,6 +40,8 @@ The manually triggered GitHub Actions workflow builds only the FOSS release APK 
 
 The in-app updater checks [this repository's releases](https://github.com/jajafu/Metrolist_AndroidCar/releases) and opens the matching APK download for confirmation. Android still requires the user to approve installation.
 
+Release names may include the `-car` suffix; the updater compares their numeric version components with the installed app version, so the current release is not reported as a new update.
+
 The first installation from an earlier Debug APK requires uninstalling that Debug package because it uses a different application ID. Subsequent FOSS Release APKs use the same signing key and can update in place.
 
 ## Original project and acknowledgements
