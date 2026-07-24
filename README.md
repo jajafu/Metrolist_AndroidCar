@@ -27,6 +27,7 @@ This fork is maintained by [jajafu](https://github.com/jajafu) and focuses on a 
 - Listen together with other users.
 - Material 3 interface with light, dark, black, dynamic and preset color themes.
 - Android Auto-focused layout and playback controls.
+- High-resolution image URL handling for YouTube's current image CDN formats.
 
 ## Build and updates
 

@@ -12,21 +12,40 @@ fun String.resize(
     height: Int? = null,
 ): String {
     if (width == null && height == null) return this
-    // Match BOTH lh3 and yt3 googleusercontent: YouTube migrated music/album art from
-    // lh3.googleusercontent.com to yt3.googleusercontent.com. Both serve the same =wW-hH resize
-    // params; matching only lh3 silently no-ops on the new host, so the player upscales the raw
-    // ~60px thumbnail (blurry). Verified live: a yt3 URL + =w544-h544 returns a sharp full-size image.
-    "https://(?:lh3|yt3)\\.googleusercontent\\.com/.*=w(\\d+)-h(\\d+).*".toRegex()
-        .matchEntire(this)?.groupValues?.let { group ->
-        val (W, H) = group.drop(1).map { it.toInt() }
-        var w = width
-        var h = height
-        if (w != null && h == null) h = (w / W) * H
-        if (w == null && h != null) w = (h / H) * W
-        return "${split("=w")[0]}=w$w-h$h-p-l90-rj"
+
+    val requestedWidth = width ?: height!!
+    val requestedHeight = height ?: width!!
+    val isGoogleCdn = contains("googleusercontent.com") || contains("ggpht.com")
+
+    if (isGoogleCdn) {
+        val existingDimensions = Regex("=w(\\d+)-h(\\d+)").find(this)
+        if (existingDimensions != null) {
+            val originalWidth = existingDimensions.groupValues[1].toInt()
+            val originalHeight = existingDimensions.groupValues[2].toInt()
+            val resizedWidth = width ?: (requestedHeight * originalWidth / originalHeight)
+            val resizedHeight = height ?: (requestedWidth * originalHeight / originalWidth)
+            return replace(existingDimensions.value, "=w$resizedWidth-h$resizedHeight")
+        }
+
+        val baseUrl = split("=w", "=s", "=h", limit = 2)[0]
+        return if (width != null && height != null) {
+            "$baseUrl=w$requestedWidth-h$requestedHeight-p-l90-rj"
+        } else {
+            "$baseUrl=s${width ?: height}-p-l90-rj"
+        }
     }
-    if (this matches "https://yt3\\.ggpht\\.com/.*=s(\\d+)".toRegex()) {
-        return "$this-s${width ?: height}"
+
+    if (contains("i.ytimg.com")) {
+        return if (requestedWidth > 480) {
+            replace("hqdefault.jpg", "maxresdefault.jpg")
+                .replace("mqdefault.jpg", "maxresdefault.jpg")
+                .replace("sddefault.jpg", "maxresdefault.jpg")
+        } else if (requestedWidth > 320) {
+            replace("mqdefault.jpg", "hqdefault.jpg")
+        } else {
+            this
+        }
     }
+
     return this
 }
