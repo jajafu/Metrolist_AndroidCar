@@ -39,15 +39,23 @@ object Updater {
     private var cachedAllReleases: List<ReleaseInfo> = emptyList()
     
     private const val CHECK_INTERVAL_MILLIS = 2 * 60 * 60 * 1000L // 2 hours
-    private const val GITHUB_API_BASE = "https://api.github.com/repos/MetrolistGroup/Metrolist"
+    const val GITHUB_RELEASES_URL = "https://github.com/jajafu/Metrolist_AndroidCar/releases"
+    private const val GITHUB_API_BASE = "https://api.github.com/repos/jajafu/Metrolist_AndroidCar"
+
+    private fun versionParts(version: String): List<Int> {
+        return Regex("\\d+")
+            .findAll(version)
+            .mapNotNull { it.value.toIntOrNull() }
+            .toList()
+    }
 
     /**
      * Compares two version strings.
      * Returns: 1 if v1 > v2, -1 if v1 < v2, 0 if equal
      */
     fun compareVersions(v1: String, v2: String): Int {
-        val v1Parts = v1.removePrefix("v").split(".").map { it.toIntOrNull() ?: 0 }
-        val v2Parts = v2.removePrefix("v").split(".").map { it.toIntOrNull() ?: 0 }
+        val v1Parts = versionParts(v1)
+        val v2Parts = versionParts(v2)
         val maxLength = maxOf(v1Parts.size, v2Parts.size)
         
         for (i in 0 until maxLength) {
@@ -98,6 +106,7 @@ object Updater {
             val (arch, variant) = when {
                 name == "Metrolist.apk" -> "universal" to "foss"
                 name == "Metrolist-with-Google-Cast.apk" -> "universal" to "gms"
+                name.startsWith("Metrolist-AndroidCar-") && name.endsWith(".apk") -> "universal" to "foss"
                 name.startsWith("app-") && name.endsWith("-release.apk") -> {
                     val arch = name.removePrefix("app-").removeSuffix("-release.apk")
                     arch to "foss"

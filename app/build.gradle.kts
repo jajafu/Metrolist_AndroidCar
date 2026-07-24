@@ -26,6 +26,10 @@ val debugKeystorePathOverride = System.getenv("METROLIST_DEBUG_KEYSTORE_PATH")?.
 val debugKeystorePassword = System.getenv("METROLIST_DEBUG_KEYSTORE_PASSWORD")?.takeIf { it.isNotBlank() } ?: "android"
 val debugKeyAlias = System.getenv("METROLIST_DEBUG_KEY_ALIAS")?.takeIf { it.isNotBlank() } ?: "androiddebugkey"
 val debugKeyPassword = System.getenv("METROLIST_DEBUG_KEY_PASSWORD")?.takeIf { it.isNotBlank() } ?: "android"
+val releaseKeystorePathOverride = System.getenv("METROLIST_RELEASE_KEYSTORE_PATH")?.takeIf { it.isNotBlank() }
+val releaseStorePassword = System.getenv("STORE_PASSWORD").orEmpty()
+val releaseKeyAlias = System.getenv("KEY_ALIAS").orEmpty()
+val releaseKeyPassword = System.getenv("KEY_PASSWORD").orEmpty()
 val persistentDebugKeystoreFile = file("persistent-debug.keystore")
 val workflowDebugKeystoreFile = debugKeystorePathOverride?.let(::file)
 
@@ -101,8 +105,8 @@ android {
         applicationId = applicationIdOverride ?: baseApplicationId
         minSdk = 26
         targetSdk = 36
-        versionCode = 152
-        versionName = "13.6.3"
+        versionCode = 153
+        versionName = "13.6.4"
         resValue("string", "app_name", appNameOverride ?: "Metrolist")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -124,12 +128,12 @@ android {
 
     flavorDimensions += listOf("variant")
     productFlavors {
-        // FOSS - no updater for this customized build, no gcast
+        // FOSS - uses this project's GitHub Releases for updates, no gcast
         create("foss") {
             dimension = "variant"
             isDefault = true
             buildConfigField("Boolean", "CAST_AVAILABLE", "false")
-            buildConfigField("Boolean", "UPDATER_AVAILABLE", "false")
+            buildConfigField("Boolean", "UPDATER_AVAILABLE", "true")
         }
 
         // GMS - Updater and gcast
@@ -161,10 +165,10 @@ android {
             keyPassword = debugKeyPassword
         }
         create("release") {
-            storeFile = file("keystore/release.keystore")
-            storePassword = System.getenv("STORE_PASSWORD")
-            keyAlias = System.getenv("KEY_ALIAS")
-            keyPassword = System.getenv("KEY_PASSWORD")
+            storeFile = releaseKeystorePathOverride?.let(::file) ?: file("keystore/release.keystore")
+            storePassword = releaseStorePassword
+            keyAlias = releaseKeyAlias
+            keyPassword = releaseKeyPassword
         }
         getByName("debug") {
             keyAlias = "androiddebugkey"

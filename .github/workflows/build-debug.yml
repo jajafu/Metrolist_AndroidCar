@@ -1,4 +1,4 @@
-name: Build & Release Foss Debug
+name: Build & Release Foss
 
 on:
   workflow_dispatch:
@@ -39,36 +39,42 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Generate temporary debug keystore
-        run: |
-          keytool -genkeypair \
-            -keystore app/ci-debug.keystore \
-            -storepass android \
-            -alias androiddebugkey \
-            -keypass android \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -dname "CN=Metrolist CI,O=Metrolist,C=US"
-
-      - name: Build and lint Foss Debug APK
+      - name: Decode release keystore
         env:
-          METROLIST_DEBUG_KEYSTORE_PATH: ci-debug.keystore
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          for secret_name in RELEASE_KEYSTORE_BASE64 RELEASE_STORE_PASSWORD RELEASE_KEY_ALIAS RELEASE_KEY_PASSWORD; do
+            if [ -z "${!secret_name}" ]; then
+              echo "Missing $secret_name."
+              exit 1
+            fi
+          done
+          printf '%s' "$RELEASE_KEYSTORE_BASE64" | base64 --decode > app/ci-release.keystore
+
+      - name: Build and lint Foss Release APK
+        env:
+          METROLIST_RELEASE_KEYSTORE_PATH: ci-release.keystore
+          STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
           LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
           LASTFM_SECRET: ${{ secrets.LASTFM_SECRET }}
-        run: ./gradlew :app:assembleFossDebug :app:lintFossDebug --console=plain --warning-mode summary
+        run: ./gradlew :app:assembleFossRelease :app:lintFossRelease --console=plain --warning-mode summary
 
-      - name: Prepare Foss Debug APK
+      - name: Prepare Foss Release APK
         id: apk
         run: |
           VERSION_NAME="${{ steps.version.outputs.version_name }}"
           RELEASE_NAME="Metrolist-AndroidCar-v${VERSION_NAME}-car.apk"
           ARTIFACT_NAME="Metrolist-AndroidCar-v${VERSION_NAME}-car"
-          cp app/build/outputs/apk/foss/debug/app-foss-debug.apk "$RUNNER_TEMP/$RELEASE_NAME"
+          cp app/build/outputs/apk/foss/release/app-foss-release.apk "$RUNNER_TEMP/$RELEASE_NAME"
           echo "artifact_name=$ARTIFACT_NAME" >> "$GITHUB_OUTPUT"
           echo "release_name=$RELEASE_NAME" >> "$GITHUB_OUTPUT"
 
-      - name: Upload Foss Debug APK
+      - name: Upload Foss Release APK
         uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.apk.outputs.artifact_name }}
@@ -84,7 +90,7 @@ jobs:
       contents: write
 
     steps:
-      - name: Download Foss Debug APK
+      - name: Download Foss Release APK
         uses: actions/download-artifact@v8
         with:
           name: ${{ needs.build.outputs.artifact_name }}
@@ -116,5 +122,5 @@ jobs:
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
             --title "$TAG" \
-            --notes "Metrolist Android Car $TAG (FOSS Debug APK)" \
+            --notes "Metrolist Android Car $TAG (FOSS Release APK)" \
             --latest
