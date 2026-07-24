@@ -133,9 +133,8 @@ fun ChangelogScreen(
                     .align(Alignment.BottomEnd)
                     .padding(16.dp)
             ) {
-                val githubReleasesUrl = stringResource(R.string.github_releases_url)
                 ExtendedFloatingActionButton(
-                    onClick = { uriHandler.openUri(githubReleasesUrl) },
+                    onClick = { uriHandler.openUri(Updater.GITHUB_RELEASES_URL) },
                     icon = { Icon(painterResource(R.drawable.github), contentDescription = null, modifier = Modifier.size(24.dp)) },
                     text = { Text(stringResource(R.string.view_on_github)) },
                     containerColor = MaterialTheme.colorScheme.onPrimary,

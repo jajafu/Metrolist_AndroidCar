@@ -28,6 +28,18 @@ This fork is maintained by [jajafu](https://github.com/jajafu) and focuses on a 
 - Material 3 interface with light, dark, black, dynamic and preset color themes.
 - Android Auto-focused layout and playback controls.
 
+## Build and updates
+
+Build the FOSS release variant locally with:
+
+```bash
+./gradlew :app:assembleFossRelease
+```
+
+The manually triggered GitHub Actions workflow builds only the FOSS release APK and publishes it to this repository's GitHub Releases. It requires the fixed Android signing secrets `RELEASE_KEYSTORE_BASE64`, `RELEASE_STORE_PASSWORD`, `RELEASE_KEY_ALIAS`, and `RELEASE_KEY_PASSWORD`; do not commit the keystore or passwords.
+
+The in-app updater checks [this repository's releases](https://github.com/jajafu/Metrolist_AndroidCar/releases) and opens the matching APK download for confirmation. Android still requires the user to approve installation.
+
 ## Original project and acknowledgements
 
 This project is a modified version of [Metrolist](https://github.com/MetrolistGroup/Metrolist). The original authors, contributors and copyright notices remain acknowledged in the source tree and [`LICENSE`](LICENSE).
