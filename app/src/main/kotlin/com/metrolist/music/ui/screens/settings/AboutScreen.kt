@@ -54,9 +54,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
@@ -82,7 +80,6 @@ import com.metrolist.music.ui.component.Material3SettingsItem
 import com.metrolist.music.ui.utils.backToMain
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import java.util.Locale
 
 private data class Contributor(
     val name: String,
@@ -258,40 +255,29 @@ fun AboutScreen(
                     .fillMaxWidth()
                     .padding(24.dp)
             ) {
-                Box(contentAlignment = Alignment.Center) {
+                Surface(
+                    modifier = Modifier.size(width = 96.dp, height = 72.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    color = Color.White,
+                ) {
                     Image(
-                        painter = painterResource(R.drawable.ic_logo_oval),
-                        contentDescription = null,
-                        colorFilter = ColorFilter.tint(
-                            color = MaterialTheme.colorScheme.primary,
-                            blendMode = BlendMode.SrcIn,
-                        ),
-                        modifier = Modifier.size(84.dp)
-                    )
-                    Image(
-                        painter = painterResource(R.drawable.about_icon),
-                        contentDescription = stringResource(R.string.metrolist),
-                        colorFilter = ColorFilter.tint(
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            blendMode = BlendMode.SrcIn,
-                        ),
-                        modifier = Modifier.size(64.dp)
+                        painter = painterResource(R.drawable.brand_logo_black),
+                        contentDescription = stringResource(R.string.app_name),
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.padding(8.dp),
                     )
                 }
         
-                Spacer(Modifier.width(20.dp))
+                Spacer(Modifier.width(16.dp))
         
                 Column {
-                    val metrolistName = stringResource(R.string.metrolist)
-                        .lowercase(Locale.getDefault())
-                        .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
-
                     Text(
-                        text = metrolistName,
-                        style = MaterialTheme.typography.headlineLarge,
+                        text = stringResource(R.string.app_name),
+                        style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Black,
                         color = MaterialTheme.colorScheme.onSurface,
-                        letterSpacing = (-0.5).sp
+                        letterSpacing = (-0.5).sp,
+                        maxLines = 2,
                     )
             
                     Spacer(Modifier.height(8.dp))
