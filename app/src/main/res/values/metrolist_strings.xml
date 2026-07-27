@@ -871,6 +871,7 @@
     <string name="logout_clear">Clear</string>
 
     <!-- Credits / About Screen -->
+    <string name="credits_project_maintainer">Project maintainer</string>
     <string name="credits_lead_developer">Lead developer</string>
     <string name="credits_collaborator">Collaborator</string>
     <string name="credits_collaborators_section">Collaborators</string>

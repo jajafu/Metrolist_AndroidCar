@@ -101,6 +101,12 @@ private data class CommunityLink(
     val url: String
 )
 
+private val projectMaintainer = Contributor(
+    name = "jajafu",
+    roleRes = R.string.credits_project_maintainer,
+    githubHandle = "jajafu",
+)
+
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 private val leadDeveloper = Contributor(
     name = "Mo Agamy",
@@ -337,6 +343,40 @@ fun AboutScreen(
                 }
             }
         }
+
+        Spacer(Modifier.height(24.dp))
+
+        Material3SettingsGroup(
+            items = listOf(
+                Material3SettingsItem(
+                    leadingContent = {
+                        ContributorAvatar(
+                            avatarUrl = projectMaintainer.avatarUrl,
+                            sizeDp = 48,
+                            contentDescription = projectMaintainer.name,
+                        )
+                    },
+                    title = {
+                        Text(
+                            text = projectMaintainer.name,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    },
+                    description = {
+                        Text(stringResource(projectMaintainer.roleRes))
+                    },
+                    trailingContent = {
+                        Icon(
+                            painter = painterResource(R.drawable.github),
+                            contentDescription = stringResource(R.string.credits_github),
+                            modifier = Modifier.size(24.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    },
+                    onClick = { uriHandler.openUri(projectMaintainer.githubUrl) },
+                ),
+            ),
+        )
 
         Spacer(Modifier.height(24.dp))
 
