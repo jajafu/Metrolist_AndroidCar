@@ -14,6 +14,7 @@ This fork is maintained by [jajafu](https://github.com/jajafu) and focuses on a 
 - Increased the cached playback queue to three tracks.
 - Removed the sleep button from the playback cover and enlarged the other buttons.
 - Stored favorite music records in the Download directory for direct access after reinstall, no import/export needed.
+- Branded the installed app as `Metrolist_AndroidCar` with car-themed launcher and playback notification icons.
 
 ## Features
 
