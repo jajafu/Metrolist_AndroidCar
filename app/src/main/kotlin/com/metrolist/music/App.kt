@@ -5,11 +5,13 @@
 
 package com.metrolist.music
 
+import android.app.ActivityManager
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
+import android.os.Process
 import android.widget.Toast
 import coil3.ImageLoader
 import coil3.PlatformContext
@@ -75,6 +77,8 @@ class App :
         // Install crash handler first
         CrashHandler.install(this)
 
+        if (!isMainProcess()) return
+
         // preferencesDataStore uses filesDir/datastore; proactive mkdir reduces failures on odd ROM states
         try {
             val datastoreDir = File(filesDir, "datastore")
@@ -130,6 +134,19 @@ class App :
 
             observeSettingsChanges()
         }
+    }
+
+    private fun isMainProcess(): Boolean {
+        val processName =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                Application.getProcessName()
+            } else {
+                getSystemService(ActivityManager::class.java)
+                    .runningAppProcesses
+                    ?.firstOrNull { process -> process.pid == Process.myPid() }
+                    ?.processName
+            }
+        return processName == packageName
     }
 
     private suspend fun initializeSettings() {

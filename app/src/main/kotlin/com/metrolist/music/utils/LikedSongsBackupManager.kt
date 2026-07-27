@@ -19,12 +19,17 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import timber.log.Timber
 import java.io.File
 import java.time.LocalDateTime
+
+internal fun isLikedSongsBackupFileName(displayName: String): Boolean =
+    LIKED_SONGS_BACKUP_FILE_REGEX.matches(displayName)
 
 class LikedSongsBackupManager(
     context: Context,
@@ -84,107 +89,181 @@ class LikedSongsBackupManager(
 
     private fun readBackup(): LikedSongsBackup? {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-            return runCatching {
-                val file = legacyBackupFile()
-                if (file.isFile) json.decodeFromString<LikedSongsBackup>(file.readText()) else null
-            }.onFailure { Timber.e(it, "Failed to read liked songs backup") }.getOrNull()
+            legacyBackupFiles().forEach { file ->
+                val backup =
+                    runCatching {
+                        json.decodeFromString<LikedSongsBackup>(file.readText())
+                    }.onFailure { Timber.w(it, "Could not read liked songs backup at ${file.path}") }
+                        .getOrNull()
+                if (backup != null) return backup
+            }
+            return null
         }
 
-        val backupUris = findBackupUris()
-        backupUris.forEach { uri ->
+        findBackupEntries().forEach { entry ->
             val backup =
                 runCatching {
-                    resolver.openInputStream(uri)?.bufferedReader()?.use { reader ->
+                    resolver.openInputStream(entry.uri)?.bufferedReader()?.use { reader ->
                         json.decodeFromString<LikedSongsBackup>(reader.readText())
                     }
-                }.onFailure { Timber.w(it, "Could not read liked songs backup at $uri") }
+                }.onFailure { Timber.w(it, "Could not read liked songs backup at ${entry.uri}") }
                     .getOrNull()
             if (backup != null) return backup
         }
         return null
     }
 
-    private fun writeBackup(songs: List<BackupSong>) {
-        val contents = json.encodeToString(LikedSongsBackup(songs = songs))
-        val result =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                writeMediaStoreBackup(contents)
-            } else {
-                runCatching {
-                    val file = legacyBackupFile()
-                    file.parentFile?.mkdirs()
-                    file.writeText(contents)
+    private suspend fun writeBackup(songs: List<BackupSong>) =
+        backupWriteMutex.withLock {
+            val contents = json.encodeToString(LikedSongsBackup(songs = songs))
+            val result =
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    writeMediaStoreBackup(contents)
+                } else {
+                    writeLegacyBackup(contents)
                 }
+
+            result
+                .onSuccess { Timber.d("Saved ${songs.size} liked songs to $BACKUP_FILE_NAME") }
+                .onFailure { Timber.e(it, "Failed to save liked songs backup") }
+        }
+
+    private fun writeMediaStoreBackup(contents: String): Result<Unit> =
+        runCatching {
+            val existingEntries = findBackupEntries()
+            val currentEntries =
+                existingEntries.sortedWith(
+                    compareByDescending<BackupEntry> { entry ->
+                        entry.displayName == BACKUP_FILE_NAME
+                    }.thenByDescending(BackupEntry::dateModified),
+                ).filter { entry ->
+                    entry.displayName.startsWith(BACKUP_FILE_STEM)
+                }
+
+            writeFirstAvailable(currentEntries, contents)?.let { entry ->
+                deleteDuplicateBackups(existingEntries, keepUri = entry.uri)
+                return@runCatching
             }
 
-        result
-            .onSuccess { Timber.d("Saved ${songs.size} liked songs to $BACKUP_FILE_NAME") }
-            .onFailure { Timber.e(it, "Failed to save liked songs backup") }
-    }
+            val createResult = createMediaStoreBackup(contents)
+            createResult.getOrNull()?.let { uri ->
+                deleteDuplicateBackups(findBackupEntries(), keepUri = uri)
+                return@runCatching
+            }
 
-    private fun writeMediaStoreBackup(contents: String): Result<Unit> {
-        findBackupUris().forEach { uri ->
-            val result = writeToUri(uri, contents)
-            if (result.isSuccess) {
-                resolver.update(
-                    uri,
-                    ContentValues().apply {
-                        put(MediaStore.MediaColumns.DATE_MODIFIED, System.currentTimeMillis() / 1000L)
-                    },
-                    null,
-                    null,
+            val legacyEntries = existingEntries.filterNot { entry -> entry in currentEntries }
+            writeFirstAvailable(legacyEntries, contents)?.let { entry ->
+                deleteDuplicateBackups(existingEntries, keepUri = entry.uri)
+                Timber.w(
+                    createResult.exceptionOrNull(),
+                    "Using legacy liked songs backup because the new backup file could not be created",
                 )
-                return result
+                return@runCatching
             }
+
+            throw createResult.exceptionOrNull()
+                ?: IllegalStateException("Could not create or update liked songs backup")
         }
 
-        val values =
-            ContentValues().apply {
-                put(MediaStore.MediaColumns.DISPLAY_NAME, BACKUP_FILE_NAME)
-                put(MediaStore.MediaColumns.MIME_TYPE, BACKUP_MIME_TYPE)
-                put(MediaStore.MediaColumns.RELATIVE_PATH, DOWNLOAD_RELATIVE_PATH)
-                put(MediaStore.MediaColumns.IS_PENDING, 1)
+    private fun writeFirstAvailable(
+        entries: List<BackupEntry>,
+        contents: String,
+    ): BackupEntry? {
+        entries.forEach { entry ->
+            val writeResult = runCatching { writeToUri(entry.uri, contents) }
+            if (writeResult.isSuccess) {
+                runCatching { updateMediaStoreEntry(entry.uri, isPending = false) }
+                    .onFailure { error ->
+                        Timber.w(error, "Could not update liked songs backup metadata at ${entry.uri}")
+                    }
+                return entry
             }
-        val uri =
-            resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
-                ?: return Result.failure(IllegalStateException("Could not create liked songs backup"))
-
-        val result = writeToUri(uri, contents)
-        if (result.isSuccess) {
-            resolver.update(
-                uri,
-                ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) },
-                null,
-                null,
-            )
-        } else {
-            resolver.delete(uri, null, null)
+            Timber.w(writeResult.exceptionOrNull(), "Could not update liked songs backup at ${entry.uri}")
         }
-        return result
+        return null
     }
+
+    private fun createMediaStoreBackup(contents: String): Result<Uri> =
+        runCatching {
+            val uri =
+                resolver.insert(
+                    MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                    ContentValues().apply {
+                        put(MediaStore.MediaColumns.DISPLAY_NAME, BACKUP_FILE_NAME)
+                        put(MediaStore.MediaColumns.MIME_TYPE, BACKUP_MIME_TYPE)
+                        put(MediaStore.MediaColumns.RELATIVE_PATH, DOWNLOAD_RELATIVE_PATH)
+                        put(MediaStore.MediaColumns.IS_PENDING, 1)
+                    },
+                ) ?: error("Could not create liked songs backup")
+
+            try {
+                writeToUri(uri, contents)
+                updateMediaStoreEntry(uri, isPending = false)
+                uri
+            } catch (error: Throwable) {
+                runCatching { resolver.delete(uri, null, null) }
+                    .onFailure { cleanupError -> error.addSuppressed(cleanupError) }
+                throw error
+            }
+        }
 
     private fun writeToUri(
         uri: Uri,
         contents: String,
-    ): Result<Unit> =
-        runCatching {
-            resolver.openOutputStream(uri, "wt")?.bufferedWriter()?.use { writer ->
-                writer.write(contents)
-            } ?: error("Could not open liked songs backup for writing")
-        }
+    ) {
+        resolver.openOutputStream(uri, "wt")?.bufferedWriter()?.use { writer ->
+            writer.write(contents)
+        } ?: error("Could not open liked songs backup for writing")
+    }
 
-    private fun findBackupUris(): List<Uri> {
+    private fun updateMediaStoreEntry(
+        uri: Uri,
+        isPending: Boolean,
+    ) {
+        resolver.update(
+            uri,
+            ContentValues().apply {
+                put(MediaStore.MediaColumns.DATE_MODIFIED, System.currentTimeMillis() / 1000L)
+                put(MediaStore.MediaColumns.IS_PENDING, if (isPending) 1 else 0)
+            },
+            null,
+            null,
+        )
+    }
+
+    private fun deleteDuplicateBackups(
+        entries: List<BackupEntry>,
+        keepUri: Uri,
+    ) {
+        entries
+            .asSequence()
+            .filterNot { entry -> entry.uri == keepUri }
+            .forEach { entry ->
+                runCatching { resolver.delete(entry.uri, null, null) }
+                    .onSuccess { deleted ->
+                        if (deleted > 0) {
+                            Timber.i("Deleted duplicate liked songs backup ${entry.displayName}")
+                        }
+                    }.onFailure { error ->
+                        Timber.w(error, "Could not delete duplicate liked songs backup ${entry.displayName}")
+                    }
+            }
+    }
+
+    private fun findBackupEntries(): List<BackupEntry> {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return emptyList()
 
         val collection = MediaStore.Downloads.EXTERNAL_CONTENT_URI
         val projection =
             arrayOf(
                 MediaStore.MediaColumns._ID,
+                MediaStore.MediaColumns.DISPLAY_NAME,
                 MediaStore.MediaColumns.DATE_MODIFIED,
             )
         val selection =
-            "${MediaStore.MediaColumns.DISPLAY_NAME} = ? AND " +
-                "${MediaStore.MediaColumns.RELATIVE_PATH} = ?"
+            "${MediaStore.MediaColumns.RELATIVE_PATH} = ? AND (" +
+                "${MediaStore.MediaColumns.DISPLAY_NAME} LIKE ? OR " +
+                "${MediaStore.MediaColumns.DISPLAY_NAME} LIKE ?)"
 
         return runCatching {
             resolver
@@ -192,23 +271,62 @@ class LikedSongsBackupManager(
                     collection,
                     projection,
                     selection,
-                    arrayOf(BACKUP_FILE_NAME, DOWNLOAD_RELATIVE_PATH),
+                    arrayOf(
+                        DOWNLOAD_RELATIVE_PATH,
+                        "$BACKUP_FILE_STEM%.json",
+                        "$LEGACY_BACKUP_FILE_STEM%.json",
+                    ),
                     "${MediaStore.MediaColumns.DATE_MODIFIED} DESC",
                 )?.use { cursor ->
                     val idColumn = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID)
+                    val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DISPLAY_NAME)
+                    val dateColumn = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_MODIFIED)
                     buildList {
                         while (cursor.moveToNext()) {
-                            add(ContentUris.withAppendedId(collection, cursor.getLong(idColumn)))
+                            val displayName = cursor.getString(nameColumn)
+                            if (isLikedSongsBackupFileName(displayName)) {
+                                add(
+                                    BackupEntry(
+                                        uri = ContentUris.withAppendedId(collection, cursor.getLong(idColumn)),
+                                        displayName = displayName,
+                                        dateModified = cursor.getLong(dateColumn),
+                                    ),
+                                )
+                            }
                         }
-                    }
+                    }.sortedByDescending(BackupEntry::dateModified)
                 }.orEmpty()
         }.onFailure { Timber.w(it, "Failed to locate liked songs backup") }.getOrDefault(emptyList())
     }
 
+    private fun writeLegacyBackup(contents: String): Result<Unit> =
+        runCatching {
+            val backupFile = legacyDownloadsDirectory().resolve(BACKUP_FILE_NAME)
+            backupFile.parentFile?.mkdirs()
+            backupFile.writeText(contents)
+            legacyBackupFiles()
+                .filterNot { file -> file == backupFile }
+                .forEach { file ->
+                    runCatching {
+                        if (!file.delete()) {
+                            Timber.w("Could not delete duplicate liked songs backup ${file.path}")
+                        }
+                    }
+                        .onFailure { error ->
+                            Timber.w(error, "Could not delete duplicate liked songs backup ${file.path}")
+                        }
+                }
+        }
+
+    private fun legacyBackupFiles(): List<File> =
+        legacyDownloadsDirectory()
+            .listFiles { file -> file.isFile && isLikedSongsBackupFileName(file.name) }
+            ?.sortedByDescending(File::lastModified)
+            .orEmpty()
+
     @Suppress("DEPRECATION")
-    private fun legacyBackupFile(): File =
+    private fun legacyDownloadsDirectory(): File =
         Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-            .resolve(BACKUP_FILE_NAME)
 
     private fun Song.toBackupSong() =
         BackupSong(
@@ -249,13 +367,27 @@ class LikedSongsBackupManager(
         this?.let { value -> runCatching { LocalDateTime.parse(value) }.getOrNull() }
 
     companion object {
-        const val BACKUP_FILE_NAME = "Metrolist_liked_songs.json"
+        const val BACKUP_FILE_NAME = "Metrolist_AndroidCar_liked_songs.json"
+        private const val BACKUP_FILE_STEM = "Metrolist_AndroidCar_liked_songs"
+        private const val LEGACY_BACKUP_FILE_STEM = "Metrolist_liked_songs"
         private const val BACKUP_MIME_TYPE = "application/json"
         private const val BACKUP_VERSION = 1
         private const val BACKUP_DEBOUNCE_MS = 500L
         private val DOWNLOAD_RELATIVE_PATH = "${Environment.DIRECTORY_DOWNLOADS}/"
+        private val backupWriteMutex = Mutex()
     }
 }
+
+private val LIKED_SONGS_BACKUP_FILE_REGEX =
+    Regex(
+        """^(?:Metrolist_AndroidCar_liked_songs|Metrolist_liked_songs)(?: \(\d+\))?\.json$""",
+    )
+
+private data class BackupEntry(
+    val uri: Uri,
+    val displayName: String,
+    val dateModified: Long,
+)
 
 @Serializable
 private data class LikedSongsBackup(
