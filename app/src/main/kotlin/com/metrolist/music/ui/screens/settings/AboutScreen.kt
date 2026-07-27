@@ -164,13 +164,13 @@ private fun ContributorAvatar(
     contentDescription: String? = null,
     onClick: (() -> Unit)? = null
 ) {
-    val fallback = painterResource(R.drawable.about_icon)
+    val fallback = painterResource(R.drawable.brand_logo_black)
     Surface(
         onClick = onClick ?: {},
         enabled = onClick != null,
         modifier = modifier.size(sizeDp.dp),
         shape = shape,
-        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+        color = Color.White,
         tonalElevation = 4.dp,
     ) {
         AsyncImage(
