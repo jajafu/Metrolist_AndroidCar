@@ -41,19 +41,19 @@ import com.metrolist.music.ui.component.Material3SettingsItem
 import com.metrolist.music.ui.utils.backToMain
 import com.metrolist.music.utils.rememberPreference
 
-val defaultList = mutableListOf(
-    "Japanese" to true,
-    "Korean" to true,
-    "Chinese" to true,
-    "Hindi" to true,
-    "Punjabi" to true,
-    "Russian" to true,
-    "Ukrainian" to true,
-    "Serbian" to true,
-    "Bulgarian" to true,
-    "Belarusian" to true,
-    "Kyrgyz" to true,
-    "Macedonian" to true,
+val defaultList = listOf(
+    "Japanese" to false,
+    "Korean" to false,
+    "Chinese" to false,
+    "Hindi" to false,
+    "Punjabi" to false,
+    "Russian" to false,
+    "Ukrainian" to false,
+    "Serbian" to false,
+    "Bulgarian" to false,
+    "Belarusian" to false,
+    "Kyrgyz" to false,
+    "Macedonian" to false,
 )
 
 @OptIn(ExperimentalMaterial3Api::class)

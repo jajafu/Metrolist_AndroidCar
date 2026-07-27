@@ -267,7 +267,7 @@ fun AppearanceSettings(
     val (gridItemSize, onGridItemSizeChange) =
         rememberEnumPreference(
             GridItemsSizeKey,
-            defaultValue = GridItemSize.SMALL,
+            defaultValue = GridItemSize.BIG,
         )
 
     val (slimNav, onSlimNavChange) =
@@ -299,7 +299,7 @@ fun AppearanceSettings(
     val (listenTogetherInTopBar, onListenTogetherInTopBarChange) =
         rememberPreference(
             ListenTogetherInTopBarKey,
-            defaultValue = true,
+            defaultValue = false,
         )
 
     val (swipeToSong, onSwipeToSongChange) =
@@ -327,17 +327,17 @@ fun AppearanceSettings(
     val (showTopPlaylist, onShowTopPlaylistChange) =
         rememberPreference(
             ShowTopPlaylistKey,
-            defaultValue = true,
+            defaultValue = false,
         )
     val (showCachedPlaylist, onShowCachedPlaylistChange) =
         rememberPreference(
             ShowCachedPlaylistKey,
-            defaultValue = true,
+            defaultValue = false,
         )
     val (showUploadedPlaylist, onShowUploadedPlaylistChange) =
         rememberPreference(
             ShowUploadedPlaylistKey,
-            defaultValue = true,
+            defaultValue = false,
         )
 
     val availableBackgroundStyles =
