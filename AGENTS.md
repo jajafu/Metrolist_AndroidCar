@@ -42,4 +42,4 @@ Metrolist_AndroidCar 是一個使用 Kotlin 開發的第三方 YouTube Music 客
 
 2. 若建置未成功，請檢視錯誤訊息、修正程式碼問題，然後再次嘗試建置。
 3. 建置成功後，可在模擬器或實體裝置上測試變更。安裝位於 `app/build/outputs/apk/foss/debug/app-foss-debug.apk` 的 APK，並請人類協助測試你修改的特定功能。
-4. GitHub Actions workflow 只允許手動執行，且只建置 Foss Release APK，不得在 push 或 pull request 時自動建置，也不建置 GMS、Izzy 或其他 build variant。從 main 分支手動執行並建置成功後，可將 Foss Release APK 上傳為 workflow artifact 並發布至 GitHub Release。Release 必須使用固定的 Android 簽章金鑰，透過 `RELEASE_KEYSTORE_BASE64`、`RELEASE_STORE_PASSWORD`、`RELEASE_KEY_ALIAS` 與 `RELEASE_KEY_PASSWORD` GitHub Secrets 注入，禁止將金鑰或密碼提交至 repository。
+4. GitHub Actions workflow 只允許手動執行，且只建置 Foss Release APK，不得在 push 或 pull request 時自動建置，也不建置 GMS、Izzy 或其他 build variant。從 main 分支手動執行並建置成功後，可將 Foss Release APK 上傳為 workflow artifact 並發布至 GitHub Release。建立 Release 時，必須根據本次實際變更填寫完整的 `--notes`，清楚列出使用者可見的新功能、修正、設定變更與必要的升級注意事項；不得只使用固定版本標題或泛用的空白說明，確保 App 更新日誌顯示實際修改內容。Release 必須使用固定的 Android 簽章金鑰，透過 `RELEASE_KEYSTORE_BASE64`、`RELEASE_STORE_PASSWORD`、`RELEASE_KEY_ALIAS` 與 `RELEASE_KEY_PASSWORD` GitHub Secrets 注入，禁止將金鑰或密碼提交至 repository。
