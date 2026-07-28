@@ -12,8 +12,8 @@
         <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
 
-    <!-- Widget Theme with Material 3 colors fallback for API < 31 -->
-    <style name="Theme.Widget.Metrolist" parent="@android:style/Theme.DeviceDefault.DayNight">
+    <!-- Widget theme fallback for API 26-28 -->
+    <style name="Theme.Widget.Metrolist" parent="@android:style/Theme.DeviceDefault">
         <item name="android:colorBackground">#E6E1E5</item>
     </style>
 

@@ -7,7 +7,6 @@ package com.metrolist.music
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.ForegroundServiceStartNotAllowedException
 import android.app.PendingIntent
 import android.content.ComponentName
 import android.content.Intent
@@ -191,6 +190,7 @@ import com.metrolist.music.ui.theme.MetrolistTheme
 import com.metrolist.music.ui.theme.extractThemeColor
 import com.metrolist.music.ui.utils.appBarScrollBehavior
 import com.metrolist.music.ui.utils.resetHeightOffset
+import com.metrolist.music.utils.ForegroundServiceStartExceptionCompat
 import com.metrolist.music.utils.SearchRoutes
 import com.metrolist.music.utils.SyncUtils
 import com.metrolist.music.utils.Updater
@@ -312,10 +312,12 @@ class MainActivity : ComponentActivity() {
                 } else {
                     startService(serviceIntent)
                 }
-            } catch (e: ForegroundServiceStartNotAllowedException) {
-                Timber.w(e, "Cannot start foreground service from background")
             } catch (e: IllegalStateException) {
-                Timber.w(e, "Failed to start foreground service")
+                if (ForegroundServiceStartExceptionCompat.isStartNotAllowed(e)) {
+                    Timber.w(e, "Cannot start foreground service from background")
+                } else {
+                    Timber.w(e, "Failed to start foreground service")
+                }
             }
         }
 

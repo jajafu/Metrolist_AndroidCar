@@ -15,6 +15,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.metrolist.music.MainActivity
 import com.metrolist.music.R
+import com.metrolist.music.utils.ForegroundServiceStartExceptionCompat
 import com.metrolist.shazamkit.models.RecognitionResult
 import com.metrolist.shazamkit.models.RecognitionStatus
 import kotlinx.coroutines.CoroutineScope
@@ -90,11 +91,7 @@ class RecognitionForegroundService : Service() {
             stopSelf()
             return false
         } catch (runtimeException: RuntimeException) {
-            if (
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
-                    runtimeException::class.java.name ==
-                    "android.app.ForegroundServiceStartNotAllowedException"
-            ) {
+            if (ForegroundServiceStartExceptionCompat.isStartNotAllowed(runtimeException)) {
                 Timber.w(runtimeException, "Unable to start microphone foreground service")
                 stopSelf()
                 return false

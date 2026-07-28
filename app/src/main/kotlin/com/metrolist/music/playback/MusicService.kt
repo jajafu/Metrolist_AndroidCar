@@ -7,7 +7,6 @@
 
 package com.metrolist.music.playback
 
-import android.app.ForegroundServiceStartNotAllowedException
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -24,8 +23,6 @@ import android.media.AudioDeviceInfo
 import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.media.audiofx.AudioEffect
-import com.metrolist.music.playback.audio.VolumeNormalizationAudioProcessor
-import com.metrolist.music.utils.safeDataStoreEdit
 import android.net.ConnectivityManager
 import android.os.Binder
 import android.os.Build
@@ -199,6 +196,7 @@ import com.metrolist.music.models.toMediaMetadata
 import com.metrolist.music.playback.alarm.MusicAlarmScheduler
 import com.metrolist.music.playback.alarm.MusicAlarmStore
 import com.metrolist.music.playback.audio.SilenceDetectorAudioProcessor
+import com.metrolist.music.playback.audio.VolumeNormalizationAudioProcessor
 import com.metrolist.music.playback.queues.EmptyQueue
 import com.metrolist.music.playback.queues.ListQueue
 import com.metrolist.music.playback.queues.Queue
@@ -209,6 +207,7 @@ import com.metrolist.music.playback.queues.filterVideoSongs
 import com.metrolist.music.constants.LoudnessLevel
 import com.metrolist.music.constants.LoudnessLevelKey
 import com.metrolist.music.utils.CoilBitmapLoader
+import com.metrolist.music.utils.ForegroundServiceStartExceptionCompat
 import com.metrolist.music.utils.NetworkConnectivityObserver
 import com.metrolist.music.utils.ScrobbleManager
 import com.metrolist.music.utils.SyncUtils
@@ -219,6 +218,7 @@ import com.metrolist.music.utils.cipher.CipherDeobfuscator
 import com.metrolist.music.utils.dataStore
 import com.metrolist.music.utils.get
 import com.metrolist.music.utils.reportException
+import com.metrolist.music.utils.safeDataStoreEdit
 import com.metrolist.music.widget.MetrolistWidgetManager
 import com.metrolist.music.widget.MusicWidgetReceiver
 import com.metrolist.music.widget.PlaylistWidgetReceiver
@@ -4390,15 +4390,13 @@ class MusicService :
                 startForeground(NOTIFICATION_ID, notification)
             }
             true
-        } catch (e: ForegroundServiceStartNotAllowedException) {
-            Timber.tag(TAG).w(e, deniedMessage)
-            if (stopOnFailure) {
-                stopSelf()
-            }
-            false
         } catch (e: Exception) {
-            Timber.tag(TAG).e(e, failureMessage)
-            reportException(e)
+            if (ForegroundServiceStartExceptionCompat.isStartNotAllowed(e)) {
+                Timber.tag(TAG).w(e, deniedMessage)
+            } else {
+                Timber.tag(TAG).e(e, failureMessage)
+                reportException(e)
+            }
             if (stopOnFailure) {
                 stopSelf()
             }
@@ -4503,10 +4501,8 @@ class MusicService :
     ) {
         try {
             super.onUpdateNotification(session, startInForegroundRequired)
-        } catch (e: ForegroundServiceStartNotAllowedException) {
-            handleForegroundServiceStartNotAllowed(e)
         } catch (e: IllegalStateException) {
-            if (isForegroundServiceStartNotAllowedException(e)) {
+            if (ForegroundServiceStartExceptionCompat.isStartNotAllowed(e)) {
                 handleForegroundServiceStartNotAllowed(e)
             } else {
                 throw e
@@ -4790,10 +4786,6 @@ class MusicService :
             stopSelf()
         }
     }
-
-    private fun isForegroundServiceStartNotAllowedException(error: IllegalStateException): Boolean =
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
-            error.javaClass.name == ForegroundServiceStartNotAllowedException::class.java.name
 
     /**
      * Updates all app widgets with current playback state
