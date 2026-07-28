@@ -16,6 +16,7 @@ import java.util.UUID
 internal enum class PendingPlaylistEditType {
     CREATE_PLAYLIST,
     ADD_SONG,
+    REMOVE_SONG,
 }
 
 @Serializable
@@ -26,8 +27,39 @@ internal data class PendingPlaylistEdit(
     val playlistName: String? = null,
     val browseId: String? = null,
     val songId: String? = null,
+    val setVideoId: String? = null,
     val createdAtEpochMs: Long = System.currentTimeMillis(),
 )
+
+internal data class PendingPlaylistRemovalPlan(
+    val edits: List<PendingPlaylistEdit>,
+    val removalQueued: Boolean,
+)
+
+internal fun planPendingPlaylistRemoval(
+    pendingEdits: List<PendingPlaylistEdit>,
+    removal: PendingPlaylistEdit,
+): PendingPlaylistRemovalPlan {
+    if (removal.setVideoId == null) {
+        val pendingAdditionIndex =
+            pendingEdits.indexOfLast {
+                it.type == PendingPlaylistEditType.ADD_SONG &&
+                    it.playlistId == removal.playlistId &&
+                    it.songId == removal.songId
+            }
+        if (pendingAdditionIndex >= 0) {
+            return PendingPlaylistRemovalPlan(
+                edits = pendingEdits.toMutableList().apply { removeAt(pendingAdditionIndex) },
+                removalQueued = false,
+            )
+        }
+    }
+
+    return PendingPlaylistRemovalPlan(
+        edits = pendingEdits + removal,
+        removalQueued = true,
+    )
+}
 
 internal object PendingPlaylistEditCodec {
     private val json =

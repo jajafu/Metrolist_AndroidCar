@@ -837,10 +837,9 @@ fun SongMenu(
                                                 syncUtils.scheduleRemoveFromPlaylist(
                                                     browseId,
                                                     ps.map.songId,
-                                                    ps.map.playlistId
-                                                ) {
-                                                    capturedSetVideoId
-                                                }
+                                                    ps.map.playlistId,
+                                                    capturedSetVideoId,
+                                                )
                                             }
                                             onDismiss()
                                         }

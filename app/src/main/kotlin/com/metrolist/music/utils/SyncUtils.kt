@@ -360,6 +360,13 @@ class SyncUtils @Inject constructor(
         }
     }
 
+    private suspend fun enqueuePendingPlaylistRemoval(edit: PendingPlaylistEdit): Boolean =
+        pendingPlaylistEditMutex.withLock {
+            val plan = planPendingPlaylistRemoval(loadPendingPlaylistEdits(), edit)
+            savePendingPlaylistEdits(plan.edits)
+            plan.removalQueued
+        }
+
     private suspend fun retryPendingPlaylistEdits(targetEditId: String? = null): Boolean {
         if (!isLoggedIn() || !context.isInternetConnected()) {
             refreshPendingPlaylistEditCount()
@@ -462,6 +469,50 @@ class SyncUtils @Inject constructor(
                                     }
                                 }
                             }
+
+                            PendingPlaylistEditType.REMOVE_SONG -> {
+                                val localPlaylist = database.playlistBlocking(edit.playlistId)?.playlist
+                                val browseId = edit.browseId ?: localPlaylist?.browseId
+                                val songId = edit.songId
+                                if (browseId == null || songId == null) {
+                                    false
+                                } else {
+                                    var resolvedSetVideoId = edit.setVideoId
+                                    if (resolvedSetVideoId == null) {
+                                        val remoteSong =
+                                            withRetry {
+                                                YouTube.playlist(browseId)
+                                                    .completed()
+                                                    .getOrThrow()
+                                                    .songs
+                                                    .lastOrNull { it.id == songId }
+                                            }.getOrThrow()
+                                        if (remoteSong == null) {
+                                            true
+                                        } else {
+                                            resolvedSetVideoId = remoteSong.setVideoId
+                                            if (resolvedSetVideoId == null) {
+                                                false
+                                            } else {
+                                                edit = edit.copy(setVideoId = resolvedSetVideoId)
+                                                pending[index] = edit
+                                                savePendingPlaylistEdits(pending)
+                                                removePendingPlaylistSong(
+                                                    browseId = browseId,
+                                                    songId = songId,
+                                                    setVideoId = resolvedSetVideoId,
+                                                )
+                                            }
+                                        }
+                                    } else {
+                                        removePendingPlaylistSong(
+                                            browseId = browseId,
+                                            songId = songId,
+                                            setVideoId = resolvedSetVideoId,
+                                        )
+                                    }
+                                }
+                            }
                         }
                     } catch (e: CancellationException) {
                         throw e
@@ -479,6 +530,32 @@ class SyncUtils @Inject constructor(
             }
 
             targetEditId == null || pending.none { it.id == targetEditId }
+        }
+    }
+
+    private suspend fun removePendingPlaylistSong(
+        browseId: String,
+        songId: String,
+        setVideoId: String,
+    ): Boolean {
+        try {
+            withRetry {
+                runQueuedPlaylistEdit {
+                    YouTube.removeFromPlaylist(browseId, songId, setVideoId).getOrThrow()
+                }
+            }.getOrThrow()
+            return true
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            val remoteSongs =
+                withRetry {
+                    YouTube.playlist(browseId).completed().getOrThrow().songs
+                }.getOrThrow()
+            if (remoteSongs.none { it.setVideoId == setVideoId }) {
+                return true
+            }
+            throw e
         }
     }
 
@@ -1979,36 +2056,24 @@ class SyncUtils @Inject constructor(
         browseId: String,
         songId: String,
         playlistId: String,
-        getSetVideoId: suspend () -> String?
+        setVideoId: String?,
     ) {
         markPlaylistModifying(playlistId)
         syncScope.launch {
             try {
-                runQueuedPlaylistEdit {
-                    var setVideoId = getSetVideoId()
-
-                    if (setVideoId == null) {
-                        Timber.w("scheduleRemoveFromPlaylist: setVideoId not in DB, fetching from YouTube")
-                        for (attempt in 0 until 3) {
-                            setVideoId = runCatching {
-                                YouTube.playlist(browseId).completed().getOrThrow()
-                                    .songs.lastOrNull { it.id == songId }?.setVideoId
-                            }.getOrNull()
-                            if (setVideoId != null) break
-                            if (attempt < 2) delay(2_000L)
-                        }
-                    }
-
-                    if (setVideoId == null) {
-                        Timber.w("scheduleRemoveFromPlaylist: setVideoId not found on YouTube, skipping remove for songId=$songId")
-                        return@runQueuedPlaylistEdit
-                    }
-
-                    YouTube.removeFromPlaylist(browseId, songId, setVideoId).getOrThrow()
+                val pendingEdit =
+                    PendingPlaylistEdit(
+                        type = PendingPlaylistEditType.REMOVE_SONG,
+                        playlistId = playlistId,
+                        browseId = browseId,
+                        songId = songId,
+                        setVideoId = setVideoId,
+                    )
+                if (enqueuePendingPlaylistRemoval(pendingEdit)) {
+                    retryPendingPlaylistEdits(pendingEdit.id)
                 }
-                delay(3_000L)
             } catch (e: Exception) {
-                Timber.e(e, "Failed to remove song $songId from playlist $browseId")
+                Timber.e(e, "Failed to queue removal of song $songId from playlist $browseId")
             } finally {
                 unmarkPlaylistModifying(playlistId)
             }

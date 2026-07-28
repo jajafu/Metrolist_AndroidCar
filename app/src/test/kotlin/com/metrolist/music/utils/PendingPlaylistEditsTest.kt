@@ -30,9 +30,69 @@ class PendingPlaylistEditsTest {
                     songId = "song-1",
                     createdAtEpochMs = 456L,
                 ),
+                PendingPlaylistEdit(
+                    id = "remove-1",
+                    type = PendingPlaylistEditType.REMOVE_SONG,
+                    playlistId = "local-1",
+                    browseId = "remote-1",
+                    songId = "song-2",
+                    setVideoId = "set-video-2",
+                    createdAtEpochMs = 789L,
+                ),
             )
 
         assertEquals(edits, PendingPlaylistEditCodec.decode(PendingPlaylistEditCodec.encode(edits)))
+    }
+
+    @Test
+    fun `removing an unsynced addition cancels the pending add`() {
+        val pendingAdd =
+            PendingPlaylistEdit(
+                id = "add-1",
+                type = PendingPlaylistEditType.ADD_SONG,
+                playlistId = "local-1",
+                browseId = "remote-1",
+                songId = "song-1",
+            )
+        val removal =
+            PendingPlaylistEdit(
+                id = "remove-1",
+                type = PendingPlaylistEditType.REMOVE_SONG,
+                playlistId = "local-1",
+                browseId = "remote-1",
+                songId = "song-1",
+            )
+
+        val plan = planPendingPlaylistRemoval(listOf(pendingAdd), removal)
+
+        assertEquals(emptyList<PendingPlaylistEdit>(), plan.edits)
+        assertFalse(plan.removalQueued)
+    }
+
+    @Test
+    fun `removing a synced duplicate keeps additions and queues exact occurrence`() {
+        val pendingAdd =
+            PendingPlaylistEdit(
+                id = "add-1",
+                type = PendingPlaylistEditType.ADD_SONG,
+                playlistId = "local-1",
+                browseId = "remote-1",
+                songId = "song-1",
+            )
+        val removal =
+            PendingPlaylistEdit(
+                id = "remove-1",
+                type = PendingPlaylistEditType.REMOVE_SONG,
+                playlistId = "local-1",
+                browseId = "remote-1",
+                songId = "song-1",
+                setVideoId = "set-video-existing",
+            )
+
+        val plan = planPendingPlaylistRemoval(listOf(pendingAdd), removal)
+
+        assertEquals(listOf(pendingAdd, removal), plan.edits)
+        assertTrue(plan.removalQueued)
     }
 
     @Test

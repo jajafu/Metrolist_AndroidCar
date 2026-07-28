@@ -577,10 +577,9 @@ fun LocalPlaylistScreen(
                             syncUtils.scheduleRemoveFromPlaylist(
                                 browseId,
                                 songId,
-                                playlistId
-                            ) {
-                                setVideoId
-                            }
+                                playlistId,
+                                setVideoId,
+                            )
                         }
                     }
 
