@@ -13,7 +13,6 @@ Metrolist Android Car 是 [Metrolist](https://github.com/MetrolistGroup/Metrolis
 - 暗黑模式下，將調整按鈕外框改為純白色，增加對比度。
 - 將快取播放列表增加為 3 首歌曲。
 - 撥放封面下刪除睡眠按鈕，放大其他按鈕。
-- 將收藏音樂記錄放到 Download 目錄下，方便重新安裝直接調用，無須匯入匯出。
 
 ## 功能
 - 獨立調整播放音量。一般 YouTube Music 僅跟隨系統音量，無法獨立控制。本軟體可獨立設定音樂音量，降低對導航語音的干擾。
