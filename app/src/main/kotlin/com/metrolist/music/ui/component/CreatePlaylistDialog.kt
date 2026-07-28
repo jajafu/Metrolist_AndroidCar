@@ -20,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -28,17 +29,17 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import com.metrolist.innertube.YouTube
+import com.metrolist.innertube.utils.parseCookieString
 import com.metrolist.music.LocalDatabase
 import com.metrolist.music.R
 import com.metrolist.music.constants.InnerTubeCookieKey
+import com.metrolist.music.constants.YtmSyncKey
 import com.metrolist.music.db.entities.PlaylistEntity
-import com.metrolist.music.extensions.isSyncEnabled
 import com.metrolist.music.utils.rememberPreference
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDateTime
-import java.util.logging.Logger
 
 @Composable
 fun CreatePlaylistDialog(
@@ -49,46 +50,70 @@ fun CreatePlaylistDialog(
 ) {
     val database = LocalDatabase.current
     val coroutineScope = rememberCoroutineScope()
-    var syncedPlaylist by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     val innerTubeCookie by rememberPreference(InnerTubeCookieKey, "")
-    val isSignedIn = innerTubeCookie.isNotEmpty()
+    val ytmSyncEnabled by rememberPreference(YtmSyncKey, true)
+    val isSignedIn = remember(innerTubeCookie) {
+        "SAPISID" in parseCookieString(innerTubeCookie)
+    }
+    var syncedPlaylist by rememberSaveable(isSignedIn, ytmSyncEnabled, allowSyncing) {
+        mutableStateOf(allowSyncing && isSignedIn && ytmSyncEnabled)
+    }
+    var isCreating by rememberSaveable { mutableStateOf(false) }
+    var pendingRemotePlaylistId by rememberSaveable { mutableStateOf<String?>(null) }
 
     val notLoggedInYoutubeStr = stringResource(R.string.not_logged_in_youtube)
     val syncDisabledStr = stringResource(R.string.sync_disabled)
+    val createFailedStr = stringResource(R.string.playlist_create_failed)
 
     TextFieldDialog(
         icon = { Icon(painter = painterResource(R.drawable.add), contentDescription = null) },
         title = { Text(text = stringResource(R.string.create_playlist)) },
         initialTextFieldValue = TextFieldValue(initialTextFieldValue ?: ""),
         onDismiss = onDismiss,
-        onDone = { playlistName ->
+        autoDismiss = false,
+        isInputValid = { playlistName -> playlistName.isNotBlank() && !isCreating },
+        onDone = onDone@{ playlistName ->
+            if (playlistName.isBlank() || isCreating) return@onDone
+            isCreating = true
             coroutineScope.launch(Dispatchers.IO) {
-                val browseId =
-                    if (syncedPlaylist && isSignedIn) {
-                        YouTube.createPlaylist(playlistName)
-                    } else if (syncedPlaylist) {
-                        Logger.getLogger("CreatePlaylistDialog").warning("Not signed in")
-                        return@launch
-                    } else {
-                        null
+                val result = runCatching {
+                    val browseId =
+                        if (syncedPlaylist && isSignedIn) {
+                            pendingRemotePlaylistId
+                                ?: YouTube.createPlaylist(playlistName)
+                                    .getOrThrow()
+                                    .also { pendingRemotePlaylistId = it }
+                        } else if (syncedPlaylist) {
+                            error(notLoggedInYoutubeStr)
+                        } else {
+                            null
+                        }
+
+                    val playlistEntity =
+                        PlaylistEntity(
+                            name = playlistName,
+                            browseId = browseId,
+                            bookmarkedAt = LocalDateTime.now(),
+                            isEditable = true,
+                        )
+
+                    database.withTransaction {
+                        insert(playlistEntity)
                     }
-
-                val playlistEntity =
-                    PlaylistEntity(
-                        name = playlistName,
-                        browseId = browseId,
-                        bookmarkedAt = LocalDateTime.now(),
-                        isEditable = true,
-                    )
-
-                database.query {
-                    insert(playlistEntity)
+                    playlistEntity.id
                 }
 
                 withContext(Dispatchers.Main) {
-                    onPlaylistCreated?.invoke(playlistEntity.id)
+                    result
+                        .onSuccess { playlistId ->
+                            onPlaylistCreated?.invoke(playlistId)
+                            onDismiss()
+                        }.onFailure {
+                            isCreating = false
+                            Toast.makeText(context, createFailedStr, Toast.LENGTH_LONG).show()
+                        }
                 }
             }
         },
@@ -114,26 +139,24 @@ fun CreatePlaylistDialog(
                     ) {
                         Switch(
                             checked = syncedPlaylist,
-                            onCheckedChange = {
-                                coroutineScope.launch {
-                                    val isYtmSyncEnabled = withContext(Dispatchers.IO) { context.isSyncEnabled() }
-                                    if (!isSignedIn && !syncedPlaylist) {
-                                        Toast
-                                            .makeText(
-                                                context,
-                                                notLoggedInYoutubeStr,
-                                                Toast.LENGTH_SHORT,
-                                            ).show()
-                                    } else if (!isYtmSyncEnabled) {
-                                        Toast
-                                            .makeText(
-                                                context,
-                                                syncDisabledStr,
-                                                Toast.LENGTH_SHORT,
-                                            ).show()
-                                    } else {
-                                        syncedPlaylist = !syncedPlaylist
-                                    }
+                            enabled = !isCreating,
+                            onCheckedChange = { shouldSync ->
+                                if (shouldSync && !isSignedIn) {
+                                    Toast
+                                        .makeText(
+                                            context,
+                                            notLoggedInYoutubeStr,
+                                            Toast.LENGTH_SHORT,
+                                        ).show()
+                                } else if (shouldSync && !ytmSyncEnabled) {
+                                    Toast
+                                        .makeText(
+                                            context,
+                                            syncDisabledStr,
+                                            Toast.LENGTH_SHORT,
+                                        ).show()
+                                } else {
+                                    syncedPlaylist = shouldSync
                                 }
                             },
                         )

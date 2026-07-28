@@ -14,6 +14,7 @@ This fork is maintained by [jajafu](https://github.com/jajafu) and focuses on a 
 - Increased the cached playback queue to three tracks.
 - Removed the sleep button from the playback cover and enlarged the other buttons.
 - Branded the installed app as `Metrolist_AndroidCar` with a black music-car logo across the launcher, About screen, and playback notifications.
+- New playlists default to YouTube Music sync when the account and sync setting are active; remote creation failures remain visible for retry, and songs are sent through one synchronized path to prevent duplicate additions.
 
 ## Features
 

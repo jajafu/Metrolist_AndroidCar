@@ -14,6 +14,7 @@ Metrolist Android Car 是 [Metrolist](https://github.com/MetrolistGroup/Metrolis
 - 將快取播放列表增加為 3 首歌曲。
 - 撥放封面下刪除睡眠按鈕，放大其他按鈕。
 - 將已安裝的 App 品牌化為 `Metrolist_AndroidCar`，在啟動器、關於頁面與播放通知中使用黑色音樂車 Logo。
+- 帳號已登入且同步功能開啟時，新播放列表預設同步至 YouTube Music；遠端建立失敗時會保留畫面供重試，歌曲則只經由單一同步流程送出，避免重複加入。
 
 ## 功能
 
