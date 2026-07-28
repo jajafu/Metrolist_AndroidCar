@@ -90,6 +90,10 @@ jobs:
       contents: write
 
     steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
       - name: Download Foss Release APK
         uses: actions/download-artifact@v8
         with:
@@ -104,13 +108,60 @@ jobs:
         run: |
           TAG="v${VERSION_NAME}-car"
           APK="release/${RELEASE_NAME}"
+          NOTES_FILE="$RUNNER_TEMP/release-notes.md"
+          PREVIOUS_TAG="$(
+            git tag --list 'v*-car' --sort=-version:refname |
+              grep -Fxv "$TAG" |
+              head -n 1 || true
+          )"
+
+          if [ -n "$PREVIOUS_TAG" ]; then
+            COMMIT_RANGE="$PREVIOUS_TAG..$GITHUB_SHA"
+          else
+            COMMIT_RANGE="$GITHUB_SHA"
+          fi
+
+          {
+            echo "# Metrolist Android Car $TAG"
+            echo
+            echo "## What's changed"
+
+            if git rev-list --quiet "$COMMIT_RANGE" && [ -n "$(git rev-list "$COMMIT_RANGE")" ]; then
+              while IFS= read -r commit; do
+                subject="$(git show -s --format=%s "$commit")"
+                body="$(git show -s --format=%b "$commit")"
+                short_commit="$(git rev-parse --short "$commit")"
+                printf -- '- %s (`%s`)\n' "$subject" "$short_commit"
+                if [ -n "$body" ]; then
+                  printf '%s\n' "$body" | sed 's/^/  /'
+                fi
+              done < <(git rev-list --reverse "$COMMIT_RANGE")
+            else
+              echo "- Maintenance release."
+            fi
+
+            echo
+            echo "## Build"
+            echo "- FOSS Release APK signed with the project's fixed release key."
+            echo "- Supports in-place updates from earlier signed FOSS Release builds."
+
+            if [ -n "$PREVIOUS_TAG" ]; then
+              echo
+              echo "[Full comparison](https://github.com/$GITHUB_REPOSITORY/compare/$PREVIOUS_TAG...$TAG)"
+            fi
+          } > "$NOTES_FILE"
 
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release edit "$TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --notes-file "$NOTES_FILE" \
+              --latest
+
             if gh release view "$TAG" \
               --repo "$GITHUB_REPOSITORY" \
               --json assets \
               --jq '.assets[].name' | grep -Fxq "$RELEASE_NAME"; then
-              echo "Release $TAG already contains $RELEASE_NAME; nothing to publish."
+              echo "Release $TAG notes updated; $RELEASE_NAME already exists."
               exit 0
             fi
 
@@ -122,5 +173,5 @@ jobs:
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
             --title "$TAG" \
-            --notes "Metrolist Android Car $TAG (FOSS Release APK)" \
+            --notes-file "$NOTES_FILE" \
             --latest
