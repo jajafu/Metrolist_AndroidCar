@@ -337,6 +337,8 @@ class MusicService :
     private lateinit var audioQuality: com.metrolist.music.constants.AudioQuality
 
     private var currentQueue: Queue = EmptyQueue
+    private val playbackRequestTracker = PlaybackRequestTracker()
+    private var playbackRequestJob: Job? = null
     private var loadMoreJob: Job? = null
     private var resumePlaybackAfterLoadMore = false
     var queueTitle: String? = null
@@ -1928,14 +1930,28 @@ class MusicService :
         queue: Queue,
         playWhenReady: Boolean = true,
     ) {
+        val requestToken = beginPlaybackRequest()
         if (!playerInitialized.value) {
             Timber.tag(TAG).w("playQueue called before player initialization, queuing request")
-            scope.launch {
-                playerInitialized.first { it }
-                playQueue(queue, playWhenReady)
-            }
+            playbackRequestJob =
+                scope.launch {
+                    playerInitialized.first { it }
+                    if (playbackRequestTracker.isActive(requestToken)) {
+                        playQueueWhenReady(queue, playWhenReady, requestToken)
+                    }
+                }
             return
         }
+
+        playQueueWhenReady(queue, playWhenReady, requestToken)
+    }
+
+    private fun playQueueWhenReady(
+        queue: Queue,
+        playWhenReady: Boolean,
+        requestToken: PlaybackRequestTracker.Token,
+    ) {
+        if (!playbackRequestTracker.isActive(requestToken)) return
 
         resetPlaybackRecoveryForUserAction()
 
@@ -1955,53 +1971,57 @@ class MusicService :
             player.prepare()
             player.playWhenReady = playWhenReady
         }
-        scope.launch(SilentHandler) {
-            val initialStatus =
-                withContext(Dispatchers.IO) {
-                    queue
-                        .getInitialStatus()
-                        .filterExplicit(dataStore.get(HideExplicitKey, false))
-                        .filterVideoSongs(dataStore.get(HideVideoSongsKey, false))
+        playbackRequestJob =
+            scope.launch(SilentHandler) {
+                val initialStatus =
+                    withContext(Dispatchers.IO) {
+                        queue
+                            .getInitialStatus()
+                            .filterExplicit(dataStore.get(HideExplicitKey, false))
+                            .filterVideoSongs(dataStore.get(HideVideoSongsKey, false))
+                    }
+                if (!playbackRequestTracker.isActive(requestToken) || currentQueue !== queue) {
+                    return@launch
                 }
-            if (queue.preloadItem != null && player.playbackState == STATE_IDLE) return@launch
-            if (initialStatus.title != null) {
-                queueTitle = initialStatus.title
-            }
-            if (initialStatus.items.isEmpty()) return@launch
-            // Track original queue size for shuffle playlist first feature
-            originalQueueSize = initialStatus.items.size
-            if (queue.preloadItem != null) {
-                player.addMediaItems(
-                    0,
-                    initialStatus.items.subList(0, initialStatus.mediaItemIndex),
-                )
-                player.addMediaItems(
-                    initialStatus.items.subList(
-                        initialStatus.mediaItemIndex + 1,
-                        initialStatus.items.size,
-                    ),
-                )
-            } else {
-                player.setMediaItems(
-                    initialStatus.items,
-                    if (initialStatus.mediaItemIndex >
-                        0
-                    ) {
-                        initialStatus.mediaItemIndex
-                    } else {
-                        0
-                    },
-                    initialStatus.position,
-                )
-                player.prepare()
-                player.playWhenReady = playWhenReady
-            }
+                if (queue.preloadItem != null && player.playbackState == STATE_IDLE) return@launch
+                if (initialStatus.title != null) {
+                    queueTitle = initialStatus.title
+                }
+                if (initialStatus.items.isEmpty()) return@launch
+                // Track original queue size for shuffle playlist first feature
+                originalQueueSize = initialStatus.items.size
+                if (queue.preloadItem != null) {
+                    player.addMediaItems(
+                        0,
+                        initialStatus.items.subList(0, initialStatus.mediaItemIndex),
+                    )
+                    player.addMediaItems(
+                        initialStatus.items.subList(
+                            initialStatus.mediaItemIndex + 1,
+                            initialStatus.items.size,
+                        ),
+                    )
+                } else {
+                    player.setMediaItems(
+                        initialStatus.items,
+                        if (initialStatus.mediaItemIndex >
+                            0
+                        ) {
+                            initialStatus.mediaItemIndex
+                        } else {
+                            0
+                        },
+                        initialStatus.position,
+                    )
+                    player.prepare()
+                    player.playWhenReady = playWhenReady
+                }
 
-            if (player.shuffleModeEnabled) {
-                val shufflePlaylistFirst = dataStore.get(ShufflePlaylistFirstKey, false)
-                applyShuffleOrder(player.currentMediaItemIndex, player.mediaItemCount, shufflePlaylistFirst)
+                if (player.shuffleModeEnabled) {
+                    val shufflePlaylistFirst = dataStore.get(ShufflePlaylistFirstKey, false)
+                    applyShuffleOrder(player.currentMediaItemIndex, player.mediaItemCount, shufflePlaylistFirst)
+                }
             }
-        }
     }
 
     fun startRadioSeamlessly() {
@@ -2014,88 +2034,138 @@ class MusicService :
 
         val currentIndex = player.currentMediaItemIndex
         val currentMediaId = currentMediaMetadata.id
+        val sourceQueue = currentQueue
+        val requestToken = beginPlaybackRequest()
 
-        scope.launch(SilentHandler) {
-            // Use simple videoId to let YouTube personalize recommendations
-            val radioQueue =
-                YouTubeQueue(
-                    endpoint =
-                        WatchEndpoint(
-                            videoId = currentMediaId,
-                        ),
-                )
+        playbackRequestJob =
+            scope.launch(SilentHandler) {
+                // Use simple videoId to let YouTube personalize recommendations
+                val radioQueue =
+                    YouTubeQueue(
+                        endpoint =
+                            WatchEndpoint(
+                                videoId = currentMediaId,
+                            ),
+                    )
 
-            try {
-                val initialStatus =
-                    withContext(Dispatchers.IO) {
-                        radioQueue
-                            .getInitialStatus()
-                            .filterExplicit(dataStore.get(HideExplicitKey, false))
-                            .filterVideoSongs(dataStore.get(HideVideoSongsKey, false))
-                    }
-
-                if (initialStatus.title != null) {
-                    queueTitle = initialStatus.title
-                }
-
-                val radioItems =
-                    initialStatus.items.filter { item ->
-                        item.mediaId != currentMediaId
-                    }
-
-                if (radioItems.isNotEmpty()) {
-                    val itemCount = player.mediaItemCount
-
-                    if (itemCount > currentIndex + 1) {
-                        player.removeMediaItems(currentIndex + 1, itemCount)
-                    }
-
-                    player.addMediaItems(currentIndex + 1, radioItems)
-                    if (player.shuffleModeEnabled) {
-                        val shufflePlaylistFirst = dataStore.get(ShufflePlaylistFirstKey, false)
-                        applyShuffleOrder(player.currentMediaItemIndex, player.mediaItemCount, shufflePlaylistFirst)
-                    }
-                }
-
-                currentQueue = radioQueue
-            } catch (e: Exception) {
                 try {
-                    val nextResult =
+                    val initialStatus =
                         withContext(Dispatchers.IO) {
-                            YouTube.next(WatchEndpoint(videoId = currentMediaId)).getOrNull()
+                            radioQueue
+                                .getInitialStatus()
+                                .filterExplicit(dataStore.get(HideExplicitKey, false))
+                                .filterVideoSongs(dataStore.get(HideVideoSongsKey, false))
                         }
-                    nextResult?.relatedEndpoint?.let { relatedEndpoint ->
-                        val relatedPage =
-                            withContext(Dispatchers.IO) {
-                                YouTube.related(relatedEndpoint).getOrNull()
-                            }
-                        relatedPage?.songs?.let { songs ->
-                            val radioItems =
-                                songs
-                                    .filter { it.id != currentMediaId }
-                                    .map { it.toMediaItem() }
-                                    .filterExplicit(cachedHideExplicit)
-                                    .filterVideoSongs(cachedHideVideoSongs)
 
-                            if (radioItems.isNotEmpty()) {
-                                val itemCount = player.mediaItemCount
-                                if (itemCount > currentIndex + 1) {
-                                    player.removeMediaItems(currentIndex + 1, itemCount)
-                                }
-                                player.addMediaItems(currentIndex + 1, radioItems)
-                                if (player.shuffleModeEnabled) {
-                                    applyShuffleOrder(
-                                        player.currentMediaItemIndex,
-                                        player.mediaItemCount,
-                                        cachedShufflePlaylistFirst,
-                                    )
-                                }
-                            }
-                        }
+                    if (!isActiveRadioRequest(requestToken, sourceQueue, currentMediaId, currentIndex)) {
+                        return@launch
                     }
-                } catch (_: Exception) {
+
+                    loadMoreJob?.cancel()
+                    loadMoreJob = null
+                    resumePlaybackAfterLoadMore = false
+                    if (initialStatus.title != null) {
+                        queueTitle = initialStatus.title
+                    }
+
+                    val radioItems =
+                        initialStatus.items.filter { item ->
+                            item.mediaId != currentMediaId
+                        }
+
+                    if (radioItems.isNotEmpty()) {
+                        replaceUpcomingItemsWithRadio(
+                            currentIndex = currentIndex,
+                            radioItems = radioItems,
+                            shufflePlaylistFirst = dataStore.get(ShufflePlaylistFirstKey, false),
+                        )
+                    }
+                    currentQueue = radioQueue
+                } catch (error: CancellationException) {
+                    throw error
+                } catch (error: Exception) {
+                    try {
+                        val songs =
+                            withContext(Dispatchers.IO) {
+                                val relatedEndpoint =
+                                    YouTube
+                                        .next(WatchEndpoint(videoId = currentMediaId))
+                                        .getOrNull()
+                                        ?.relatedEndpoint
+                                        ?: return@withContext null
+                                YouTube.related(relatedEndpoint).getOrNull()?.songs
+                            }
+
+                        if (!isActiveRadioRequest(requestToken, sourceQueue, currentMediaId, currentIndex)) {
+                            return@launch
+                        }
+
+                        val radioItems =
+                            songs
+                                ?.filter { it.id != currentMediaId }
+                                ?.map { it.toMediaItem() }
+                                ?.filterExplicit(cachedHideExplicit)
+                                ?.filterVideoSongs(cachedHideVideoSongs)
+                                .orEmpty()
+
+                        if (radioItems.isNotEmpty()) {
+                            loadMoreJob?.cancel()
+                            loadMoreJob = null
+                            resumePlaybackAfterLoadMore = false
+                            replaceUpcomingItemsWithRadio(
+                                currentIndex = currentIndex,
+                                radioItems = radioItems,
+                                shufflePlaylistFirst = cachedShufflePlaylistFirst,
+                            )
+                            currentQueue =
+                                ListQueue(
+                                    title = queueTitle,
+                                    items = player.mediaItems,
+                                    startIndex = currentIndex,
+                                    position = player.currentPosition,
+                                )
+                        }
+                    } catch (fallbackCancellation: CancellationException) {
+                        throw fallbackCancellation
+                    } catch (fallbackError: Exception) {
+                        Timber.tag(TAG).w(fallbackError, "Failed to start fallback radio")
+                    }
                 }
             }
+    }
+
+    private fun beginPlaybackRequest(): PlaybackRequestTracker.Token {
+        playbackRequestJob?.cancel()
+        return playbackRequestTracker.begin()
+    }
+
+    private fun isActiveRadioRequest(
+        requestToken: PlaybackRequestTracker.Token,
+        sourceQueue: Queue,
+        mediaId: String,
+        mediaItemIndex: Int,
+    ): Boolean =
+        playbackRequestTracker.isActive(requestToken) &&
+            currentQueue === sourceQueue &&
+            player.currentMetadata?.id == mediaId &&
+            player.currentMediaItemIndex == mediaItemIndex
+
+    private fun replaceUpcomingItemsWithRadio(
+        currentIndex: Int,
+        radioItems: List<MediaItem>,
+        shufflePlaylistFirst: Boolean,
+    ) {
+        val itemCount = player.mediaItemCount
+        if (itemCount > currentIndex + 1) {
+            player.removeMediaItems(currentIndex + 1, itemCount)
+        }
+        player.addMediaItems(currentIndex + 1, radioItems)
+        if (player.shuffleModeEnabled) {
+            applyShuffleOrder(
+                player.currentMediaItemIndex,
+                player.mediaItemCount,
+                shufflePlaylistFirst,
+            )
         }
     }
 
