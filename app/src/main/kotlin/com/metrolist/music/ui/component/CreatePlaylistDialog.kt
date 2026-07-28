@@ -28,18 +28,15 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
-import com.metrolist.innertube.YouTube
 import com.metrolist.innertube.utils.parseCookieString
-import com.metrolist.music.LocalDatabase
+import com.metrolist.music.LocalSyncUtils
 import com.metrolist.music.R
 import com.metrolist.music.constants.InnerTubeCookieKey
 import com.metrolist.music.constants.YtmSyncKey
-import com.metrolist.music.db.entities.PlaylistEntity
 import com.metrolist.music.utils.rememberPreference
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.time.LocalDateTime
 
 @Composable
 fun CreatePlaylistDialog(
@@ -48,7 +45,7 @@ fun CreatePlaylistDialog(
     allowSyncing: Boolean = true,
     onPlaylistCreated: ((String) -> Unit)? = null,
 ) {
-    val database = LocalDatabase.current
+    val syncUtils = LocalSyncUtils.current
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
 
@@ -61,11 +58,11 @@ fun CreatePlaylistDialog(
         mutableStateOf(allowSyncing && isSignedIn && ytmSyncEnabled)
     }
     var isCreating by rememberSaveable { mutableStateOf(false) }
-    var pendingRemotePlaylistId by rememberSaveable { mutableStateOf<String?>(null) }
 
     val notLoggedInYoutubeStr = stringResource(R.string.not_logged_in_youtube)
     val syncDisabledStr = stringResource(R.string.sync_disabled)
     val createFailedStr = stringResource(R.string.playlist_create_failed)
+    val syncQueuedStr = stringResource(R.string.playlist_sync_queued)
 
     TextFieldDialog(
         icon = { Icon(painter = painterResource(R.drawable.add), contentDescription = null) },
@@ -78,37 +75,15 @@ fun CreatePlaylistDialog(
             if (playlistName.isBlank() || isCreating) return@onDone
             isCreating = true
             coroutineScope.launch(Dispatchers.IO) {
-                val result = runCatching {
-                    val browseId =
-                        if (syncedPlaylist && isSignedIn) {
-                            pendingRemotePlaylistId
-                                ?: YouTube.createPlaylist(playlistName)
-                                    .getOrThrow()
-                                    .also { pendingRemotePlaylistId = it }
-                        } else if (syncedPlaylist) {
-                            error(notLoggedInYoutubeStr)
-                        } else {
-                            null
-                        }
-
-                    val playlistEntity =
-                        PlaylistEntity(
-                            name = playlistName,
-                            browseId = browseId,
-                            bookmarkedAt = LocalDateTime.now(),
-                            isEditable = true,
-                        )
-
-                    database.withTransaction {
-                        insert(playlistEntity)
-                    }
-                    playlistEntity.id
-                }
+                val result = syncUtils.createPlaylist(playlistName, syncedPlaylist)
 
                 withContext(Dispatchers.Main) {
                     result
-                        .onSuccess { playlistId ->
-                            onPlaylistCreated?.invoke(playlistId)
+                        .onSuccess { creationResult ->
+                            onPlaylistCreated?.invoke(creationResult.playlistId)
+                            if (creationResult.syncPending) {
+                                Toast.makeText(context, syncQueuedStr, Toast.LENGTH_LONG).show()
+                            }
                             onDismiss()
                         }.onFailure {
                             isCreating = false

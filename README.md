@@ -14,7 +14,7 @@ This fork is maintained by [jajafu](https://github.com/jajafu) and focuses on a 
 - Increased the cached playback queue to three tracks.
 - Removed the sleep button from the playback cover and enlarged the other buttons.
 - Branded the installed app as `Metrolist_AndroidCar` with a black music-car logo across the launcher, About screen, and playback notifications.
-- New playlists default to YouTube Music sync when the account and sync setting are active; remote creation failures remain visible for retry, and songs are sent through one synchronized path to prevent duplicate additions.
+- New playlists default to YouTube Music sync when the account and sync setting are active. Failed playlist creation and song additions are stored outside the App database, retried automatically, and shown as pending in the playlist library; new remote playlists also receive a reconciliation grace period.
 
 ## Features
 
@@ -39,7 +39,7 @@ Build the FOSS release variant locally with:
 ./gradlew :app:assembleFossRelease
 ```
 
-The manually triggered GitHub Actions workflow builds only the FOSS release APK and publishes it to this repository's GitHub Releases. It requires the fixed Android signing secrets `RELEASE_KEYSTORE_BASE64`, `RELEASE_STORE_PASSWORD`, `RELEASE_KEY_ALIAS`, and `RELEASE_KEY_PASSWORD`; do not commit the keystore or passwords.
+The manually triggered GitHub Actions workflow builds only the FOSS release APK and publishes it to this repository's GitHub Releases. Release notes are generated automatically from the actual commits since the previous release and are refreshed when an existing release is rerun. The workflow requires the fixed Android signing secrets `RELEASE_KEYSTORE_BASE64`, `RELEASE_STORE_PASSWORD`, `RELEASE_KEY_ALIAS`, and `RELEASE_KEY_PASSWORD`; do not commit the keystore or passwords.
 
 The in-app updater checks [this repository's releases](https://github.com/jajafu/Metrolist_AndroidCar/releases) and opens the matching APK download for confirmation. Android still requires the user to approve installation.
 

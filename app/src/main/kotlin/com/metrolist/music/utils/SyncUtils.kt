@@ -19,6 +19,7 @@ import com.metrolist.lastfm.LastFM
 import com.metrolist.music.constants.InnerTubeCookieKey
 import com.metrolist.music.constants.LastFMUseSendLikes
 import com.metrolist.music.constants.LastFullSyncKey
+import com.metrolist.music.constants.PendingPlaylistEditsKey
 import com.metrolist.music.constants.SYNC_COOLDOWN
 import com.metrolist.music.db.MusicDatabase
 import com.metrolist.music.db.entities.ArtistEntity
@@ -101,6 +102,11 @@ data class SyncState(
     val currentOperation: String = ""
 )
 
+data class PlaylistCreationResult(
+    val playlistId: String,
+    val syncPending: Boolean,
+)
+
 @Singleton
 class SyncUtils @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -127,13 +133,17 @@ class SyncUtils @Inject constructor(
     @Volatile private var cachedLastSyncEpoch: Long = 0L
     private val playlistsBeingModified = ConcurrentHashMap<String, AtomicInteger>()
     private val playlistEditMutex = Mutex()
+    private val pendingPlaylistEditMutex = Mutex()
     private var lastPlaylistEditAtMs = 0L
+    private val _pendingPlaylistEditCount = MutableStateFlow(0)
+    val pendingPlaylistEditCount: StateFlow<Int> = _pendingPlaylistEditCount.asStateFlow()
 
     companion object {
         private const val MAX_RETRIES = 3
         private const val INITIAL_RETRY_DELAY_MS = 1000L
         private const val DB_OPERATION_DELAY_MS = 50L
         private const val PLAYLIST_EDIT_THROTTLE_MS = 500L
+        private const val NEW_PLAYLIST_RECONCILIATION_GRACE_MINUTES = 15L
     }
     private fun markPlaylistModifying(playlistId: String) {
         playlistsBeingModified.getOrPut(playlistId) { AtomicInteger(0) }.incrementAndGet()
@@ -148,7 +158,7 @@ class SyncUtils @Inject constructor(
     private fun isPlaylistBeingModified(playlistId: String): Boolean =
         (playlistsBeingModified[playlistId]?.get() ?: 0) > 0
 
-    private suspend fun runQueuedPlaylistEdit(block: suspend () -> Unit) {
+    private suspend fun <T> runQueuedPlaylistEdit(block: suspend () -> T): T =
         playlistEditMutex.withLock {
             val remainingDelay = PLAYLIST_EDIT_THROTTLE_MS -
                 (System.currentTimeMillis() - lastPlaylistEditAtMs)
@@ -159,7 +169,6 @@ class SyncUtils @Inject constructor(
                 lastPlaylistEditAtMs = System.currentTimeMillis()
             }
         }
-    }
 
     init {
         context.dataStore.data
@@ -175,6 +184,10 @@ class SyncUtils @Inject constructor(
         }
 
         startProcessingQueue()
+        syncScope.launch {
+            refreshPendingPlaylistEditCount()
+            retryPendingPlaylistEdits()
+        }
     }
 
     private fun startProcessingQueue() {
@@ -313,6 +326,213 @@ class SyncUtils @Inject constructor(
         return Result.failure(Exception("Max retries exceeded"))
     }
 
+    private suspend fun loadPendingPlaylistEdits(): List<PendingPlaylistEdit> {
+        val encoded =
+            context.dataStore.data
+                .map { it[PendingPlaylistEditsKey] }
+                .first()
+        return PendingPlaylistEditCodec.decode(encoded)
+    }
+
+    private suspend fun savePendingPlaylistEdits(edits: List<PendingPlaylistEdit>) {
+        val saved =
+            context.safeDataStoreEdit { settings ->
+                if (edits.isEmpty()) {
+                    settings.remove(PendingPlaylistEditsKey)
+                } else {
+                    settings[PendingPlaylistEditsKey] = PendingPlaylistEditCodec.encode(edits)
+                }
+            }
+        if (!saved) {
+            error("Failed to persist pending playlist edits")
+        }
+        _pendingPlaylistEditCount.value = edits.size
+    }
+
+    private suspend fun refreshPendingPlaylistEditCount() {
+        _pendingPlaylistEditCount.value = loadPendingPlaylistEdits().size
+    }
+
+    private suspend fun enqueuePendingPlaylistEdit(edit: PendingPlaylistEdit) {
+        pendingPlaylistEditMutex.withLock {
+            val pending = loadPendingPlaylistEdits()
+            savePendingPlaylistEdits(pending + edit)
+        }
+    }
+
+    private suspend fun retryPendingPlaylistEdits(targetEditId: String? = null): Boolean {
+        if (!isLoggedIn() || !context.isInternetConnected()) {
+            refreshPendingPlaylistEditCount()
+            return false
+        }
+
+        return pendingPlaylistEditMutex.withLock {
+            val pending = loadPendingPlaylistEdits().toMutableList()
+            _pendingPlaylistEditCount.value = pending.size
+            var index = 0
+
+            while (index < pending.size) {
+                var edit = pending[index]
+                if (targetEditId != null && edit.id != targetEditId) {
+                    index++
+                    continue
+                }
+
+                val succeeded =
+                    try {
+                        when (edit.type) {
+                            PendingPlaylistEditType.CREATE_PLAYLIST -> {
+                                val localPlaylist = database.playlistBlocking(edit.playlistId)?.playlist
+                                if (localPlaylist == null) {
+                                    true
+                                } else {
+                                    val remoteBrowseId =
+                                        localPlaylist.browseId
+                                            ?: edit.browseId
+                                            ?: withRetry {
+                                                runQueuedPlaylistEdit {
+                                                    YouTube.createPlaylist(
+                                                        edit.playlistName ?: localPlaylist.name,
+                                                    ).getOrThrow()
+                                                }
+                                            }.getOrThrow()
+                                                .also { createdBrowseId ->
+                                                    edit = edit.copy(browseId = createdBrowseId)
+                                                    pending[index] = edit
+                                                    savePendingPlaylistEdits(pending)
+                                                }
+
+                                    database.withTransaction {
+                                        val current = playlistBlocking(edit.playlistId)?.playlist
+                                        if (current != null && current.browseId == null) {
+                                            update(
+                                                current.copy(
+                                                    browseId = remoteBrowseId,
+                                                    lastUpdateTime = LocalDateTime.now(),
+                                                ),
+                                            )
+                                        }
+                                    }
+
+                                    val queuedSongCounts =
+                                        pending
+                                            .asSequence()
+                                            .filter {
+                                                it.type == PendingPlaylistEditType.ADD_SONG &&
+                                                    it.playlistId == edit.playlistId
+                                            }.mapNotNull { it.songId }
+                                            .groupingBy { it }
+                                            .eachCount()
+                                            .toMutableMap()
+                                    val localSongCounts = mutableMapOf<String, Int>()
+                                    database.playlistSongIds(edit.playlistId).forEach { songId ->
+                                        val localOccurrence = (localSongCounts[songId] ?: 0) + 1
+                                        localSongCounts[songId] = localOccurrence
+                                        if (localOccurrence > (queuedSongCounts[songId] ?: 0)) {
+                                            pending +=
+                                                PendingPlaylistEdit(
+                                                    type = PendingPlaylistEditType.ADD_SONG,
+                                                    playlistId = edit.playlistId,
+                                                    browseId = remoteBrowseId,
+                                                    songId = songId,
+                                                )
+                                            queuedSongCounts[songId] = (queuedSongCounts[songId] ?: 0) + 1
+                                        }
+                                    }
+                                    true
+                                }
+                            }
+
+                            PendingPlaylistEditType.ADD_SONG -> {
+                                val localPlaylist = database.playlistBlocking(edit.playlistId)?.playlist
+                                if (localPlaylist == null) {
+                                    true
+                                } else {
+                                    val browseId = edit.browseId ?: localPlaylist.browseId
+                                    val songId = edit.songId
+                                    if (browseId == null || songId == null) {
+                                        false
+                                    } else {
+                                        withRetry {
+                                            runQueuedPlaylistEdit {
+                                                YouTube.addToPlaylist(browseId, songId).getOrThrow()
+                                            }
+                                        }.getOrThrow()
+                                        true
+                                    }
+                                }
+                            }
+                        }
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        Timber.e(e, "Pending playlist edit failed: ${edit.type} (${edit.id})")
+                        false
+                    }
+
+                if (succeeded) {
+                    pending.removeAt(index)
+                    savePendingPlaylistEdits(pending)
+                } else {
+                    index++
+                }
+            }
+
+            targetEditId == null || pending.none { it.id == targetEditId }
+        }
+    }
+
+    suspend fun createPlaylist(
+        name: String,
+        syncToYouTube: Boolean,
+    ): Result<PlaylistCreationResult> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val playlist =
+                    PlaylistEntity(
+                        name = name,
+                        bookmarkedAt = LocalDateTime.now(),
+                        isEditable = true,
+                    )
+                database.withTransaction {
+                    insert(playlist)
+                }
+
+                if (!syncToYouTube) {
+                    return@runCatching PlaylistCreationResult(
+                        playlistId = playlist.id,
+                        syncPending = false,
+                    )
+                }
+
+                val pendingEdit =
+                    PendingPlaylistEdit(
+                        type = PendingPlaylistEditType.CREATE_PLAYLIST,
+                        playlistId = playlist.id,
+                        playlistName = playlist.name,
+                    )
+                try {
+                    enqueuePendingPlaylistEdit(pendingEdit)
+                } catch (e: Exception) {
+                    database.withTransaction {
+                        delete(playlist)
+                    }
+                    throw e
+                }
+
+                PlaylistCreationResult(
+                    playlistId = playlist.id,
+                    syncPending = !retryPendingPlaylistEdits(pendingEdit.id),
+                )
+            }
+        }
+
+    suspend fun clearPendingPlaylistEdits() {
+        pendingPlaylistEditMutex.withLock {
+            savePendingPlaylistEdits(emptyList())
+        }
+    }
+
     private fun updateState(update: SyncState.() -> SyncState) {
         _syncState.value = _syncState.value.update()
     }
@@ -341,6 +561,8 @@ class SyncUtils @Inject constructor(
             if (!context.isSyncEnabled() || !context.isInternetConnected()) {
                 return@launch
             }
+
+            retryPendingPlaylistEdits()
 
             val lastSync = context.dataStore.get(LastFullSyncKey, 0L)
             val effectiveLastSync = maxOf(lastSync, cachedLastSyncEpoch)
@@ -459,6 +681,7 @@ class SyncUtils @Inject constructor(
     suspend fun clearAllLibraryData() = withContext(Dispatchers.IO) {
         Timber.d("[LOGOUT_CLEAR] Starting complete library data cleanup")
         try {
+            clearPendingPlaylistEdits()
             updateState {
                 copy(
                     overallStatus = SyncStatus.Syncing,
@@ -595,6 +818,8 @@ class SyncUtils @Inject constructor(
         updateState { copy(overallStatus = SyncStatus.Syncing, currentOperation = "Starting full sync") }
 
         try {
+            retryPendingPlaylistEdits()
+
             // Sync in sequence to avoid overwhelming the API and database
             executeSyncLikedSongs()
             delay(DB_OPERATION_DELAY_MS)
@@ -1402,6 +1627,7 @@ class SyncUtils @Inject constructor(
             return@withContext
         }
 
+        retryPendingPlaylistEdits()
         updateState { copy(playlists = SyncStatus.Syncing, currentOperation = "Syncing saved playlists") }
 
         withRetry {
@@ -1415,11 +1641,19 @@ class SyncUtils @Inject constructor(
                     val remoteIds = remotePlaylists.map { it.id }.toSet()
 
                     val localPlaylists = database.playlistEntitiesByNameAsc()
-                    localPlaylists.filterNot { it.browseId in remoteIds }
-                        .filterNot { it.browseId == null }
+                    val now = LocalDateTime.now()
+                    localPlaylists
+                        .filter {
+                            shouldUnbookmarkMissingPlaylist(
+                                playlist = it,
+                                remoteIds = remoteIds,
+                                now = now,
+                                gracePeriodMinutes = NEW_PLAYLIST_RECONCILIATION_GRACE_MINUTES,
+                            )
+                        }
                         .forEach { playlist ->
                             try {
-                                database.update(playlist.localToggleLike())
+                                database.update(playlist.copy(bookmarkedAt = null))
                                 delay(DB_OPERATION_DELAY_MS)
                             } catch (e: Exception) {
                                 Timber.e(e, "Failed to update playlist: ${playlist.id}")
@@ -1622,6 +1856,7 @@ class SyncUtils @Inject constructor(
         updateState { copy(overallStatus = SyncStatus.Syncing, currentOperation = "Clearing synced content") }
 
         try {
+            clearPendingPlaylistEdits()
             database.withTransaction {
                 // Clear liked songs
                 val likedSongs = database.likedSongsByNameAsc().first()
@@ -1723,10 +1958,15 @@ class SyncUtils @Inject constructor(
     ): Boolean {
         markPlaylistModifying(playlistId)
         return try {
-            runQueuedPlaylistEdit {
-                YouTube.addToPlaylist(browseId, songId).getOrThrow()
-            }
-            true
+            val pendingEdit =
+                PendingPlaylistEdit(
+                    type = PendingPlaylistEditType.ADD_SONG,
+                    playlistId = playlistId,
+                    browseId = browseId,
+                    songId = songId,
+                )
+            enqueuePendingPlaylistEdit(pendingEdit)
+            retryPendingPlaylistEdits(pendingEdit.id)
         } catch (e: Exception) {
             Timber.e(e, "Failed to add song $songId to playlist $browseId")
             false

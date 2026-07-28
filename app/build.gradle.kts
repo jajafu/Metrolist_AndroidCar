@@ -104,8 +104,8 @@ android {
         applicationId = applicationIdOverride ?: baseApplicationId
         minSdk = 26
         targetSdk = 36
-        versionCode = 163
-        versionName = "13.6.14"
+        versionCode = 164
+        versionName = "13.6.15"
         resValue("string", "app_name", "Metrolist_AndroidCar")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

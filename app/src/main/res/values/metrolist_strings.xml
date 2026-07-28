@@ -27,7 +27,9 @@
     <string name="sync_playlist">Sync playlist</string>
     <string name="sync_disabled">Sync disabled</string>
     <string name="playlist_create_failed">Could not create the playlist. Check your connection and try again.</string>
-    <string name="playlist_song_sync_failed">Added locally, but %1$d song(s) could not sync to YouTube Music.</string>
+    <string name="playlist_sync_queued">Playlist saved locally. YouTube Music sync will retry automatically.</string>
+    <string name="playlist_song_sync_failed">Added locally. %1$d song(s) will retry YouTube Music sync automatically.</string>
+    <string name="playlist_changes_pending">%1$d change(s) waiting to sync</string>
     <string name="allows_for_sync_witch_youtube">NOTE: This option enables syncing with YouTube Music and CANNOT be changed later</string>
 
     <string name="and">and</string>

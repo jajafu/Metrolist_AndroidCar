@@ -36,6 +36,7 @@ class AccountSettingsViewModel @Inject constructor(
      */
     fun logoutAndClearSyncedContent(context: Context, onCookieChange: (String) -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
+            syncUtils.clearPendingPlaylistEdits()
             // Clear all YouTube Music synced content first
             syncUtils.clearAllSyncedContent()
 
@@ -64,6 +65,7 @@ class AccountSettingsViewModel @Inject constructor(
     suspend fun logoutAndClearLibraryData(context: Context) {
         Timber.d("[LOGOUT_CLEAR] ViewModel: logoutAndClearLibraryData called")
         withContext(Dispatchers.IO) {
+            syncUtils.clearPendingPlaylistEdits()
             // Forget account first — clears cookie/auth from DataStore.
             // Once isLoggedIn() returns false, ALL sync operations will skip.
             App.forgetAccount(context)
@@ -81,6 +83,7 @@ class AccountSettingsViewModel @Inject constructor(
     suspend fun logoutKeepData(context: Context, onCookieChange: (String) -> Unit) {
         Timber.d("[LOGOUT_KEEP] ViewModel: logoutKeepData called")
         withContext(Dispatchers.IO) {
+            syncUtils.clearPendingPlaylistEdits()
             App.forgetAccount(context)
         }
         Timber.d("[LOGOUT_KEEP] ViewModel: Account forgotten, clearing cookie in UI")

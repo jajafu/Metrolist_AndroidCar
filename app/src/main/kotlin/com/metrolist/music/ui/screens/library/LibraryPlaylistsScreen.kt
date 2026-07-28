@@ -55,6 +55,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.metrolist.innertube.utils.parseCookieString
 import com.metrolist.music.LocalPlayerAwareWindowInsets
+import com.metrolist.music.LocalSyncUtils
 import com.metrolist.music.R
 import com.metrolist.music.constants.CONTENT_TYPE_HEADER
 import com.metrolist.music.constants.CONTENT_TYPE_PLAYLIST
@@ -110,6 +111,7 @@ fun LibraryPlaylistsScreen(
     allowSyncing: Boolean = true,
 ) {
     val menuState = LocalMenuState.current
+    val syncUtils = LocalSyncUtils.current
     val haptic = LocalHapticFeedback.current
     val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -295,6 +297,7 @@ fun LibraryPlaylistsScreen(
     }
 
     val (ytmSync) = rememberPreference(YtmSyncKey, true)
+    val pendingPlaylistEditCount by syncUtils.pendingPlaylistEditCount.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         if (ytmSync) {
@@ -356,6 +359,18 @@ fun LibraryPlaylistsScreen(
             )
 
             Spacer(Modifier.weight(1f))
+
+            if (pendingPlaylistEditCount > 0) {
+                Text(
+                    text = stringResource(
+                        R.string.playlist_changes_pending,
+                        pendingPlaylistEditCount,
+                    ),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.tertiary,
+                    modifier = Modifier.padding(end = 8.dp),
+                )
+            }
 
             Text(
                 text = pluralStringResource(

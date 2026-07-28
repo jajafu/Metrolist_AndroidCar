@@ -14,7 +14,7 @@ Metrolist Android Car 是 [Metrolist](https://github.com/MetrolistGroup/Metrolis
 - 將快取播放列表增加為 3 首歌曲。
 - 撥放封面下刪除睡眠按鈕，放大其他按鈕。
 - 將已安裝的 App 品牌化為 `Metrolist_AndroidCar`，在啟動器、關於頁面與播放通知中使用黑色音樂車 Logo。
-- 帳號已登入且同步功能開啟時，新播放列表預設同步至 YouTube Music；遠端建立失敗時會保留畫面供重試，歌曲則只經由單一同步流程送出，避免重複加入。
+- 帳號已登入且同步功能開啟時，新播放列表預設同步至 YouTube Music。播放列表建立或歌曲加入失敗時，待處理操作會儲存在 App 資料庫以外、自動重試，並在播放列表音樂庫顯示待同步數量；新建立的遠端播放列表也有同步寬限時間，避免暫時從清單消失。
 
 ## 功能
 
@@ -39,7 +39,7 @@ Metrolist Android Car 是 [Metrolist](https://github.com/MetrolistGroup/Metrolis
 ./gradlew :app:assembleFossRelease
 ```
 
-手動觸發的 GitHub Actions workflow 只會建置 FOSS Release APK，並發布到本專案的 GitHub Releases。它需要固定的 Android 簽章 Secrets：`RELEASE_KEYSTORE_BASE64`、`RELEASE_STORE_PASSWORD`、`RELEASE_KEY_ALIAS` 與 `RELEASE_KEY_PASSWORD`；請勿提交 keystore 或密碼。
+手動觸發的 GitHub Actions workflow 只會建置 FOSS Release APK，並發布到本專案的 GitHub Releases。Release notes 會依上一版 Release 之後的實際提交內容自動產生；重新執行既有版本時也會更新日誌。Workflow 需要固定的 Android 簽章 Secrets：`RELEASE_KEYSTORE_BASE64`、`RELEASE_STORE_PASSWORD`、`RELEASE_KEY_ALIAS` 與 `RELEASE_KEY_PASSWORD`；請勿提交 keystore 或密碼。
 
 App 內更新器會檢查[本專案的 Releases](https://github.com/jajafu/Metrolist_AndroidCar/releases)，並開啟符合版本的 APK 下載頁供確認。Android 仍會要求使用者核准安裝。
 
