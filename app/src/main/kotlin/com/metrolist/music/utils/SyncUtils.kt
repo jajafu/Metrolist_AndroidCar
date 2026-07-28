@@ -529,7 +529,11 @@ class SyncUtils @Inject constructor(
                 }
             }
 
-            targetEditId == null || pending.none { it.id == targetEditId }
+            if (targetEditId == null) {
+                pending.isEmpty()
+            } else {
+                pending.none { it.id == targetEditId }
+            }
         }
     }
 
@@ -644,17 +648,11 @@ class SyncUtils @Inject constructor(
             val lastSync = context.dataStore.get(LastFullSyncKey, 0L)
             val effectiveLastSync = maxOf(lastSync, cachedLastSyncEpoch)
             val currentTime = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC)
-            if (effectiveLastSync > 0 && (currentTime - effectiveLastSync) < SYNC_COOLDOWN) {
+            if (isFullSyncCoolingDown(effectiveLastSync, currentTime, SYNC_COOLDOWN)) {
                 return@launch
             }
 
             enqueue(SyncOperation.FullSync)
-
-            val now = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC)
-            cachedLastSyncEpoch = now
-            context.safeDataStoreEdit { settings ->
-                settings[LastFullSyncKey] = now
-            }
         }
     }
 
@@ -892,38 +890,89 @@ class SyncUtils @Inject constructor(
             return@withContext
         }
 
-        updateState { copy(overallStatus = SyncStatus.Syncing, currentOperation = "Starting full sync") }
+        updateState {
+            copy(
+                overallStatus = SyncStatus.Syncing,
+                likedSongs = SyncStatus.Idle,
+                librarySongs = SyncStatus.Idle,
+                uploadedSongs = SyncStatus.Idle,
+                likedAlbums = SyncStatus.Idle,
+                uploadedAlbums = SyncStatus.Idle,
+                artists = SyncStatus.Idle,
+                playlists = SyncStatus.Idle,
+                currentOperation = "Starting full sync",
+            )
+        }
 
         try {
-            retryPendingPlaylistEdits()
+            val result =
+                executeFullSyncPlan(
+                    steps =
+                        listOf(
+                            FullSyncStep("pending playlist edits") {
+                                if (retryPendingPlaylistEdits()) {
+                                    SyncStatus.Completed
+                                } else {
+                                    SyncStatus.Error("Pending playlist edits remain")
+                                }
+                            },
+                            FullSyncStep("liked songs") {
+                                executeSyncLikedSongs()
+                                _syncState.value.likedSongs
+                            },
+                            FullSyncStep("library songs") {
+                                executeSyncLibrarySongs()
+                                _syncState.value.librarySongs
+                            },
+                            FullSyncStep("uploaded songs") {
+                                executeSyncUploadedSongs()
+                                _syncState.value.uploadedSongs
+                            },
+                            FullSyncStep("liked albums") {
+                                executeSyncLikedAlbums()
+                                _syncState.value.likedAlbums
+                            },
+                            FullSyncStep("uploaded albums") {
+                                executeSyncUploadedAlbums()
+                                _syncState.value.uploadedAlbums
+                            },
+                            FullSyncStep("artist subscriptions") {
+                                executeSyncArtistsSubscriptions()
+                                _syncState.value.artists
+                            },
+                            FullSyncStep("podcast subscriptions") {
+                                executeSyncPodcastSubscriptions()
+                            },
+                            FullSyncStep("episodes for later") {
+                                executeSyncEpisodesForLater()
+                            },
+                            FullSyncStep("saved playlists") {
+                                executeSyncSavedPlaylists()
+                                _syncState.value.playlists
+                            },
+                        ),
+                    afterStep = { delay(DB_OPERATION_DELAY_MS) },
+                )
 
-            // Sync in sequence to avoid overwhelming the API and database
-            executeSyncLikedSongs()
-            delay(DB_OPERATION_DELAY_MS)
+            if (!result.isSuccessful) {
+                val message = "Partial sync failure: ${result.failedComponents.joinToString()}"
+                updateState { copy(overallStatus = SyncStatus.Error(message), currentOperation = "") }
+                Timber.w(message)
+                return@withContext
+            }
 
-            executeSyncLibrarySongs()
-            delay(DB_OPERATION_DELAY_MS)
-
-            executeSyncUploadedSongs()
-            delay(DB_OPERATION_DELAY_MS)
-
-            executeSyncLikedAlbums()
-            delay(DB_OPERATION_DELAY_MS)
-
-            executeSyncUploadedAlbums()
-            delay(DB_OPERATION_DELAY_MS)
-
-            executeSyncArtistsSubscriptions()
-            delay(DB_OPERATION_DELAY_MS)
-
-            executeSyncPodcastSubscriptions()
-            delay(DB_OPERATION_DELAY_MS)
-
-            executeSyncEpisodesForLater()
-            delay(DB_OPERATION_DELAY_MS)
-
-            executeSyncSavedPlaylists()
-            delay(DB_OPERATION_DELAY_MS)
+            val now = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC)
+            val saved =
+                context.safeDataStoreEdit { settings ->
+                    settings[LastFullSyncKey] = now
+                }
+            check(saved) { "Failed to save full sync completion time" }
+            cachedLastSyncEpoch =
+                nextLastSuccessfulSyncEpoch(
+                    previousEpoch = cachedLastSyncEpoch,
+                    currentEpoch = now,
+                    result = result,
+                )
 
             updateState { copy(overallStatus = SyncStatus.Completed, currentOperation = "") }
             Timber.d("Full sync completed successfully")
@@ -1412,11 +1461,11 @@ class SyncUtils @Inject constructor(
         }
     }
 
-    private suspend fun executeSyncPodcastSubscriptions() = withContext(Dispatchers.IO) {
+    private suspend fun executeSyncPodcastSubscriptions(): SyncStatus = withContext(Dispatchers.IO) {
         Timber.d("[PODCAST_SYNC] executeSyncPodcastSubscriptions() started")
         if (!isLoggedIn()) {
             Timber.w("[PODCAST_SYNC] Skipping syncPodcastSubscriptions - user not logged in")
-            return@withContext
+            return@withContext SyncStatus.Error("User not logged in")
         }
         Timber.d("[PODCAST_SYNC] User is logged in, proceeding with sync")
 
@@ -1424,6 +1473,13 @@ class SyncUtils @Inject constructor(
         val allRemoteIds = mutableSetOf<String>()
         var fetchedSavedShows = false
         var fetchedSubscribedChannels = false
+        var failureMessage: String? = null
+
+        fun recordFailure(error: Throwable) {
+            if (failureMessage == null) {
+                failureMessage = error.message ?: "Unknown error"
+            }
+        }
 
         // Sync saved podcast shows (most common - saved via likePlaylist)
         withRetry {
@@ -1484,18 +1540,22 @@ class SyncUtils @Inject constructor(
                             delay(DB_OPERATION_DELAY_MS)
                         } catch (e: Exception) {
                             Timber.e(e, "[PODCAST_SYNC] Failed to process podcast: ${podcast.id}")
+                            recordFailure(e)
                         }
                     }
 
                     Timber.d("[PODCAST_SYNC] Synced ${remotePodcasts.size} saved podcast shows successfully")
                 } catch (e: Exception) {
                     Timber.e(e, "[PODCAST_SYNC] Error processing saved podcast shows")
+                    recordFailure(e)
                 }
             }.onFailure { e ->
                 Timber.e(e, "[PODCAST_SYNC] Failed to fetch saved podcast shows from YouTube")
+                recordFailure(e)
             }
         }.onFailure { e ->
             Timber.e(e, "[PODCAST_SYNC] Failed to sync saved podcast shows after retries")
+            recordFailure(e)
         }
 
         // Also sync subscribed podcast channels (subscribed via subscribeChannel API)
@@ -1551,18 +1611,22 @@ class SyncUtils @Inject constructor(
                             delay(DB_OPERATION_DELAY_MS)
                         } catch (e: Exception) {
                             Timber.e(e, "[PODCAST_SYNC] Failed to process subscribed channel: ${podcast.id}")
+                            recordFailure(e)
                         }
                     }
 
                     Timber.d("[PODCAST_SYNC] Synced ${remotePodcasts.size} subscribed podcast channels successfully")
                 } catch (e: Exception) {
                     Timber.e(e, "[PODCAST_SYNC] Error processing subscribed podcast channels")
+                    recordFailure(e)
                 }
             }.onFailure { e ->
                 Timber.e(e, "[PODCAST_SYNC] Failed to fetch subscribed podcast channels from YouTube")
+                recordFailure(e)
             }
         }.onFailure { e ->
             Timber.e(e, "[PODCAST_SYNC] Failed to sync subscribed podcast channels after retries")
+            recordFailure(e)
         }
 
         // Cleanup: Remove local podcasts that are no longer subscribed on YouTube Music
@@ -1581,29 +1645,46 @@ class SyncUtils @Inject constructor(
                         Timber.d("[PODCAST_SYNC] Unsubscribed from local podcast: ${podcast.id}")
                     } catch (e: Exception) {
                         Timber.e(e, "[PODCAST_SYNC] Failed to cleanup podcast: ${podcast.id}")
+                        recordFailure(e)
                     }
                 }
             }
         } catch (e: Exception) {
             Timber.e(e, "[PODCAST_SYNC] Error during cleanup")
+            recordFailure(e)
+        }
+
+        if (fetchedSavedShows && fetchedSubscribedChannels && failureMessage == null) {
+            SyncStatus.Completed
+        } else {
+            SyncStatus.Error(failureMessage ?: "Podcast sync did not complete")
         }
     }
 
-    private suspend fun executeSyncEpisodesForLater() = withContext(Dispatchers.IO) {
+    private suspend fun executeSyncEpisodesForLater(): SyncStatus = withContext(Dispatchers.IO) {
         Timber.d("[EPISODES_SYNC] executeSyncEpisodesForLater() started")
         if (!isLoggedIn()) {
             Timber.w("[EPISODES_SYNC] Skipping syncEpisodesForLater - user not logged in")
-            return@withContext
+            return@withContext SyncStatus.Error("User not logged in")
         }
         Timber.d("[EPISODES_SYNC] User is logged in, proceeding with sync")
 
         updateState { copy(currentOperation = "Syncing episodes for later") }
+        var fetchedEpisodes = false
+        var failureMessage: String? = null
+
+        fun recordFailure(error: Throwable) {
+            if (failureMessage == null) {
+                failureMessage = error.message ?: "Unknown error"
+            }
+        }
 
         withRetry {
             Timber.d("[EPISODES_SYNC] Calling YouTube.episodesForLater() (VLSE playlist)")
             YouTube.episodesForLater()
         }.onSuccess { result ->
             result.onSuccess { remoteEpisodes ->
+                fetchedEpisodes = true
                 try {
                     Timber.d("[EPISODES_SYNC] Fetched ${remoteEpisodes.size} episodes from VLSE playlist")
                     val remoteIds = remoteEpisodes.map { it.id }.toSet()
@@ -1669,6 +1750,7 @@ class SyncUtils @Inject constructor(
                             delay(DB_OPERATION_DELAY_MS)
                         } catch (e: Exception) {
                             Timber.e(e, "[EPISODES_SYNC] Failed to process episode: ${episode.id}")
+                            recordFailure(e)
                         }
                     }
 
@@ -1683,18 +1765,28 @@ class SyncUtils @Inject constructor(
                             Timber.d("[EPISODES_SYNC] Removed episode from library: ${song.id}")
                         } catch (e: Exception) {
                             Timber.e(e, "[EPISODES_SYNC] Failed to cleanup episode: ${song.id}")
+                            recordFailure(e)
                         }
                     }
 
                     Timber.d("[EPISODES_SYNC] Synced ${remoteEpisodes.size} episodes successfully")
                 } catch (e: Exception) {
                     Timber.e(e, "[EPISODES_SYNC] Error processing episodes")
+                    recordFailure(e)
                 }
             }.onFailure { e ->
                 Timber.e(e, "[EPISODES_SYNC] Failed to fetch episodes from YouTube")
+                recordFailure(e)
             }
         }.onFailure { e ->
             Timber.e(e, "[EPISODES_SYNC] Failed to sync episodes after retries")
+            recordFailure(e)
+        }
+
+        if (fetchedEpisodes && failureMessage == null) {
+            SyncStatus.Completed
+        } else {
+            SyncStatus.Error(failureMessage ?: "Episodes sync did not complete")
         }
     }
 
@@ -1983,11 +2075,10 @@ class SyncUtils @Inject constructor(
                 }
             }
 
-            // Reset sync timestamp
-            val now = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC)
-            cachedLastSyncEpoch = now
+            // Allow the cleared library to be synchronized again immediately.
+            cachedLastSyncEpoch = 0L
             context.safeDataStoreEdit { settings ->
-                settings[LastFullSyncKey] = now
+                settings.remove(LastFullSyncKey)
             }
 
             updateState { copy(overallStatus = SyncStatus.Completed, currentOperation = "") }

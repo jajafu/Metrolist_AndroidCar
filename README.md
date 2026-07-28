@@ -15,6 +15,7 @@ This fork is maintained by [jajafu](https://github.com/jajafu) and focuses on a 
 - Removed the sleep button from the playback cover and enlarged the other buttons.
 - Branded the installed app as `Metrolist_AndroidCar` with a black music-car logo across the launcher, About screen, and playback notifications.
 - New playlists default to YouTube Music sync when the account and sync setting are active. Failed playlist creation, song additions, and song removals are stored outside the App database, retried automatically, and shown as pending in the playlist library; duplicate-song removals preserve the exact YouTube occurrence, and new remote playlists receive a reconciliation grace period.
+- Automatic full sync starts its cooldown only after every required component and pending playlist edit succeeds. Partial failures remain visible and can be retried immediately.
 
 ## Features
 
