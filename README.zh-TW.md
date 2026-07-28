@@ -19,7 +19,7 @@ Metrolist Android Car 是 [Metrolist](https://github.com/MetrolistGroup/Metrolis
 
 ## 功能
 
-- 獨立調整播放音量。一般 YouTube Music 僅跟隨系統音量，無法獨立控制。本軟體可獨立設定音樂音量，降低對導航語音的干擾。
+- 獨立調整播放音量。一般 YouTube Music 僅跟隨系統音量，無法獨立控制。本軟體可獨立設定音樂音量，降低對導航語音的干擾；導航壓低音量或短暫暫停播放後，音樂音量會可靠地恢復至原本設定。
 - 播放 YouTube Music 音樂。
 - 背景播放與離線下載。
 - 跳過靜音、睡眠計時、音量正常化、速度與音調調整。

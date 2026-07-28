@@ -296,9 +296,7 @@ class MusicService :
 
     private lateinit var audioManager: AudioManager
     private var audioFocusRequest: AudioFocusRequest? = null
-    private var lastAudioFocusState = AudioManager.AUDIOFOCUS_NONE
-    private var wasPlayingBeforeAudioFocusLoss = false
-    private var hasAudioFocus = false
+    private val audioFocusState = PlaybackAudioFocusState()
     private var reentrantFocusGain = false
     private var wasPlayingBeforeVolumeMute = false
     private var isPausedByVolumeMute = false
@@ -1423,86 +1421,90 @@ class MusicService :
         when (focusChange) {
             AudioManager.AUDIOFOCUS_GAIN,
             AudioManager.AUDIOFOCUS_GAIN_TRANSIENT,
+            AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK,
             -> {
-                hasAudioFocus = true
-                audioFocusVolumeMultiplier.value = 1f
+                val shouldResumePlayback = audioFocusState.onFocusGain()
+                applyAudioFocusVolume()
 
-                if (wasPlayingBeforeAudioFocusLoss && !player.isPlaying && !reentrantFocusGain) {
+                if (shouldResumePlayback && !player.isPlaying && !reentrantFocusGain) {
                     reentrantFocusGain = true
                     scope.launch {
-                        delay(300)
-                        if (hasAudioFocus && wasPlayingBeforeAudioFocusLoss && !player.isPlaying) {
-                            if (castConnectionHandler?.isCasting?.value != true) {
-                                player.play()
+                        try {
+                            delay(300)
+                            if (audioFocusState.canPlayAudio && !player.isPlaying) {
+                                if (castConnectionHandler?.isCasting?.value != true) {
+                                    player.play()
+                                }
                             }
-                            wasPlayingBeforeAudioFocusLoss = false
+                        } finally {
+                            reentrantFocusGain = false
                         }
-                        reentrantFocusGain = false
                     }
                 }
-
-                applyEffectiveVolume()
-                lastAudioFocusState = focusChange
             }
 
             AudioManager.AUDIOFOCUS_LOSS -> {
-                hasAudioFocus = false
-                audioFocusVolumeMultiplier.value = 1f
-                wasPlayingBeforeAudioFocusLoss = player.isPlaying
                 if (player.isPlaying) {
                     player.pause()
                 }
+                audioFocusState.onPermanentLoss()
+                applyAudioFocusVolume()
                 abandonAudioFocus()
-                lastAudioFocusState = focusChange
             }
 
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
-                hasAudioFocus = false
-                audioFocusVolumeMultiplier.value = 1f
-                wasPlayingBeforeAudioFocusLoss = player.isPlaying
-                if (player.isPlaying) {
+                val wasPlaying = player.isPlaying
+                audioFocusState.onTransientLoss(wasPlaying)
+                if (wasPlaying) {
                     player.pause()
                 }
-                lastAudioFocusState = focusChange
+                applyAudioFocusVolume()
             }
 
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
-                hasAudioFocus = false
-                audioFocusVolumeMultiplier.value = 0.2f
-                wasPlayingBeforeAudioFocusLoss = player.isPlaying
-                if (player.isPlaying) {
-                    applyEffectiveVolume()
-                }
-                lastAudioFocusState = focusChange
-            }
-
-            AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK -> {
-                hasAudioFocus = true
-                audioFocusVolumeMultiplier.value = 1f
-                applyEffectiveVolume()
-                lastAudioFocusState = focusChange
+                audioFocusState.onDuck()
+                applyAudioFocusVolume()
             }
         }
     }
 
     private fun requestAudioFocus(): Boolean {
-        if (hasAudioFocus) return true
+        if (audioFocusState.canPlayAudio) return true
 
         audioFocusRequest?.let { request ->
             val result = audioManager.requestAudioFocus(request)
-            hasAudioFocus = result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
-            return hasAudioFocus
+            return when (result) {
+                AudioManager.AUDIOFOCUS_REQUEST_GRANTED -> {
+                    audioFocusState.onFocusRequestGranted()
+                    applyAudioFocusVolume()
+                    true
+                }
+
+                AudioManager.AUDIOFOCUS_REQUEST_DELAYED -> {
+                    Timber.tag(TAG).d("Audio focus request delayed")
+                    false
+                }
+
+                else -> {
+                    Timber.tag(TAG).w("Audio focus request failed: $result")
+                    false
+                }
+            }
         }
         return false
     }
 
     private fun abandonAudioFocus() {
-        if (hasAudioFocus) {
-            audioFocusRequest?.let { request ->
-                audioManager.abandonAudioFocusRequest(request)
-                hasAudioFocus = false
-            }
+        audioFocusRequest?.let { request ->
+            audioManager.abandonAudioFocusRequest(request)
         }
+        audioFocusState.onAbandoned()
+        applyAudioFocusVolume()
+    }
+
+    private fun applyAudioFocusVolume() {
+        audioFocusVolumeMultiplier.value = audioFocusState.volumeMultiplier
+        applyEffectiveVolume()
     }
 
     private fun clearPersistedQueueFiles() {
@@ -1511,7 +1513,7 @@ class MusicService :
         runCatching { filesDir.resolve(PERSISTENT_PLAYER_STATE_FILE).delete() }
     }
 
-    fun hasAudioFocusForPlayback(): Boolean = hasAudioFocus
+    fun hasAudioFocusForPlayback(): Boolean = audioFocusState.canPlayAudio
 
     private fun waitOnNetworkError() {
         if (waitingForNetworkConnection.value) return
@@ -3330,6 +3332,7 @@ class MusicService :
         }
 
         incrementRetryCount(mediaId)
+        val shouldResumeAfterRecovery = player.isPlaying
 
         retryJob?.cancel()
         retryJob =
@@ -3356,9 +3359,9 @@ class MusicService :
 
                         Timber.tag(TAG).d("Retrying playback for $mediaId after AudioTrack error")
 
-                        if (wasPlayingBeforeAudioFocusLoss) {
+                        if (shouldResumeAfterRecovery) {
                             delay(500) // Brief delay to allow renderer to be ready
-                            if (hasAudioFocus && playerInitialized.value) {
+                            if (audioFocusState.canPlayAudio && playerInitialized.value) {
                                 if (castConnectionHandler?.isCasting?.value != true) {
                                     player.play()
                                 }
