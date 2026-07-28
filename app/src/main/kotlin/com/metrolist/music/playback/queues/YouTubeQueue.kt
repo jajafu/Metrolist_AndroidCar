@@ -18,8 +18,6 @@ class YouTubeQueue(
     override val preloadItem: MediaMetadata? = null,
 ) : Queue {
     private var continuation: String? = null
-    private var retryCount = 0
-    private val maxRetries = 3
 
     private class EmptyRadioQueueException : IllegalStateException()
 
@@ -38,7 +36,7 @@ class YouTubeQueue(
                 endpoint.playlistId?.startsWith("RDAMVM") == true ||
                 (endpoint.videoId != null && endpoint.playlistId == null)
 
-            for (attempt in 0..maxRetries) {
+            repeat(MAX_ATTEMPTS) {
                 try {
                     val nextResult = YouTube.next(endpoint, continuation).getOrThrow()
                     
@@ -59,7 +57,6 @@ class YouTubeQueue(
 
                     endpoint = nextResult.endpoint
                     continuation = nextResult.continuation
-                    retryCount = 0
                     return@withContext Queue.Status(
                         title = nextResult.title,
                         items = items.map { it.toMediaItem() },
@@ -85,21 +82,17 @@ class YouTubeQueue(
 
     override suspend fun nextPage(): List<MediaItem> {
         return withContext(IO) {
+            val currentContinuation = continuation ?: return@withContext emptyList()
             var lastException: Throwable? = null
 
-            for (attempt in 0..maxRetries) {
+            repeat(MAX_ATTEMPTS) {
                 try {
-                    val nextResult = YouTube.next(endpoint, continuation).getOrThrow()
+                    val nextResult = YouTube.next(endpoint, currentContinuation).getOrThrow()
                     endpoint = nextResult.endpoint
                     continuation = nextResult.continuation
-                    retryCount = 0
                     return@withContext nextResult.items.map { it.toMediaItem() }
                 } catch (e: Exception) {
                     lastException = e
-                    retryCount++
-                    if (retryCount >= maxRetries) {
-                        continuation = null // Stop trying to load more
-                    }
                 }
             }
             throw lastException ?: Exception("Failed to get next page")
@@ -107,6 +100,8 @@ class YouTubeQueue(
     }
 
     companion object {
+        private const val MAX_ATTEMPTS = 3
+
         /**
          * Creates a radio queue based on a song.
          * Explicitly requests the RDAMVM playlist to trigger automotive/radio mixing.

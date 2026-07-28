@@ -339,6 +339,8 @@ class MusicService :
     private lateinit var audioQuality: com.metrolist.music.constants.AudioQuality
 
     private var currentQueue: Queue = EmptyQueue
+    private var loadMoreJob: Job? = null
+    private var resumePlaybackAfterLoadMore = false
     var queueTitle: String? = null
 
     val currentMediaMetadata = MutableStateFlow<com.metrolist.music.models.MediaMetadata?>(null)
@@ -1935,6 +1937,9 @@ class MusicService :
 
         resetPlaybackRecoveryForUserAction()
 
+        loadMoreJob?.cancel()
+        loadMoreJob = null
+        resumePlaybackAfterLoadMore = false
         currentQueue = queue
         queueTitle = null
         val persistShuffleAcrossQueues = dataStore.get(PersistentShuffleAcrossQueuesKey, false)
@@ -2597,6 +2602,97 @@ class MusicService :
     private var lastTransitionedMediaId: String? = null
     private var previousEpisodePosition: Long = 0L
 
+    private fun loadMoreIfNeeded(
+        resumePlaybackWhenAdded: Boolean = false,
+    ) {
+        if (!cachedAutoLoadMore ||
+            (cachedDisableLoadMoreWhenRepeatAll && player.repeatMode == REPEAT_MODE_ALL)
+        ) {
+            return
+        }
+
+        if (resumePlaybackWhenAdded) {
+            resumePlaybackAfterLoadMore = true
+        }
+
+        if (loadMoreJob?.isActive == true) return
+
+        val remainingItemCount = player.mediaItemCount - player.currentMediaItemIndex
+        if (!resumePlaybackWhenAdded && remainingItemCount > LOAD_MORE_THRESHOLD) return
+
+        val queue = currentQueue
+        if (!queue.hasNextPage()) {
+            resumePlaybackAfterLoadMore = false
+            return
+        }
+
+        val existingMediaIds =
+            buildSet {
+                repeat(player.mediaItemCount) { index ->
+                    add(player.getMediaItemAt(index).mediaId)
+                }
+            }
+
+        loadMoreJob =
+            scope.launch {
+                try {
+                    val mediaItems =
+                        withContext(Dispatchers.IO) {
+                            var playableItems = emptyList<MediaItem>()
+                            var checkedPageCount = 0
+                            while (playableItems.isEmpty() &&
+                                queue.hasNextPage() &&
+                                checkedPageCount < MAX_EMPTY_LOAD_MORE_PAGES
+                            ) {
+                                playableItems =
+                                    queue
+                                        .nextPage()
+                                        .filterExplicit(cachedHideExplicit)
+                                        .filterVideoSongs(cachedHideVideoSongs)
+                                        .filterNot { item -> item.mediaId in existingMediaIds }
+                                checkedPageCount++
+                            }
+                            playableItems
+                        }
+
+                    if (queue !== currentQueue ||
+                        player.playbackState == STATE_IDLE ||
+                        mediaItems.isEmpty()
+                    ) {
+                        return@launch
+                    }
+
+                    val shouldResume =
+                        resumePlaybackAfterLoadMore &&
+                            player.playbackState == Player.STATE_ENDED
+                    player.addMediaItems(mediaItems)
+                    if (player.shuffleModeEnabled) {
+                        applyShuffleOrder(
+                            player.currentMediaItemIndex,
+                            player.mediaItemCount,
+                            cachedShufflePlaylistFirst,
+                        )
+                    }
+                    if (shouldResume) {
+                        player.seekToNextMediaItem()
+                        player.prepare()
+                        if (castConnectionHandler?.isCasting?.value != true) {
+                            player.play()
+                        }
+                    }
+                } catch (error: CancellationException) {
+                    throw error
+                } catch (error: Exception) {
+                    Timber.tag(TAG).w(error, "Failed to load more queue items")
+                } finally {
+                    if (queue === currentQueue) {
+                        resumePlaybackAfterLoadMore = false
+                    }
+                    loadMoreJob = null
+                }
+            }
+    }
+
     /**
      * Save podcast episode playback position to database.
      * Only saves if the item is an episode and position is meaningful (> 3 seconds).
@@ -2698,27 +2794,8 @@ class MusicService :
             }
         }
 
-        if (cachedAutoLoadMore &&
-            reason != Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT &&
-            player.mediaItemCount - player.currentMediaItemIndex <= 5 &&
-            currentQueue.hasNextPage() &&
-            !(cachedDisableLoadMoreWhenRepeatAll && player.repeatMode == REPEAT_MODE_ALL)
-        ) {
-            scope.launch(SilentHandler) {
-                val mediaItems =
-                    withContext(Dispatchers.IO) {
-                        currentQueue
-                            .nextPage()
-                            .filterExplicit(cachedHideExplicit)
-                            .filterVideoSongs(cachedHideVideoSongs)
-                    }
-                if (player.playbackState != STATE_IDLE && mediaItems.isNotEmpty()) {
-                    player.addMediaItems(mediaItems)
-                    if (player.shuffleModeEnabled) {
-                        applyShuffleOrder(player.currentMediaItemIndex, player.mediaItemCount, cachedShufflePlaylistFirst)
-                    }
-                }
-            }
+        if (reason != Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT) {
+            loadMoreIfNeeded()
         }
 
         if (cachedPersistentQueue) {
@@ -2731,8 +2808,11 @@ class MusicService :
     ) {
         if (playbackState == Player.STATE_ENDED) {
             // Check sleep timer guard - don't autoplay/repeat if sleep timer will pause
-            val timer = sleepTimer ?: return
-            if (timer.isActive && timer.pauseWhenSongEnd) {
+            val shouldPauseForSleepTimer =
+                sleepTimer?.let { timer ->
+                    timer.isActive && timer.pauseWhenSongEnd
+                } ?: false
+            if (shouldPauseForSleepTimer) {
                 return
             }
 
@@ -2751,6 +2831,8 @@ class MusicService :
                 player.play()
                 return
             }
+
+            loadMoreIfNeeded(resumePlaybackWhenAdded = true)
 
             if (cachedAutoplay && player.hasNextMediaItem()) {
                 player.seekToNextMediaItem()
@@ -4990,6 +5072,8 @@ class MusicService :
         const val NEXT_TRACK_PREFETCH_LENGTH = CHUNK_LENGTH
         const val NEXT_TRACK_PREFETCH_DELAY_MS = 500L
         const val PREFETCH_READ_BUFFER_SIZE = 64 * 1024
+        const val LOAD_MORE_THRESHOLD = 5
+        const val MAX_EMPTY_LOAD_MORE_PAGES = 3
         const val PERSISTENT_QUEUE_FILE = "persistent_queue.data"
         const val PERSISTENT_AUTOMIX_FILE = "persistent_automix.data"
         const val PERSISTENT_PLAYER_STATE_FILE = "persistent_player_state.data"

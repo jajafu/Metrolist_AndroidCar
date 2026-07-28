@@ -13,7 +13,6 @@ This fork is maintained by [jajafu](https://github.com/jajafu) and focuses on a 
 - Increased dark-mode contrast by changing adjustment-button outlines to pure white.
 - Increased the cached playback queue to three tracks.
 - Removed the sleep button from the playback cover and enlarged the other buttons.
-- Stores liked-song records in a single self-maintained JSON backup in Downloads for recovery after reinstall.
 - Branded the installed app as `Metrolist_AndroidCar` with a black music-car logo across the launcher, About screen, and playback notifications.
 
 ## Features

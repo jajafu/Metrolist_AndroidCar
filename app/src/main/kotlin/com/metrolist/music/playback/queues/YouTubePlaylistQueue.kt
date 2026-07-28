@@ -22,8 +22,6 @@ class YouTubePlaylistQueue(
     override val preloadItem: MediaMetadata? = null,
 ) : Queue {
     private var continuation: String? = initialContinuation
-    private var retryCount = 0
-    private val maxRetries = 3
 
     override suspend fun getInitialStatus(): Queue.Status {
         return withContext(IO) {
@@ -52,21 +50,20 @@ class YouTubePlaylistQueue(
             val currentContinuation = continuation ?: return@withContext emptyList()
             var lastException: Throwable? = null
             
-            for (attempt in 0..maxRetries) {
+            repeat(MAX_ATTEMPTS) {
                 try {
                     val continuationPage = YouTube.playlistContinuation(currentContinuation).getOrThrow()
                     continuation = continuationPage.continuation
-                    retryCount = 0
                     return@withContext continuationPage.songs.map { it.toMediaItem() }
                 } catch (e: Exception) {
                     lastException = e
-                    retryCount++
-                    if (retryCount >= maxRetries) {
-                        continuation = null
-                    }
                 }
             }
             throw lastException ?: Exception("Failed to get next page")
         }
+    }
+
+    companion object {
+        private const val MAX_ATTEMPTS = 3
     }
 }
