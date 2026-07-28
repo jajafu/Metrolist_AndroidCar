@@ -13,18 +13,38 @@ Metrolist Android Car 是 [Metrolist](https://github.com/MetrolistGroup/Metrolis
 - 暗黑模式下，將調整按鈕外框改為純白色，增加對比度。
 - 將快取播放列表增加為 3 首歌曲。
 - 撥放封面下刪除睡眠按鈕，放大其他按鈕。
+- 將已安裝的 App 品牌化為 `Metrolist_AndroidCar`，在啟動器、關於頁面與播放通知中使用黑色音樂車 Logo。
 
 ## 功能
+
 - 獨立調整播放音量。一般 YouTube Music 僅跟隨系統音量，無法獨立控制。本軟體可獨立設定音樂音量，降低對導航語音的干擾。
 - 播放 YouTube Music 音樂。
 - 背景播放與離線下載。
 - 跳過靜音、睡眠計時、音量正常化、速度與音調調整。
 - 同步歌詞與歌詞翻譯。
 - 搜尋歌曲、專輯、藝人與播放列表。
-- 音樂庫、私人播放列表與帳號同步。
+- 音樂庫、本機播放列表與帳號同步。
 - 與其他使用者一起聆聽。
 - Material 3 介面，支援亮色、暗色、全黑、動態與預設配色主題。
 - 針對 Android Auto 調整版面與播放控制。
+- 支援 YouTube 目前圖片 CDN 格式的高解析度圖片網址處理。
+- 車機導向的預設設定，包含大型網格與精簡的自動生成播放列表。
+
+## 建置與更新
+
+在本機建置 FOSS Release 版本：
+
+```bash
+./gradlew :app:assembleFossRelease
+```
+
+手動觸發的 GitHub Actions workflow 只會建置 FOSS Release APK，並發布到本專案的 GitHub Releases。它需要固定的 Android 簽章 Secrets：`RELEASE_KEYSTORE_BASE64`、`RELEASE_STORE_PASSWORD`、`RELEASE_KEY_ALIAS` 與 `RELEASE_KEY_PASSWORD`；請勿提交 keystore 或密碼。
+
+App 內更新器會檢查[本專案的 Releases](https://github.com/jajafu/Metrolist_AndroidCar/releases)，並開啟符合版本的 APK 下載頁供確認。Android 仍會要求使用者核准安裝。
+
+Release 名稱可能包含 `-car` 後綴；更新器會比較版本中的數字部分，因此目前版本不會被誤判為有新更新。
+
+首次從舊版 Debug APK 安裝時，因為使用不同的 application ID，必須先解除安裝 Debug 版本。之後的 FOSS Release APK 使用相同簽章金鑰，可以直接覆蓋更新。
 
 ## 原始專案與致謝
 

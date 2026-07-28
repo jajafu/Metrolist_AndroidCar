@@ -12,7 +12,7 @@ Metrolist_AndroidCar 是一個使用 Kotlin 開發的第三方 YouTube Music 客
 
 ## AI 專屬規範
 
-1. 修改 App 相關檔案後更新 README.md，若沒有太大改變，不要隨意更新 README，不要一直膨脹內容。
+1. 修改 App 相關檔案後，若變更對使用者可見，必須同步更新 `README.md` 與 `README.zh-TW.md`。兩份 README 的段落、功能清單、建置／更新說明、品牌資訊與重要規則必須保持一致，只翻譯語言，不得只更新其中一份；若沒有太大改變，不要隨意更新 README，不要一直膨脹內容。
 2. 先執行 `git status --short --branch`；若工作樹有未提交變更，不得直接拉取或覆寫，應先提交／推送既有變更，或停下來請使用者決定如何處理。
 - 工作樹乾淨時，執行 `git fetch origin`，再執行 `git pull --rebase origin main`（或目前任務指定的目標分支）。
 - 若同步發生衝突、遠端未設定、認證失敗或無法確認已是最新版本，必須先停止修改並回報，不得在未同步狀態下繼續更新。
