@@ -19,6 +19,7 @@ This fork is maintained by [jajafu](https://github.com/jajafu) and focuses on a 
 - Rapid queue or radio selections keep only the latest request, preventing slower network responses from replacing the active playback queue.
 - Backup and restore file work runs in the background. Restores validate staged database and settings files before replacing live data, roll back all replacements on failure, and restart into a usable database state when required.
 - Foreground-service startup handling and widget themes are compatible with Android 8.0 (API 26) through current Android releases.
+- Wrapped safely supports listening histories with fewer than five eligible top songs.
 
 ## Features
 

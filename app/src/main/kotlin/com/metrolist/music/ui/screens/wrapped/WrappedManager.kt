@@ -40,6 +40,24 @@ sealed class PlaylistCreationState {
     object Success : PlaylistCreationState()
 }
 
+internal data class WrappedTrackSelection(
+    val introSongId: String,
+    val topSongId: String,
+    val endSongId: String
+)
+
+internal fun selectWrappedTracks(topSongIds: List<String>): WrappedTrackSelection? {
+    val topSongId = topSongIds.firstOrNull() ?: return null
+    val introSongId = topSongIds.drop(5).randomOrNull() ?: topSongIds.last()
+    val endSongId = topSongIds.drop(2).take(3).randomOrNull() ?: topSongIds.last()
+
+    return WrappedTrackSelection(
+        introSongId = introSongId,
+        topSongId = topSongId,
+        endSongId = endSongId
+    )
+}
+
 class WrappedManager(
     private val databaseDao: DatabaseDao,
     private val context: Context
@@ -98,7 +116,8 @@ class WrappedManager(
     private suspend fun generatePlaylistMap() {
         val topSongs = _state.value.topSongs
         val topArtists = _state.value.topArtists
-        if (topSongs.isEmpty()) {
+        val trackSelection = selectWrappedTracks(topSongs.map { it.id })
+        if (trackSelection == null) {
             Timber.tag("WrappedManager").w("Cannot generate playlist map, top songs list is empty.")
             _state.update { it.copy(trackMap = emptyMap()) }
             return
@@ -108,17 +127,16 @@ class WrappedManager(
             val playlistMap = mutableMapOf<WrappedScreenType, String>()
 
             // Intro Part: Random song from top 6-30
-            val introSongPool = topSongs.subList(5, topSongs.size)
-            val introSong = introSongPool.randomOrNull()?.id ?: topSongs.last().id
+            val introSong = trackSelection.introSongId
             playlistMap[WrappedScreenType.Welcome] = introSong
             playlistMap[WrappedScreenType.MinutesTease] = introSong
             playlistMap[WrappedScreenType.MinutesReveal] = introSong
 
             // Music Part: Top 1 song
             val topSong = topSongs.first()
-            playlistMap[WrappedScreenType.TotalSongs] = topSong.id
-            playlistMap[WrappedScreenType.TopSongReveal] = topSong.id
-            playlistMap[WrappedScreenType.Top5Songs] = topSong.id
+            playlistMap[WrappedScreenType.TotalSongs] = trackSelection.topSongId
+            playlistMap[WrappedScreenType.TopSongReveal] = trackSelection.topSongId
+            playlistMap[WrappedScreenType.Top5Songs] = trackSelection.topSongId
 
             // Album Part: Random song from top album
             val topAlbum = _state.value.topAlbum
@@ -162,8 +180,7 @@ class WrappedManager(
             playlistMap[WrappedScreenType.Top5Artists] = artistSong
 
             // End Part
-            val endSongPool = topSongs.subList(2, 5)
-            val endSong = endSongPool.randomOrNull()?.id ?: topSongs[2].id
+            val endSong = trackSelection.endSongId
             playlistMap[WrappedScreenType.Playlist] = endSong
             playlistMap[WrappedScreenType.Conclusion] = "2-p9DM2Xvsc"
 
