@@ -226,6 +226,15 @@ object YTPlayerUtils {
                 continue
             }
 
+            if (shouldSkipFailedWebRemixClient(
+                    clientName = client.clientName,
+                    webRemixPreviouslyFailed = webRemixFailedIds.contains(videoId),
+                )
+            ) {
+                Timber.tag(logTag).d("Skipping WEB_REMIX after a playback failure for videoId=$videoId")
+                continue
+            }
+
             if (client.loginRequired && !isLoggedIn) {
                 Timber.tag(logTag).d("Skipping client ${client.clientName} - requires login")
                 continue
@@ -412,8 +421,11 @@ object YTPlayerUtils {
                 // GET that ExoPlayer makes. Skip HEAD validation for the main client and let ExoPlayer
                 // try directly, UNLESS this videoId already 403'd on GET (markWebRemixFailed) — then
                 // fall through to the fallback clients. Saves a validateStatus round-trip per resolve.
-                if (currentClient.clientName == "WEB_REMIX" &&
-                    !webRemixFailedIds.contains(videoId)
+                if (shouldSkipWebRemixValidation(
+                        clientName = currentClient.clientName,
+                        webRemixPreviouslyFailed = webRemixFailedIds.contains(videoId),
+                        musicVideoType = musicVideoType,
+                    )
                 ) {
                     Timber.tag(logTag).d("WEB_REMIX — skipping HEAD validation, letting ExoPlayer try directly")
                     Timber.tag(TAG).i("Playback: client=${currentClient.clientName}, videoId=$videoId")

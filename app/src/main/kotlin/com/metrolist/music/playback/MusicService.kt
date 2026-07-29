@@ -528,6 +528,13 @@ class MusicService :
             }
         }
     )
+    private val streamClientByMediaId = Collections.synchronizedMap(
+        object : LinkedHashMap<String, String>(0, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, String>): Boolean {
+                return size > 500
+            }
+        }
+    )
 
     // Tracks mediaIds for which a recoverSong() coroutine is currently in flight.
     //
@@ -3478,13 +3485,24 @@ class MusicService :
             }
         }
 
-        // For IO_UNSPECIFIED and IO_BAD_HTTP_STATUS, try recovery first
-        if (error.errorCode == PlaybackException.ERROR_CODE_IO_UNSPECIFIED ||
-            error.errorCode == PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS
-        ) {
-            Timber.tag(TAG).d("IO error detected (${error.errorCode}), attempting recovery")
-            handleGenericIOError(mediaId)
-            return
+        when (playbackIoRecoveryAction(error.errorCode, mediaId?.let(streamClientByMediaId::get))) {
+            PlaybackIoRecoveryAction.RETRY_CURRENT_CLIENT -> {
+                Timber.tag(TAG).d("HTTP IO error detected (${error.errorCode}), retrying current stream client")
+                handleGenericIOError(mediaId)
+                return
+            }
+
+            PlaybackIoRecoveryAction.TRY_FALLBACK_CLIENT -> {
+                Timber.tag(TAG).d("WEB_REMIX IO error detected (${error.errorCode}), trying fallback clients")
+                handleStreamClientFallback(mediaId)
+                return
+            }
+
+            PlaybackIoRecoveryAction.DO_NOT_RETRY -> {
+                Timber.tag(TAG).d("IO error ${error.errorCode} is not recoverable with the current stream client")
+            }
+
+            null -> Unit
         }
 
         if (cachedPreference(AutoSkipNextOnErrorKey, false)) {
@@ -3786,6 +3804,34 @@ class MusicService :
                 player.prepare()
 
                 Timber.tag(TAG).d("Retrying playback for $mediaId after generic IO error")
+            }
+    }
+
+    private fun handleStreamClientFallback(mediaId: String?) {
+        if (mediaId == null) {
+            handleFinalFailure()
+            return
+        }
+
+        incrementRetryCount(mediaId)
+        songUrlCache.remove(mediaId)
+        YTPlayerUtils.markWebRemixFailed(mediaId)
+
+        retryJob?.cancel()
+        retryJob =
+            scope.launch {
+                delay(RETRY_DELAY_MS)
+
+                val currentPosition = player.currentPosition
+                val currentIndex = player.currentMediaItemIndex
+                if (currentIndex == C.INDEX_UNSET) {
+                    handleFinalFailure()
+                    return@launch
+                }
+
+                player.seekTo(currentIndex, currentPosition)
+                player.prepare()
+                Timber.tag(TAG).d("Retrying playback for $mediaId with WEB_REMIX excluded")
             }
     }
 
@@ -4271,6 +4317,7 @@ class MusicService :
 
                 val streamUrl = nonNullPlayback.streamUrl
                 currentStreamClient.value = nonNullPlayback.streamClient
+                streamClientByMediaId[mediaId] = nonNullPlayback.streamClient
 
                 songUrlCache[mediaId] =
                     streamUrl to System.currentTimeMillis() + (nonNullPlayback.streamExpiresInSeconds * 1000L)

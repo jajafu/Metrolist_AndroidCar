@@ -4,6 +4,18 @@
 
 This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.40
+
+### 中文
+
+- Podcast、UGC 與未知媒體型態不再略過 WEB_REMIX 串流驗證，驗證失敗時會繼續嘗試其他播放來源。
+- WEB_REMIX 實際播放發生 `IO_UNSPECIFIED` 時，會在有限重試內排除該來源並重新解析；其他來源的相同錯誤不再無意義地重試同一網址。
+
+### English
+
+- Validate WEB_REMIX streams for podcast, UGC, and unknown media types, continuing through other playback sources when validation fails.
+- When WEB_REMIX playback returns `IO_UNSPECIFIED`, exclude that source and resolve again within the existing retry limit; the same error from other clients no longer retries the same unsuitable URL.
+
 ## 13.6.39
 
 ### 中文
