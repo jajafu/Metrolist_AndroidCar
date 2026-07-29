@@ -26,8 +26,9 @@ import com.metrolist.music.db.entities.FormatEntity
 import com.metrolist.music.db.entities.SongEntity
 import com.metrolist.music.di.DownloadCache
 import com.metrolist.music.di.PlayerCache
+import com.metrolist.music.extensions.toEnum
 import com.metrolist.music.utils.YTPlayerUtils
-import com.metrolist.music.utils.enumPreference
+import com.metrolist.music.utils.dataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -37,6 +38,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -60,10 +62,19 @@ constructor(
 ) {
     private val TAG = "DownloadUtil"
     private val connectivityManager = context.getSystemService<ConnectivityManager>()!!
-    private val audioQuality by enumPreference(context, AudioQualityKey, AudioQuality.AUTO)
     private val songUrlCache = DownloadUrlCache()
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    @Volatile private var audioQuality = AudioQuality.AUTO
+
+    init {
+        scope.launch {
+            context.dataStore.data
+                .map { preferences -> preferences[AudioQualityKey].toEnum(AudioQuality.AUTO) }
+                .distinctUntilChanged()
+                .collect { audioQuality = it }
+        }
+    }
 
     val downloads = MutableStateFlow<Map<String, Download>>(emptyMap())
 

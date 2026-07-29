@@ -4,6 +4,18 @@
 
 This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.36
+
+### 中文
+
+- 將 App、播放器服務、一起聆聽、歌詞與 ViewModel 的 DataStore 設定讀取改為非同步讀取或記憶體快取，避免同步磁碟存取阻塞主執行緒。
+- 播放佇列、電台、自動混音與 Podcast 播放位置的協程失敗現在會記錄具體操作來源與完整錯誤，不再靜默吞掉例外。
+
+### English
+
+- Move DataStore preference reads in the app, playback service, Listen Together, lyrics, and ViewModels to asynchronous reads or in-memory snapshots to prevent synchronous disk access from blocking the main thread.
+- Record the specific operation and full error when queue, radio, automix, or podcast-position coroutines fail instead of silently swallowing exceptions.
+
 ## 13.6.35
 
 ### 中文

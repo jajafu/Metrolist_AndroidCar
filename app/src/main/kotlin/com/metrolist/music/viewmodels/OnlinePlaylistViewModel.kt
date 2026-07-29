@@ -265,7 +265,7 @@ class OnlinePlaylistViewModel @Inject constructor(
         fetchInitialPlaylistData() // This will also restart proactive loading if applicable
     }
 
-    private fun applySongFilters(songs: List<SongItem>): List<SongItem> {
+    private suspend fun applySongFilters(songs: List<SongItem>): List<SongItem> {
         val hideVideoSongs = context.dataStore.get(HideVideoSongsKey, false)
         return songs
             .distinctBy { it.id }

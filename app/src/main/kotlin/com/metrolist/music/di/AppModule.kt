@@ -30,6 +30,8 @@ import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.util.NavigableSet
 import java.util.TreeSet
@@ -166,9 +168,15 @@ object AppModule {
     fun providePlayerCache(
         @ApplicationContext context: Context,
         databaseProvider: DatabaseProvider,
-    ): Cache =
-        LazyCache {
-            val cacheSize = context.dataStore[MaxSongCacheSizeKey] ?: 1024
+        @ApplicationScope applicationScope: CoroutineScope,
+    ): Cache {
+        val cacheSizeDeferred =
+            applicationScope.async(Dispatchers.IO) {
+                context.dataStore[MaxSongCacheSizeKey] ?: 1024
+            }
+        return LazyCache {
+            val cacheSize =
+                runBlocking { cacheSizeDeferred.await() }
             val evictor =
                 when (cacheSize) {
                     -1 -> NoOpCacheEvictor()
@@ -180,6 +188,7 @@ object AppModule {
                 databaseProvider,
             )
         }
+    }
 
     @Singleton
     @Provides

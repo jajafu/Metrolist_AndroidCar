@@ -6,15 +6,14 @@
 package com.metrolist.music.lyrics
 
 import android.content.Context
+import androidx.datastore.preferences.core.Preferences
 import com.metrolist.lrclib.LrcLib
 import com.metrolist.music.constants.EnableLrcLibKey
-import com.metrolist.music.utils.dataStore
-import com.metrolist.music.utils.get
 
 object LrcLibLyricsProvider : LyricsProvider {
     override val name = "LrcLib"
 
-    override fun isEnabled(context: Context): Boolean = context.dataStore[EnableLrcLibKey] ?: true
+    override fun isEnabled(preferences: Preferences): Boolean = preferences[EnableLrcLibKey] ?: true
 
     override suspend fun getLyrics(
         context: Context,

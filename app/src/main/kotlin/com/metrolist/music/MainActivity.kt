@@ -253,6 +253,7 @@ class MainActivity : ComponentActivity() {
     private var playerConnectionSnapshot by mutableStateOf<PlayerConnection?>(null)
 
     private var isServiceBound = false
+    @Volatile private var stopMusicOnTaskClear = false
 
     private val serviceConnection =
         object : ServiceConnection {
@@ -348,7 +349,7 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
         // Use effective playing state so Cast (local player paused, remote playing) is included.
         val stopServiceOnClear =
-            dataStore.get(StopMusicOnTaskClearKey, false) &&
+            stopMusicOnTaskClear &&
                 playerConnection?.isEffectivelyPlaying?.value == true &&
                 isFinishing
 
@@ -384,15 +385,6 @@ class MainActivity : ComponentActivity() {
 
         // Initialize Listen Together manager
         listenTogetherManager.initialize()
-
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-            val locale =
-                dataStore[AppLanguageKey]
-                    ?.takeUnless { it == SYSTEM_DEFAULT }
-                    ?.let { Locale.forLanguageTag(it) }
-                    ?: Locale.getDefault()
-            setAppLocale(this, locale)
-        }
 
         lifecycleScope.launch {
             dataStore.data
@@ -447,15 +439,36 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        setContent {
-            MetrolistApp(
-                latestVersionName = latestVersionName,
-                onLatestVersionNameChange = { latestVersionName = it },
-                playerConnection = playerConnectionSnapshot,
-                database = database,
-                downloadUtil = downloadUtil,
-                syncUtils = syncUtils,
-            )
+        lifecycleScope.launch {
+            dataStore.data
+                .map { it[StopMusicOnTaskClearKey] ?: false }
+                .distinctUntilChanged()
+                .collectLatest { stopMusicOnTaskClear = it }
+        }
+
+        lifecycleScope.launch {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                val appLanguage = withContext(Dispatchers.IO) {
+                    dataStore[AppLanguageKey]
+                }
+                val locale =
+                    appLanguage
+                        ?.takeUnless { it == SYSTEM_DEFAULT }
+                        ?.let { Locale.forLanguageTag(it) }
+                        ?: Locale.getDefault()
+                setAppLocale(this@MainActivity, locale)
+            }
+
+            setContent {
+                MetrolistApp(
+                    latestVersionName = latestVersionName,
+                    onLatestVersionNameChange = { latestVersionName = it },
+                    playerConnection = playerConnectionSnapshot,
+                    database = database,
+                    downloadUtil = downloadUtil,
+                    syncUtils = syncUtils,
+                )
+            }
         }
     }
 
@@ -471,6 +484,7 @@ class MainActivity : ComponentActivity() {
         syncUtils: SyncUtils,
     ) {
         val checkForUpdates by rememberPreference(CheckForUpdatesKey, defaultValue = true)
+        val pauseSearchHistory by rememberPreference(PauseSearchHistoryKey, defaultValue = false)
 
         if (BuildConfig.UPDATER_AVAILABLE) {
             LaunchedEffect(checkForUpdates) {
@@ -742,7 +756,7 @@ class MainActivity : ComponentActivity() {
                             if (searchQuery.isNotEmpty()) {
                                 navController.navigate(SearchRoutes.resultRoute(searchQuery))
 
-                                if (dataStore[PauseSearchHistoryKey] != true) {
+                                if (!pauseSearchHistory) {
                                     lifecycleScope.launch(Dispatchers.IO) {
                                         runCatching {
                                             database.insert(SearchHistory(query = searchQuery))
@@ -1477,8 +1491,13 @@ class MainActivity : ComponentActivity() {
                 ?: uri.pathSegments.getOrNull(1)
         val isListenLink = uri.pathSegments.firstOrNull() == "listen" || uri.host?.equals("listen", ignoreCase = true) == true
         if (!listenCode.isNullOrBlank() && isListenLink) {
-            val username = dataStore.get(ListenTogetherUsernameKey, "").ifBlank { "Guest" }
-            listenTogetherManager.joinRoom(listenCode, username)
+            coroutineScope.launch {
+                val username =
+                    withContext(Dispatchers.IO) {
+                        dataStore.get(ListenTogetherUsernameKey, "")
+                    }.ifBlank { "Guest" }
+                listenTogetherManager.joinRoom(listenCode, username)
+            }
             return
         }
 

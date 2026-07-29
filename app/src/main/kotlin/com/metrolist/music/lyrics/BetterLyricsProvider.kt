@@ -6,15 +6,14 @@
 package com.metrolist.music.lyrics
 
 import android.content.Context
+import androidx.datastore.preferences.core.Preferences
 import com.metrolist.music.betterlyrics.BetterLyrics
 import com.metrolist.music.constants.EnableBetterLyricsKey
-import com.metrolist.music.utils.dataStore
-import com.metrolist.music.utils.get
 
 object BetterLyricsProvider : LyricsProvider {
     override val name = "BetterLyrics"
 
-    override fun isEnabled(context: Context): Boolean = context.dataStore[EnableBetterLyricsKey] ?: true
+    override fun isEnabled(preferences: Preferences): Boolean = preferences[EnableBetterLyricsKey] ?: true
 
     override suspend fun getLyrics(
         context: Context,

@@ -18,13 +18,10 @@ import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.preferencesDataStore
 import com.metrolist.music.extensions.toEnum
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlin.properties.ReadOnlyProperty
 import timber.log.Timber
 import java.io.File
 import java.io.IOException
@@ -67,30 +64,13 @@ suspend fun Context.safeDataStoreEdit(
     }
 }
 
-operator fun <T> DataStore<Preferences>.get(key: Preferences.Key<T>): T? =
-    runBlocking(Dispatchers.IO) {
-        data.first()[key]
-    }
+suspend operator fun <T> DataStore<Preferences>.get(key: Preferences.Key<T>): T? =
+    data.first()[key]
 
-fun <T> DataStore<Preferences>.get(
+suspend fun <T> DataStore<Preferences>.get(
     key: Preferences.Key<T>,
     defaultValue: T,
-): T =
-    runBlocking(Dispatchers.IO) {
-        data.first()[key] ?: defaultValue
-    }
-
-fun <T> preference(
-    context: Context,
-    key: Preferences.Key<T>,
-    defaultValue: T,
-) = ReadOnlyProperty<Any?, T> { _, _ -> context.dataStore[key] ?: defaultValue }
-
-inline fun <reified T : Enum<T>> enumPreference(
-    context: Context,
-    key: Preferences.Key<String>,
-    defaultValue: T,
-) = ReadOnlyProperty<Any?, T> { _, _ -> context.dataStore[key].toEnum(defaultValue) }
+): T = data.first()[key] ?: defaultValue
 
 @Composable
 fun <T> rememberPreference(

@@ -48,6 +48,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
@@ -295,6 +296,9 @@ class ListenTogetherClient
         private val _events = MutableSharedFlow<ListenTogetherEvent>()
         val events: SharedFlow<ListenTogetherEvent> = _events.asSharedFlow()
         private val eventQueue = Channel<ListenTogetherEvent>(Channel.UNLIMITED)
+        @Volatile private var configuredServerUrl = DEFAULT_SERVER_URL
+        @Volatile private var autoApproveJoins = false
+        @Volatile private var autoApproveSuggestions = false
 
         // Used from [loadPersistedSession] launched in init — must be declared before init (Kotlin
         // initialization order + IO thread can run the coroutine before later properties run).
@@ -427,14 +431,20 @@ class ListenTogetherClient
         /**
          * Load persisted session information from storage
          */
-        private fun loadPersistedSession() {
+        private suspend fun loadPersistedSession() {
             val generationAtLoadStart = sessionApplyGeneration.get()
             try {
-                val token = context.dataStore.get(ListenTogetherSessionTokenKey, "")
-                val roomCode = context.dataStore.get(ListenTogetherRoomCodeKey, "")
-                val userId = context.dataStore.get(ListenTogetherUserIdKey, "")
-                val isHost = context.dataStore.get(ListenTogetherIsHostKey, false)
-                val timestamp = context.dataStore.get(ListenTogetherSessionTimestampKey, 0L)
+                val preferences = context.dataStore.data.first()
+                val token = preferences[ListenTogetherSessionTokenKey] ?: ""
+                val roomCode = preferences[ListenTogetherRoomCodeKey] ?: ""
+                val userId = preferences[ListenTogetherUserIdKey] ?: ""
+                val isHost = preferences[ListenTogetherIsHostKey] ?: false
+                val timestamp = preferences[ListenTogetherSessionTimestampKey] ?: 0L
+                configuredServerUrl = normalizeServerUrl(
+                    preferences[ListenTogetherServerUrlKey] ?: DEFAULT_SERVER_URL,
+                )
+                autoApproveJoins = preferences[ListenTogetherAutoApprovalKey] ?: false
+                autoApproveSuggestions = preferences[ListenTogetherAutoApproveSuggestionsKey] ?: false
 
                 // Check if session is still valid (within grace period)
                 if (token.isNotEmpty() && roomCode.isNotEmpty() &&
@@ -470,12 +480,21 @@ class ListenTogetherClient
 
             // Migrate old server URL to new one
             migrateServerUrl()
+            scope.launch {
+                context.dataStore.data.collect { preferences ->
+                    configuredServerUrl =
+                        normalizeServerUrl(preferences[ListenTogetherServerUrlKey] ?: DEFAULT_SERVER_URL)
+                    autoApproveJoins = preferences[ListenTogetherAutoApprovalKey] ?: false
+                    autoApproveSuggestions =
+                        preferences[ListenTogetherAutoApproveSuggestionsKey] ?: false
+                }
+            }
         }
 
         /**
          * Load blocked usernames from storage
          */
-        private fun loadBlockedUsernames() {
+        private suspend fun loadBlockedUsernames() {
             try {
                 val blockedJson = context.dataStore.get(com.metrolist.music.constants.ListenTogetherBlockedUsersKey, "")
                 val blockedList =
@@ -508,7 +527,7 @@ class ListenTogetherClient
         /**
          * Migrate old server URL to new one if needed
          */
-        private fun migrateServerUrl() {
+        private suspend fun migrateServerUrl() {
             try {
                 val configuredUrl = context.dataStore.get(ListenTogetherServerUrlKey, DEFAULT_SERVER_URL)
                 val normalizedUrl = normalizeServerUrl(configuredUrl)
@@ -632,8 +651,7 @@ class ListenTogetherClient
         }
 
         private fun getServerUrl(): String {
-            val configuredUrl = context.dataStore.get(ListenTogetherServerUrlKey, DEFAULT_SERVER_URL)
-            return normalizeServerUrl(configuredUrl)
+            return configuredServerUrl
         }
 
         /**
@@ -1159,10 +1177,8 @@ class ListenTogetherClient
                         log(LogLevel.INFO, "Join request received", "User: ${payload.username}")
 
                         // Check if auto-approval is enabled
-                        val autoApprovalEnabled = context.dataStore.get(ListenTogetherAutoApprovalKey, false)
-
                         if (_role.value == RoomRole.HOST) {
-                            if (autoApprovalEnabled) {
+                            if (autoApproveJoins) {
                                 // Automatically approve the join request
                                 log(LogLevel.INFO, "Auto-approving join request", "User: ${payload.username}")
                                 approveJoin(payload.userId)
@@ -1418,9 +1434,7 @@ class ListenTogetherClient
                             log(LogLevel.INFO, "Suggestion received", "${payload.fromUsername}: ${payload.trackInfo.title}")
 
                             // Check if auto-approval of suggestions is enabled
-                            val autoApproveSuggestionsEnabled = context.dataStore.get(ListenTogetherAutoApproveSuggestionsKey, false)
-
-                            if (autoApproveSuggestionsEnabled) {
+                            if (autoApproveSuggestions) {
                                 // Automatically approve the suggestion
                                 log(LogLevel.INFO, "Auto-approving suggestion", "${payload.fromUsername}: ${payload.trackInfo.title}")
                                 approveSuggestion(payload.suggestionId)

@@ -46,7 +46,6 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import okhttp3.Credentials
 import timber.log.Timber
@@ -90,11 +89,6 @@ class App :
 
         // Initialize cipher deobfuscator for WEB_REMIX streaming
         CipherDeobfuscator.initialize(this)
-
-        // Pre-read Coil cache size on background to avoid runBlocking in newImageLoader
-        applicationScope.launch(Dispatchers.IO) {
-            cachedCoilCacheSize = dataStore.data.map { it[MaxImageCacheSizeKey] ?: 512 }.first()
-        }
 
         // تهيئة إعدادات التطبيق عند الإقلاع
         applicationScope.launch {
@@ -142,6 +136,7 @@ class App :
 
     private suspend fun initializeSettings() {
         val settings = dataStore.data.first()
+        cachedCoilCacheSize = settings[MaxImageCacheSizeKey] ?: DEFAULT_IMAGE_CACHE_SIZE_MB
         val locale = Locale.getDefault()
         val languageTag = locale.language
 
@@ -311,9 +306,9 @@ class App :
     private var cachedCoilCacheSize: Int? = null
 
     override fun newImageLoader(context: PlatformContext): ImageLoader {
-        val cacheSize = cachedCoilCacheSize ?: runBlocking {
-            dataStore.data.map { it[MaxImageCacheSizeKey] ?: 512 }.first()
-        }
+        // App startup preloads the persisted value. If Coil is requested even
+        // earlier, use the documented default instead of blocking the main thread.
+        val cacheSize = cachedCoilCacheSize ?: DEFAULT_IMAGE_CACHE_SIZE_MB
         return ImageLoader
             .Builder(this)
             .apply {
@@ -343,6 +338,8 @@ class App :
     }
 
     companion object {
+        private const val DEFAULT_IMAGE_CACHE_SIZE_MB = 512
+
         suspend fun forgetAccount(context: Context) {
             Timber.d("forgetAccount: Starting logout process")
 

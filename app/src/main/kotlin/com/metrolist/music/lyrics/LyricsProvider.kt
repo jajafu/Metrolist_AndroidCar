@@ -6,11 +6,12 @@
 package com.metrolist.music.lyrics
 
 import android.content.Context
+import androidx.datastore.preferences.core.Preferences
 
 interface LyricsProvider {
     val name: String
 
-    fun isEnabled(context: Context): Boolean
+    fun isEnabled(preferences: Preferences): Boolean
 
     suspend fun getLyrics(
         context: Context,

@@ -6,10 +6,9 @@
 package com.metrolist.music.lyrics
 
 import android.content.Context
+import androidx.datastore.preferences.core.Preferences
 import com.metrolist.music.betterlyrics.TTMLParser
 import com.metrolist.music.constants.EnableLyricsPlus
-import com.metrolist.music.utils.dataStore
-import com.metrolist.music.utils.get
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
@@ -167,8 +166,8 @@ object LyricsPlusProvider : LyricsProvider {
         }
     }
 
-    override fun isEnabled(context: Context): Boolean =
-        context.dataStore[EnableLyricsPlus] ?: false
+    override fun isEnabled(preferences: Preferences): Boolean =
+        preferences[EnableLyricsPlus] ?: false
 
     private suspend fun fetchFromUrl(
         url: String,

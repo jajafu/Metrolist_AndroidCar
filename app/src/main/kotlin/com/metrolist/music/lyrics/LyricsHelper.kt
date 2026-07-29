@@ -53,9 +53,8 @@ constructor(
             return LyricsWithProvider(cached.lyrics, cached.providerName)
         }
 
-        val orderedProviders = context.dataStore.data
-            .map { preferences -> resolveLyricsProviders(preferences) }
-            .first()
+        val preferences = context.dataStore.data.first()
+        val orderedProviders = resolveLyricsProviders(preferences)
 
         val isNetworkAvailable = try {
             networkConnectivity.isCurrentlyConnected()
@@ -69,7 +68,7 @@ constructor(
 
         val result = withTimeoutOrNull(MAX_LYRICS_FETCH_MS) {
             val cleanedTitle = LyricsUtils.cleanTitleForSearch(mediaMetadata.title)
-            val enabledProviders = orderedProviders.filter { it.isEnabled(context) }
+            val enabledProviders = orderedProviders.filter { it.isEnabled(preferences) }
 
             Timber.tag("LyricsHelper").d("Starting sequential fetch for: $cleanedTitle by ${mediaMetadata.artists.joinToString { it.name }}")
             Timber.tag("LyricsHelper").d("Enabled providers in order: ${enabledProviders.joinToString { it.name }}")
@@ -138,10 +137,9 @@ constructor(
         val allResult = mutableListOf<LyricsResult>()
         currentLyricsJob = CoroutineScope(SupervisorJob()).launch {
             val cleanedTitle = LyricsUtils.cleanTitleForSearch(songTitle)
-            val allProviders = context.dataStore.data
-                .map { preferences -> resolveLyricsProviders(preferences) }
-                .first()
-            val enabledProviders = allProviders.filter { it.isEnabled(context) }
+            val preferences = context.dataStore.data.first()
+            val allProviders = resolveLyricsProviders(preferences)
+            val enabledProviders = allProviders.filter { it.isEnabled(preferences) }
 
             val otherProviders = enabledProviders.filter { it.name != "LyricsPlus" }
             val lyricsPlusProvider = enabledProviders.find { it.name == "LyricsPlus" }
