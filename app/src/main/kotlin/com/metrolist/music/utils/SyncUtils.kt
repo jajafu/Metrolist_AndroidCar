@@ -1881,15 +1881,23 @@ class SyncUtils @Inject constructor(
         }.onSuccess { result ->
             result.onSuccess { page ->
                 try {
-                    val remotePlaylists = page.items.filterIsInstance<PlaylistItem>()
-                        .filterNot { it.id == "LM" || it.id == "SE" }
-                        .reversed()
+                    val remotePlaylists = deduplicateRemotePlaylists(
+                        playlists = page.items.filterIsInstance<PlaylistItem>()
+                            .filterNot { it.id == "LM" || it.id == "SE" }
+                            .reversed(),
+                        idSelector = PlaylistItem::id,
+                    )
                     val remoteIds = remotePlaylists.map { it.id }.toSet()
 
+                    executeCleanupDuplicatePlaylists()
+
                     val localPlaylists = database.playlistEntitiesByNameAsc()
+                    val pendingPlaylistIds = loadPendingPlaylistEdits().mapTo(mutableSetOf()) { it.playlistId }
                     val now = LocalDateTime.now()
                     localPlaylists
                         .filter {
+                            it.id !in pendingPlaylistIds &&
+                                !isPlaylistBeingModified(it.id) &&
                             shouldUnbookmarkMissingPlaylist(
                                 playlist = it,
                                 remoteIds = remoteIds,
@@ -1906,9 +1914,28 @@ class SyncUtils @Inject constructor(
                             }
                         }
 
+                    val protectedPlaylistIds = localPlaylists
+                        .filter {
+                            it.id in pendingPlaylistIds ||
+                                isPlaylistBeingModified(it.id) ||
+                                isRecentlyCreatedRemotePlaylist(
+                                    playlist = it,
+                                    now = now,
+                                    gracePeriodMinutes = NEW_PLAYLIST_RECONCILIATION_GRACE_MINUTES,
+                                )
+                        }
+                        .mapTo(mutableSetOf()) { it.id }
+                    val localPlaylistsByBrowseId = localPlaylists
+                        .filter { it.browseId != null }
+                        .groupBy { it.browseId!! }
+                        .mapValues { (_, duplicates) ->
+                            planPlaylistDuplicateCleanup(duplicates, protectedPlaylistIds).keeper
+                        }
+                        .toMutableMap()
+
                     for (playlist in remotePlaylists) {
                         try {
-                            var playlistEntity = localPlaylists.find { it.browseId == playlist.id }
+                            var playlistEntity = localPlaylistsByBrowseId[playlist.id]
 
                             if (playlistEntity == null) {
                                 playlistEntity = PlaylistEntity(
@@ -1925,17 +1952,20 @@ class SyncUtils @Inject constructor(
                                     radioEndpointParams = playlist.radioEndpoint?.params
                                 )
                                 database.insert(playlistEntity)
+                                localPlaylistsByBrowseId[playlist.id] = playlistEntity
                                 Timber.d("syncSavedPlaylists: Created new playlist ${playlist.title} (${playlist.id})")
                             } else {
                                 database.update(playlistEntity, playlist)
                                 Timber.d("syncSavedPlaylists: Updated existing playlist ${playlist.title} (${playlist.id})")
                             }
 
-                            if (!isPlaylistBeingModified(playlistEntity.id)) {
+                            if (!isPlaylistBeingModified(playlistEntity.id) &&
+                                playlistEntity.id !in pendingPlaylistIds
+                            ) {
                                 executeSyncPlaylist(playlist.id, playlistEntity.id)
                                 delay(DB_OPERATION_DELAY_MS)
                             } else {
-                                Timber.d("Skipping playlist ${playlist.title} — remove in progress")
+                                Timber.d("Skipping playlist ${playlist.title} — local edits are still pending")
                             }
                             delay(DB_OPERATION_DELAY_MS)
                         } catch (e: Exception) {
@@ -2069,21 +2099,57 @@ class SyncUtils @Inject constructor(
 
     private suspend fun executeCleanupDuplicatePlaylists() = withContext(Dispatchers.IO) {
         try {
-            val allPlaylists = database.playlistsByNameAsc().first()
+            val allPlaylists = database.playlistEntitiesByNameAsc()
             val browseIdGroups = allPlaylists
-                .filter { it.playlist.browseId != null }
-                .groupBy { it.playlist.browseId }
+                .filter { it.browseId != null }
+                .groupBy { it.browseId }
+            val now = LocalDateTime.now()
+            val pendingPlaylistIds = loadPendingPlaylistEdits().mapTo(mutableSetOf()) { it.playlistId }
 
             for ((browseId, playlists) in browseIdGroups) {
                 if (playlists.size > 1) {
                     Timber.w("Found ${playlists.size} duplicate playlists for browseId: $browseId")
-                    val toKeep = playlists.maxByOrNull { it.songCount } ?: playlists.first()
+                    val protectedPlaylistIds = playlists
+                        .filter {
+                            it.id in pendingPlaylistIds ||
+                                isPlaylistBeingModified(it.id) ||
+                                isRecentlyCreatedRemotePlaylist(
+                                    playlist = it,
+                                    now = now,
+                                    gracePeriodMinutes = NEW_PLAYLIST_RECONCILIATION_GRACE_MINUTES,
+                                )
+                        }
+                        .mapTo(mutableSetOf()) { it.id }
+                    val plan = planPlaylistDuplicateCleanup(playlists, protectedPlaylistIds)
 
-                    playlists.filter { it.id != toKeep.id }.forEach { duplicate ->
+                    plan.duplicatesToDelete.forEach { duplicate ->
                         try {
-                            Timber.d("Removing duplicate playlist: ${duplicate.playlist.name} (${duplicate.id})")
-                            database.clearPlaylist(duplicate.id)
-                            database.delete(duplicate.playlist)
+                            val stillHasPendingEdits =
+                                loadPendingPlaylistEdits().any { it.playlistId == duplicate.id }
+                            if (stillHasPendingEdits || isPlaylistBeingModified(duplicate.id)) {
+                                Timber.d("Keeping duplicate playlist ${duplicate.id} because local edits are active")
+                                return@forEach
+                            }
+
+                            Timber.d("Removing duplicate playlist: ${duplicate.name} (${duplicate.id})")
+                            database.withTransaction {
+                                val downloadedSongIds = downloadedPlaylistSongIds(duplicate.id).distinct()
+                                val keeperSongIds = playlistSongIds(plan.keeper.id).toMutableSet()
+                                var nextPosition = maxPlaylistSongPosition(plan.keeper.id) + 1
+                                downloadedSongIds.forEach { songId ->
+                                    if (keeperSongIds.add(songId)) {
+                                        insert(
+                                            PlaylistSongMap(
+                                                playlistId = plan.keeper.id,
+                                                songId = songId,
+                                                position = nextPosition++,
+                                            ),
+                                        )
+                                    }
+                                }
+                                clearPlaylist(duplicate.id)
+                                delete(duplicate)
+                            }
                             delay(DB_OPERATION_DELAY_MS)
                         } catch (e: Exception) {
                             Timber.e(e, "Failed to remove duplicate playlist: ${duplicate.id}")

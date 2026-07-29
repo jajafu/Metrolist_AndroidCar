@@ -99,6 +99,21 @@ interface DatabaseDao {
     )
     suspend fun playlistSongIds(playlistId: String): List<String>
 
+    @Query(
+        """
+        SELECT playlist_song_map.songId
+        FROM playlist_song_map
+        JOIN song ON song.id = playlist_song_map.songId
+        WHERE playlist_song_map.playlistId = :playlistId
+          AND (song.isDownloaded = 1 OR song.dateDownload IS NOT NULL)
+        ORDER BY playlist_song_map.position
+        """,
+    )
+    suspend fun downloadedPlaylistSongIds(playlistId: String): List<String>
+
+    @Query("SELECT COALESCE(MAX(position), -1) FROM playlist_song_map WHERE playlistId = :playlistId")
+    suspend fun maxPlaylistSongPosition(playlistId: String): Int
+
     @Query("SELECT * FROM album WHERE id = :albumId LIMIT 1")
     suspend fun albumEntity(albumId: String): AlbumEntity?
 

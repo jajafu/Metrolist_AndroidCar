@@ -4,6 +4,18 @@
 
 This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.42
+
+### 中文
+
+- 遠端播放列表同步會先依 browse ID 去重，並在同一輪同步中記住新建立的本機項目，避免產生重複播放列表。
+- 清理本機重複播放列表時改用輕量的播放列表資料；待處理編輯、正在修改與寬限期內項目不會被刪除，其他重複項目的已下載歌曲會先合併至保留項目。
+
+### English
+
+- Deduplicate remote playlists by browse ID and track newly inserted local records during the same sync pass to prevent duplicate playlist creation.
+- Use lightweight playlist entities for local duplicate cleanup; preserve pending, actively modified, and grace-period records, and merge downloaded songs before removing other duplicates.
+
 ## 13.6.41
 
 ### 中文
