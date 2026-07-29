@@ -4,6 +4,18 @@
 
 This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.39
+
+### 中文
+
+- 修正首頁快速存取歌曲在同步或刪除期間從資料庫消失時，畫面仍以非空值存取歌曲而造成的崩潰。
+- 播放與歌曲選單會使用最新資料；資料列剛移除時則暫時使用畫面原有項目，直到首頁清單完成更新。
+
+### English
+
+- Fix a Home quick-access crash when a song disappears from the database during synchronization or deletion while the composed item still accesses it as non-null.
+- Playback and song menus use the latest data, with the original displayed item as a temporary fallback until the Home list refreshes.
+
 ## 13.6.38
 
 ### 中文
