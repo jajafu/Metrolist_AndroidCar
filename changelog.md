@@ -1,239 +1,377 @@
----v13.5.0
-# MAINTENANCE MODE
-Metrolist is currently in maintenance mode. This means we will only be fixing bugs and making minor improvements. Please do not submit PRs for new features or major changes, as they will not be accepted.
+# Metrolist AndroidCar 變更日誌 / Changelog
 
-# Major changes
-- Rewrote the Discord RPC integration again (@adrielGGmotion @nyxiereal)
-- Fixed random playback issues and pauses (@DanielSchmerber @isotjs)
-- Fixed liked songs, playlists, albums, search results, etc. not displaying properly (@adrielGGmotion @nyxiereal)
+本檔案記錄 `Metrolist_AndroidCar` 專案自 `13.6.0` 起的客製功能、修正與建置變更。上游 Metrolist 的同步內容未在此重複列出。
 
-## Notable new features
-- Added a toggle for automatic radio queue generation (@FireLion137)
-- Added automatic tablet UI scaling (@kairosci)
-- Toggle from repeat(1) to repeat(all) after song change (@sunjeetkajla)
+This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
-## Other improvements
-- Fixe covers not loading sometimes (@Arjuanto)
-- Artist names are now split properly, and are now clickable (@kairosci)
-- Fixed multiple crashes (@kairosci @nyxiereal)
-- Improved audio normalization (@kairosci)
-- Fixed search results not being combined properly (@kairosci)
-- Fixed 'High quality' option not choosing the highest quality option (@kairosci)
-- Fixed history sync not working (@kairosci)
+## 13.6.33
 
-## New Contributors
-- @DanielSchmerber made their first contribution in https://github.com/MetrolistGroup/Metrolist/pull/3777
-- @Arjuanto made their first contribution in https://github.com/MetrolistGroup/Metrolist/pull/3780
+### 中文
 
----v13.4.3
-# MAINTENANCE MODE
-Metrolist is currently in maintenance mode. This means we will only be fixing bugs and making minor improvements. Please do not submit PRs for new features or major changes, as they will not be accepted.
+- 關閉串流網址驗證使用的 HTTP response，避免資源未釋放與連線累積。
 
-# Major changes
-- Rewrote the Discord RPC integration (@adrielGGmotion)
-- Improved the look of playlist screens (@adrielGGmotion)
-- Added a new playlist widget (@David-2765 @AntonioDionisio05)
+### English
 
-## Notable new features
-- Added proper apple music lyrics support (@adrielGGmotion)
-- Added a normalization level selector (@Jeff0945)
-- Added the ability to hide monthly/weekly most playlists (@isotjs)
+- Close HTTP responses used for stream URL validation to prevent leaked resources and accumulating connections.
 
-## Other improvements
-- Improve overall performance and stability (@adrielGGmotion @nyxiereal)
-- Fixed devnagari lyrics not being displayed properly (@cloud-zip)
-- Improve lyrics fetching speed (@nyxiereal)
-- Fixed crashes and some memory leaks (@nyxiereal)
-- Fixed images being low resolution for some users (@adrielGGmotion)
-- Handle playlist paging properly (@kairosci)
-- Multiple smaller improvements by @kairosci <3
+## 13.6.32
 
-## New Contributors
-- @Jeff0945 made their first contribution in https://github.com/MetrolistGroup/Metrolist/pull/3358
+### 中文
 
----v13.4.2
-# MAINTENANCE MODE
-Metrolist is currently in maintenance mode. This means we will only be fixing bugs and making minor improvements. Please do not submit PRs for new features or major changes, as they will not be accepted.
+- 將備份檔案預覽與串流驗證移至背景執行緒，避免大型檔案操作阻塞介面。
 
-# Major changes
-- Fixed random crashes and some memory leaks (@nyxiereal)
-- Fixed issues with uploading songs to YouTube (@kairosci)
-- Fixed playback for uploaded songs (@punkscience)
+### English
 
-## Notable new features
-- EQ screen redesign and guided AutoEQ profile import (@ndellagrotte)
-- Automatically create database backups before updates (@nyxiereal)
+- Move backup file preview and streaming validation work off the main thread so large files do not block the UI.
 
-## Other improvements
-- Improved support for Android Auto (@cmeka)
-- Brought back the copy lyrics button for experimental lyrics (@nyxiereal)
-- Fixed the re-sync button for experimental lyrics (@nyxiereal)
-- Fixed listen together not working (@nyxiereal)
-- Added back support for choosing an account upon login (@nyxiereal)
-- Implemented concurrent fetching, fix lyrics fetch ordering, and optimize LyricsPlus server selection (@ibratabian17)
-- Corrected the play-next shuffle order (@johannesbrauer)
-- Improved the Android Auto icon (@ThatOneCalculator)
+## 13.6.31
 
-## New Contributors
-- @ndellagrotte made their first contribution in https://github.com/MetrolistGroup/Metrolist/pull/3487
-- @cmeka made their first contribution in https://github.com/MetrolistGroup/Metrolist/pull/3534
-- @punkscience made their first contribution in https://github.com/MetrolistGroup/Metrolist/pull/3517
+### 中文
 
----v13.4.1
-# MAINTENANCE MODE
-Metrolist is currently in maintenance mode. This means we will only be fixing bugs and making minor improvements. Please do not submit PRs for new features or major changes, as they will not be accepted.
+- 將喜歡歌曲的同步更新排入持久化、依序處理的佇列，避免快速操作時遺失或覆蓋更新。
 
-# Major changes
-- Fixed cached songs showing up in the downloads playlist (@nyxiereal)
-- Fixed multiple playback issues and prepared for YouTube's player changes (@mostafaalagamy @nyxiereal)
+### English
 
-## Notable new features
-- Added the ability to paste URLs to the search to play them directly (@nyxiereal)
-- Added a search bar to the Library screen (@isotjs)
-- Added a setting to bind pitch and speed together (@sasha-melech)
-- Added support for Gemini voice playback (@FireLion137)
-- Added an option choose the highest possible audio quality (@nyxiereal @kairosci)
-- Added a button to create a playlist from the Library screen (@SunjeetKajla)
+- Serialize durable liked-song synchronization updates so rapid actions do not lose or overwrite changes.
 
-## Other improvements
-- Moved the resync button to the lyrics menu (@nyxiereal)
-- Properly reset player on IO errors (@kairosci)
-- Multiple improvements to lyrics fetching and parsing (@kairosci @nyxiereal @ibratabian17)
-- Made autoplay disablable from the settings (@kairosci)
-- Fixed foreground/background service crashes (@kairosci)
-- Fixed Play next not working (@johannesbrauer)
-- Properly handle database updates on download removal (@kairosci)
-- Use lyricsplus caching to lower server load (@binimum)
-- Performance optimizations (@stopper2408)
-- Prefetch lyrics for the next song if currently viewing lyrics (@nyxiereal)
-- Fixed multiple issues with Listen Together (@nyxiereal)
-- Fixed multiple issues with the experimental lyrics (@nyxiereal)
-- Fixed pause music on task clear not working (@nyxiereal)
+## 13.6.30
 
-## New Contributors
-* @ibratabian17 made their first contribution in https://github.com/MetrolistGroup/Metrolist/pull/3474
-* @sasha-melech made their first contribution in https://github.com/MetrolistGroup/Metrolist/pull/3301
-* @FireLion137 made their first contribution in https://github.com/MetrolistGroup/Metrolist/pull/3500
-* @binimum made their first contribution in https://github.com/MetrolistGroup/Metrolist/pull/3493
-* @stopper2408 made their first contribution in https://github.com/MetrolistGroup/Metrolist/pull/3506
-* @SunjeetKajla made their first contribution in https://github.com/MetrolistGroup/Metrolist/pull/3505
+### 中文
 
-**Full Changelog**: https://github.com/MetrolistGroup/Metrolist/compare/v13.4.0...v13.4.1
----v13.4.0
-# MAINTENANCE MODE
-Metrolist is currently in maintenance mode. This means we will only be fixing bugs and making minor improvements. Please do not submit PRs for new features or major changes, as they will not be accepted.
+- 服務重新啟動後恢復可延伸的 YouTube 播放佇列，讓自動載入更多歌曲可以繼續運作。
 
-No, this is not an April Fools joke, even though this update is being released on April 1st.
+### English
 
-We are working on something big for the future of Metrolist - this is not the end of the project.
+- Restore extendable YouTube playback queues after service restarts so automatic loading can continue.
 
-# Major changes
-- Multiple playback fixes and reliability improvements (@alltechdev)
-- Revamped the entire Lyrics engine, improving lyric accuracy and usability (@adrielGGmotion)
-- Fixed multiple crash issues (@kairosci, @nyxiereal)
-- Multiple improvements to Android Auto support (@andker87)
-- Fixed multiple grammar and text inconsistency issues in the project (@TheRebo)
+## 13.6.29
 
-## Notable new features
-- Added support for treating cached songs as offline songs (@kairosci)
-- Added music alarm scheduling (@0xarchit)
-- Added miniplayer styles (@johannesbrauer)
-- Added a button to copy all song lyrics to the clipboard (@kairosci)
-- Added a time transfer feature to move listening time between songs in the stats page (@finley-webber)
-- Added customization support for the AI prompt used for translations (@nyxiereal)
-- Added a notification-based music recognition for the QS tile shortcut (@isotjs)
+### 中文
 
-## Other improvements
-- Fixed incorrect artist order for multi-artist songs (@AntonioDionisio05)
-- Fixed playtime in the stats page not being fully visible (@David-2765)
-- Improved radio to start seamlessly when initiated from the currently playing track (@luigiwwmf)
-- Improved the UI for tablets (@adrielGGmotion)
-- Improved the About Screen layout (@adrielGGmotion)
-- Fixed ghost adds on playlists (@johannesbrauer)
-- Improved search focus and navigation behavior (@saivijaychandan)
-- Added album navigation on song title click regardless of play source (@gergesh)
-- Prevented UI state reset when switching apps (@mostafaalagamy)
-- Restored the Daily Discover title in the Home screen (@mostafaalagamy)
-- Fixed listen together audio choppiness (@nyxiereal)
-- Redesigned romanization and account settings (@omardotdev)
-- Improved the design of the sleep timer dialog (@johannesbrauer)
-- Redesigned some components to use Material 3 Expressive (@johannesbrauer)
-- Fixed links in the README (@Lolen10 @nyxiereal)
+- 修正隨機播放接近佇列尾端時的判斷，改為依照實際隨機播放順序載入後續歌曲。
 
-## New Contributors
-* @AntonioDionisio05 made their first contribution in https://github.com/MetrolistGroup/Metrolist/pull/3255
-* @David-2765 made their first contribution in https://github.com/MetrolistGroup/Metrolist/pull/3271
-* @luigiwwmf made their first contribution in https://github.com/MetrolistGroup/Metrolist/pull/3293
-* @gergesh made their first contribution in https://github.com/MetrolistGroup/Metrolist/pull/3300
-* @Lolen10 made their first contribution in https://github.com/MetrolistGroup/Metrolist/pull/3328
+### English
 
-**Full Changelog**: https://github.com/MetrolistGroup/Metrolist/compare/v13.3.0...v13.3.1
----v13.3.0
-# Major changes
-- Implemented song upload and delete functionality (@alltechdev)
-- Multiple playback fixes and reliability improvements (@alltechdev, @mostafaalagamy)
-- Fixed proguard rules causing issues with Reproducible Builds (@nyxiereal)
-- Fixed proguard rules removing Listen Together protobuf classes (@mostafaalagamy)
-- Added a playlist export option to the playlist context menu (@nyxiereal)
+- Fix queue-end detection during shuffle playback by following the actual shuffled order when loading more songs.
 
-## Notable new features
-- Added a Play all action for the stats page (@isotjs)
-- Added a quick settings tile for recognizing music (@nyxiereal)
-- Added automatic sleep timer options and integrated fade-out volume handling (@isotjs)
-- Added a profile search filter (@alltechdev)
-- Added channel subscriptions for podcasts and artists (@alltechdev)
+## 13.6.28
 
-## Other improvements
-- Fixed cached images not clearing properly and cached covers not showing when offline (@nyxiereal)
-- Removed useless and stale strings from the codebase (@nyxiereal)
-- Refined the song details view (@omardotdev)
-- Added support for Mistral AI models (@nyxiereal)
-- Redesigned the lastfm integration settings (@omardotdev)
-- Fixed importing csv files crashing the app (@nyxiereal)
-- Prevent guest playback while in listen together (@nyxiereal)
-- Fixed podcasts not working for logged-out users (@alltechdev)
-- Updated dependencies (@nyxiereal)
+### 中文
 
-## New Contributors
-* @isotjs made their first contribution in https://github.com/MetrolistGroup/Metrolist/pull/3090
+- 修正電台分頁結束後無法繼續產生推薦歌曲的問題。
 
-**Full Changelog**: https://github.com/MetrolistGroup/Metrolist/compare/v13.2.1...v13.3.0
----v13.2.1
->[!WARNING]
->Listen Together doesn't work in v13.2.1! Use v13.2.0 if you need it.
+### English
 
-## Hot Fixes
-- Fix interface lag issue
-- Fix navigate local playlists pinned in speed dial
-- Removed "cache songs only after playback has started" option
+- Fix radio playback stopping when the current continuation page is exhausted.
 
-**Full Changelog**: https://github.com/MetrolistGroup/Metrolist/compare/v13.2.0...v13.2.1
----v13.2.0
-# Major changes
-- Fixed playback breaking due to YouTube's February 2026 n-transform changes (@alltechdev)
-- Added full podcast library support (@mostafaalagamy & @alltechdev)
-- Redesigned loading, Changelog, and About screens (@adrielGGmotion)
-- Improved app startup time via parallelized home screen loading (@mostafaalagamy)
+## 13.6.27
 
-## Notable new features
-- Added an option to cache songs only after playback has started (@kairosci)
-- Added a music recognizer home screen widget (@mostafaalagamy)
-- Rewrote music recognizer in pure Kotlin, removing NDK dependency and reducing APK size (@mostafaalagamy)
-- Overhauled lyrics: added LyricsPlus provider, AI lyric fixes, untranslation support, and provider priority settings (@nyxiereal)
-- Changed listen together to use protobuf, lowering latency and improving reliability (@nyxiereal)
-- Added auto-approve setting for listen together song requests (@nyxiereal)
-- Added an option to persist the sleep timer default value (@johannesbrauer)
-- Added a dialog on logout to keep or clear library data (@alltechdev)
+### 中文
 
-## Other improvements
-- Fixed backup restore causing playback errors due to stale auth credentials (@alltechdev)
-- The CSV import dialog is now scrollable (@kairosci)
-- Fixed Android 15 foreground service crashes (@kairosci)
-- Fixed a crash on the About screen on some devices (@mostafaalagamy)
-- Fixed home screen playlist navigation routing to wrong screen (@mostafaalagamy)
-- Fixed crash when creating local playlists (@mostafaalagamy)
+- 新增適合車機操作的播放清單格狀選擇器，放大項目與操作區域。
+- CI 增加 lint 錯誤回歸檢查。
+- 限制外部控制入口，避免未授權的控制路徑被使用。
+- 修正下載網址快取的執行緒安全問題。
+- 自動載入更多歌曲失敗時加入重試機制。
+- 修正小型歌曲資料庫的播放處理、Android 版本相容性例外、備份替換復原，以及過期播放佇列請求。
+- 修正音訊 ducking 後音量未恢復的問題。
+- 修正同步完成狀態，使背景同步結果能被正確記錄。
 
-## New Contributors
-* @johannesbrauer made their first contribution in https://github.com/MetrolistGroup/Metrolist/pull/2991
+### English
 
-**Full Changelog**: https://github.com/MetrolistGroup/Metrolist/compare/v13.1.1...v13.2.0
+- Add a car-friendly grid playlist picker with larger items and touch targets.
+- Add a lint-error regression gate to CI.
+- Restrict external control entry points to prevent unauthorized control paths.
+- Fix thread safety in the download URL cache.
+- Retry failed automatic load-more requests.
+- Fix playback for small song libraries, Android-version-specific service exceptions, recoverable backup replacement, and stale queue requests.
+- Restore volume correctly after audio-focus ducking.
+- Record background synchronization completion accurately.
+
+## 13.6.26
+
+### 中文
+
+- CI 增加 lint 錯誤回歸檢查，防止新的編譯或靜態分析錯誤被忽略。
+
+### English
+
+- Add a lint-error regression gate to CI so new build or static-analysis errors are not missed.
+
+## 13.6.25
+
+### 中文
+
+- 限制外部控制入口，改善應用程式的安全性。
+
+### English
+
+- Restrict external control entry points to improve application security.
+
+## 13.6.24
+
+### 中文
+
+- 修正下載網址快取的執行緒安全問題，降低並行下載時的錯誤風險。
+
+### English
+
+- Fix thread safety in the download URL cache to reduce failures during concurrent downloads.
+
+## 13.6.23
+
+### 中文
+
+- 自動載入更多歌曲失敗時加入重試機制，改善播放清單接近尾端時的連續播放。
+
+### English
+
+- Retry failed automatic load-more requests to improve continuous playback near the end of a playlist.
+
+## 13.6.22
+
+### 中文
+
+- 修正小型歌曲資料庫的播放處理，避免歌曲數量較少時的錯誤。
+
+### English
+
+- Fix playback handling for small song libraries and avoid errors when only a few songs are available.
+
+## 13.6.21
+
+### 中文
+
+- 增加 Android 特定版本服務例外的防護，改善背景播放穩定性。
+
+### English
+
+- Guard against Android-version-specific service exceptions to improve background playback stability.
+
+## 13.6.20
+
+### 中文
+
+- 讓備份還原的檔案替換流程可復原，降低替換中斷造成資料無法使用的風險。
+
+### English
+
+- Make backup replacement during restore recoverable, reducing the risk of unusable data after an interrupted replacement.
+
+## 13.6.19
+
+### 中文
+
+- 防止過期的播放佇列請求覆蓋較新的播放狀態。
+
+### English
+
+- Prevent stale queue requests from overwriting newer playback state.
+
+## 13.6.18
+
+### 中文
+
+- 修正導航或其他音訊焦點事件暫時降低音量後，播放音量沒有恢復的問題。
+
+### English
+
+- Fix playback volume not being restored after navigation or other audio-focus ducking events.
+
+## 13.6.17
+
+### 中文
+
+- 修正同步完成狀態的記錄，讓背景同步結果能被正確判定。
+
+### English
+
+- Fix synchronization completion tracking so background sync results are reported accurately.
+
+## 13.6.16
+
+### 中文
+
+- 持久化播放清單歌曲移除操作，確保登出、重新登入或同步延遲後仍能套用刪除結果。
+
+### English
+
+- Persist playlist song removals so deletions are retained across logout, login, or delayed synchronization.
+
+## 13.6.15
+
+### 中文
+
+- 持久化尚未送出的播放清單編輯，避免網路或背景同步中斷時遺失變更。
+
+### English
+
+- Persist pending playlist edits so changes are not lost when network or background synchronization is interrupted.
+
+## 13.6.14
+
+### 中文
+
+- 改善 YouTube 播放清單同步可靠性，修正手機端與 YouTube 端更新延遲或不一致的情況。
+- 更新專案文件與代理規範，要求 Release notes 依實際變更完整填寫。
+- 移除已停用的 Download 收藏歌曲 JSON 備份說明與相關流程。
+- 穩定自動電台佇列的延續播放。
+
+### English
+
+- Improve YouTube playlist synchronization reliability and fix delayed or inconsistent updates between the app and YouTube.
+- Update project documentation and agent rules to require complete release notes based on actual changes.
+- Remove the obsolete Download-folder liked-song JSON backup documentation and workflow.
+- Stabilize automatic radio queue continuation.
+
+## 13.6.13
+
+### 中文
+
+- 穩定自動電台佇列延續播放，改善播放清單播到尾端後沒有新歌曲的情況。
+
+### English
+
+- Stabilize automatic radio queue continuation when playback reaches the end of the current list.
+
+## 13.6.12
+
+### 中文
+
+- 修正應用程式標籤與關於頁顯示不一致，確保品牌名稱顯示為 `Metrolist_AndroidCar`。
+
+### English
+
+- Fix inconsistent application labels and About-screen branding so the project name is shown as `Metrolist_AndroidCar`.
+
+## 13.6.11
+
+### 中文
+
+- 將新的黑色專案標誌套用到應用程式、通知與待機播放控制等顯示位置。
+- 修正收藏歌曲檔案重複建立的問題。
+
+### English
+
+- Apply the new black project logo across the app, notifications, and playback controls shown while idle.
+- Prevent duplicate liked-song files from being created.
+
+## 13.6.10
+
+### 中文
+
+- 修正收藏歌曲 JSON 檔案因同名檔案而不斷產生副本的問題。
+
+### English
+
+- Fix liked-song JSON exports repeatedly creating duplicate files when a file with the same name already exists.
+
+## 13.6.9
+
+### 中文
+
+- 更新應用程式圖示與通知圖示，改用 AndroidCar 專案品牌圖案。
+
+### English
+
+- Update the application and notification icons with the AndroidCar project branding.
+
+## 13.6.8
+
+### 中文
+
+- 在關於頁新增專案維護者 `jajafu` 與 GitHub 連結。
+- 調整羅馬化、外觀，以及播放與音訊設定的預設值，使車機使用更簡潔。
+
+### English
+
+- Add project maintainer `jajafu` and a GitHub link to the About screen.
+- Adjust default Romanization, appearance, and playback/audio settings for a simpler car-focused experience.
+
+## 13.6.7
+
+### 中文
+
+- 調整預設設定：關閉羅馬化內容、頂部欄「一起聆聽」與不必要的自動播放清單選項；網格大小預設為大，並保留喜歡歌曲與已下載歌曲的自動播放清單。
+
+### English
+
+- Adjust defaults: disable Romanization content, top-bar Listen Together, and unnecessary automatic playlists; use a large grid by default while keeping liked and downloaded songs enabled.
+
+## 13.6.6
+
+### 中文
+
+- 修正 YouTube 縮圖尺寸處理，恢復正常的圖片載入與顯示。
+
+### English
+
+- Fix YouTube thumbnail resizing and restore correct image loading and display.
+
+## 13.6.5
+
+### 中文
+
+- 更新程式內更新檢查的版本比較方式，正確處理多位數版本號，避免錯誤判斷更新狀態。
+
+### English
+
+- Use semantic version comparison for update checks so multi-digit version numbers do not produce incorrect update states.
+
+## 13.6.4
+
+### 中文
+
+- 新增使用固定 Android 簽章金鑰的 Foss Release 更新流程。
+- 支援從 GitHub Release 取得並套用簽章一致的更新，改善重新安裝時的資料保留。
+
+### English
+
+- Add a signed Foss Release update flow using a persistent Android signing key.
+- Support updates from GitHub Releases with consistent signing so reinstalling can preserve app data.
+
+## 13.6.3
+
+### 中文
+
+- 將 Material 3 的棄用 `rememberModalBottomSheetState` 遷移至新版 bottom sheet API，保留隱藏與半展開行為。
+- GitHub Actions 改為僅建置 Foss 版本，並維持手動執行流程。
+
+### English
+
+- Migrate the deprecated Material 3 `rememberModalBottomSheetState` calls to the new bottom-sheet API while preserving hidden and half-expanded behavior.
+- Configure GitHub Actions to build only the Foss variant and remain manually triggered.
+
+## 13.6.2
+
+### 中文
+
+- 更新 Room 破壞性遷移 fallback，明確使用 `dropAllTables` 參數以符合 Room 2.7 新版 API。
+
+### English
+
+- Update the Room destructive-migration fallback to use the explicit `dropAllTables` parameter required by the Room 2.7 API.
+
+## 13.6.1
+
+### 中文
+
+- 修正 MusicService 與安全相關的 Kotlin 編譯警告，降低背景播放與外部控制的風險。
+
+### English
+
+- Resolve Kotlin compiler warnings in MusicService and security-related code, reducing risks around background playback and external control.
+
+## 13.6.0
+
+### 中文
+
+- 建立 Metrolist AndroidCar 客製版本，加入車機導向的播放與橫向設定介面。
+- 建立中英文雙語專案文件與客製化品牌資訊。
+- 將 GitHub Actions 簡化為手動執行的 Foss APK 建置與 Release 流程。
+
+### English
+
+- Establish the customized Metrolist AndroidCar build with car-focused playback and landscape settings UI.
+- Add bilingual project documentation and customized branding information.
+- Simplify GitHub Actions to a manually triggered Foss APK build and release flow.
