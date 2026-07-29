@@ -4,6 +4,18 @@
 
 This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.45
+
+### 中文
+
+- Coil 解碼或載入的封面會先複製成獨立、不可變的 ARGB_8888 軟體 Bitmap，再交給 Media3 使用。
+- 來源圖片已回收或複製失敗時改用安全的小型替代圖，避免 Android 15 在通知、鎖定畫面或車機媒體控制縮放封面時崩潰。
+
+### English
+
+- Copy artwork decoded or loaded by Coil into an independently owned, immutable ARGB_8888 software bitmap before handing it to Media3.
+- Return a small safe fallback when the source is recycled or copying fails, preventing Android 15 crashes while notifications, lock-screen metadata, or car controls scale artwork.
+
 ## 13.6.44
 
 ### 中文
