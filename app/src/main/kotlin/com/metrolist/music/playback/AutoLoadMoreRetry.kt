@@ -78,3 +78,18 @@ internal fun canRequestMoreQueueItems(
     similarContentEnabled: Boolean,
     hasFallbackSeed: Boolean,
 ): Boolean = hasNextPage || (similarContentEnabled && hasFallbackSeed)
+
+internal fun isNearQueueEndByPlaybackOrder(
+    currentIndex: Int,
+    threshold: Int,
+    nextIndex: (Int) -> Int,
+): Boolean {
+    if (currentIndex < 0 || threshold <= 0) return false
+
+    var cursor = currentIndex
+    repeat(threshold) {
+        cursor = nextIndex(cursor)
+        if (cursor < 0) return true
+    }
+    return false
+}

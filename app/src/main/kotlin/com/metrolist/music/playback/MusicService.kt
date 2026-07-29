@@ -2892,10 +2892,20 @@ class MusicService :
         )
 
     private fun isNearQueueEnd(): Boolean {
-        val itemCount = player.mediaItemCount
+        val timeline = player.currentTimeline
         val currentIndex = player.currentMediaItemIndex
-        if (itemCount == 0 || currentIndex !in 0 until itemCount) return false
-        return itemCount - currentIndex <= LOAD_MORE_THRESHOLD
+        if (timeline.isEmpty || currentIndex !in 0 until timeline.windowCount) return false
+
+        return isNearQueueEndByPlaybackOrder(
+            currentIndex = currentIndex,
+            threshold = LOAD_MORE_THRESHOLD,
+        ) { index ->
+            timeline.getNextWindowIndex(
+                index,
+                REPEAT_MODE_OFF,
+                player.shuffleModeEnabled,
+            )
+        }
     }
 
     private fun finishLoadMoreRecovery() {

@@ -87,4 +87,38 @@ class AutoLoadMoreRetryTest {
             ),
         )
     }
+
+    @Test
+    fun `queue end detection follows shuffled playback order`() {
+        val shuffledNext = mapOf(4 to 9, 9 to 1, 1 to -1)
+
+        assertTrue(
+            isNearQueueEndByPlaybackOrder(
+                currentIndex = 4,
+                threshold = 3,
+            ) { shuffledNext[it] ?: -1 },
+        )
+    }
+
+    @Test
+    fun `physical tail is not near the end when shuffle has more tracks`() {
+        val shuffledNext = mapOf(8 to 2, 2 to 5, 5 to 7, 7 to -1)
+
+        assertFalse(
+            isNearQueueEndByPlaybackOrder(
+                currentIndex = 8,
+                threshold = 3,
+            ) { shuffledNext[it] ?: -1 },
+        )
+    }
+
+    @Test
+    fun `non-shuffled playback triggers at the configured threshold`() {
+        assertTrue(
+            isNearQueueEndByPlaybackOrder(
+                currentIndex = 7,
+                threshold = 3,
+            ) { index -> if (index < 9) index + 1 else -1 },
+        )
+    }
 }
