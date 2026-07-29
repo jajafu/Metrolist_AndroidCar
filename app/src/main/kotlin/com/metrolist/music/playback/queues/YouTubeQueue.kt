@@ -10,19 +10,25 @@ import com.metrolist.innertube.YouTube
 import com.metrolist.innertube.models.WatchEndpoint
 import com.metrolist.music.extensions.toMediaItem
 import com.metrolist.music.models.MediaMetadata
+import com.metrolist.music.models.QueueData
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.withContext
 
 class YouTubeQueue(
     private var endpoint: WatchEndpoint,
     override val preloadItem: MediaMetadata? = null,
+    private var continuation: String? = null,
+    private var restoredStatus: Queue.Status? = null,
 ) : Queue {
-    private var continuation: String? = null
-
     private class EmptyRadioQueueException : IllegalStateException()
 
     override suspend fun getInitialStatus(): Queue.Status {
         return withContext(IO) {
+            restoredStatus?.let { status ->
+                restoredStatus = null
+                return@withContext status
+            }
+
             var lastException: Throwable? = null
 
             if (endpoint.videoId != null && endpoint.playlistId == null) {
@@ -95,9 +101,20 @@ class YouTubeQueue(
                     lastException = e
                 }
             }
+            continuation = null
             throw lastException ?: Exception("Failed to get next page")
         }
     }
+
+    fun persistenceData() =
+        QueueData.YouTubeDataV2(
+            videoId = endpoint.videoId,
+            playlistId = endpoint.playlistId,
+            playlistSetVideoId = endpoint.playlistSetVideoId,
+            params = endpoint.params,
+            index = endpoint.index,
+            continuation = continuation,
+        )
 
     companion object {
         private const val MAX_ATTEMPTS = 3
@@ -115,5 +132,22 @@ class YouTubeQueue(
                 song
             )
         }
+
+        fun restore(
+            data: QueueData.YouTubeDataV2,
+            status: Queue.Status,
+        ): YouTubeQueue =
+            YouTubeQueue(
+                endpoint =
+                    WatchEndpoint(
+                        videoId = data.videoId,
+                        playlistId = data.playlistId,
+                        playlistSetVideoId = data.playlistSetVideoId,
+                        params = data.params,
+                        index = data.index,
+                    ),
+                continuation = data.continuation,
+                restoredStatus = status,
+            )
     }
 }

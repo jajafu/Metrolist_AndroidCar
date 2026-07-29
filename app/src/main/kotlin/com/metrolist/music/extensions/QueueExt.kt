@@ -30,42 +30,32 @@ fun Queue.toPersistQueue(
             queueType = QueueType.LIST
         )
         is YouTubeQueue -> {
-            // Since endpoint is private, we'll store a simplified version
-            val endpoint = "youtube_queue"
             PersistQueue(
                 title = title,
                 items = items,
                 mediaItemIndex = mediaItemIndex,
                 position = position,
                 queueType = QueueType.YOUTUBE,
-                queueData = QueueData.YouTubeData(endpoint = endpoint)
+                queueData = persistenceData(),
             )
         }
         is YouTubeAlbumRadio -> {
-            // Since playlistId is private, we'll store a simplified version
             PersistQueue(
                 title = title,
                 items = items,
                 mediaItemIndex = mediaItemIndex,
                 position = position,
                 queueType = QueueType.YOUTUBE_ALBUM_RADIO,
-                queueData = QueueData.YouTubeAlbumRadioData(
-                    playlistId = "youtube_album_radio"
-                )
+                queueData = persistenceData(),
             )
         }
         is LocalAlbumRadio -> {
-            // Since albumWithSongs and startIndex are private, we'll store a simplified version
             PersistQueue(
                 title = title,
                 items = items,
                 mediaItemIndex = mediaItemIndex,
                 position = position,
-                queueType = QueueType.LOCAL_ALBUM_RADIO,
-                queueData = QueueData.LocalAlbumRadioData(
-                    albumId = "local_album_radio",
-                    startIndex = 0
-                )
+                queueType = QueueType.LIST,
             )
         }
         else -> PersistQueue(
@@ -79,39 +69,51 @@ fun Queue.toPersistQueue(
 }
 
 fun PersistQueue.toQueue(): Queue {
+    val restoredStatus =
+        Queue.Status(
+            title = title,
+            items = items.map { it.toMediaItem() },
+            mediaItemIndex = mediaItemIndex,
+            position = position,
+        )
+
     return when (queueType) {
         is QueueType.LIST -> ListQueue(
             title = title,
-            items = items.map { it.toMediaItem() },
+            items = restoredStatus.items,
             startIndex = mediaItemIndex,
             position = position
         )
         is QueueType.YOUTUBE -> {
-            // For now, fallback to ListQueue since we can't reconstruct YouTubeQueue properly
-            ListQueue(
-                title = title,
-                items = items.map { it.toMediaItem() },
-                startIndex = mediaItemIndex,
-                position = position
-            )
+            val data = queueData.restorableYouTubeDataOrNull()
+            if (data != null) {
+                YouTubeQueue.restore(data, restoredStatus)
+            } else {
+                restoredStatus.toListQueue()
+            }
         }
         is QueueType.YOUTUBE_ALBUM_RADIO -> {
-            // For now, fallback to ListQueue since we can't reconstruct YouTubeAlbumRadio properly
-            ListQueue(
-                title = title,
-                items = items.map { it.toMediaItem() },
-                startIndex = mediaItemIndex,
-                position = position
-            )
+            val data = queueData as? QueueData.YouTubeAlbumRadioData
+            if (data != null && data.playlistId != "youtube_album_radio") {
+                YouTubeAlbumRadio.restore(data, restoredStatus)
+            } else {
+                restoredStatus.toListQueue()
+            }
         }
         is QueueType.LOCAL_ALBUM_RADIO -> {
-            // For now, fallback to ListQueue since we can't reconstruct LocalAlbumRadio properly
-            ListQueue(
-                title = title,
-                items = items.map { it.toMediaItem() },
-                startIndex = mediaItemIndex,
-                position = position
-            )
+            restoredStatus.toListQueue()
         }
     }
 }
+
+private fun Queue.Status.toListQueue() =
+    ListQueue(
+        title = title,
+        items = items,
+        startIndex = mediaItemIndex,
+        position = position,
+    )
+
+internal fun QueueData?.restorableYouTubeDataOrNull(): QueueData.YouTubeDataV2? =
+    (this as? QueueData.YouTubeDataV2)
+        ?.takeIf { it.videoId != null || it.playlistId != null }

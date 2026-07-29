@@ -28,6 +28,15 @@ sealed class QueueData : Serializable {
         val endpoint: String,
         val continuation: String? = null
     ) : QueueData()
+
+    data class YouTubeDataV2(
+        val videoId: String? = null,
+        val playlistId: String? = null,
+        val playlistSetVideoId: String? = null,
+        val params: String? = null,
+        val index: Int? = null,
+        val continuation: String? = null,
+    ) : QueueData()
     
     data class YouTubeAlbumRadioData(
         val playlistId: String,
