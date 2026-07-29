@@ -37,6 +37,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.metrolist.innertube.YouTube
 import com.metrolist.innertube.models.SongItem
 import com.metrolist.music.LocalDatabase
+import com.metrolist.music.LocalSyncUtils
 import com.metrolist.music.R
 import com.metrolist.music.constants.AddToPlaylistSortDescendingKey
 import com.metrolist.music.constants.AddToPlaylistSortTypeKey
@@ -101,6 +102,7 @@ fun AddToPlaylistDialogOnline(
     viewModel: PlaylistsViewModel = hiltViewModel()
 ) {
     val database = LocalDatabase.current
+    val syncUtils = LocalSyncUtils.current
     val coroutineScope = rememberCoroutineScope()
     val viewStateMap = remember { mutableStateMapOf<String, ItemsPage?>() }
     val (sortType, onSortTypeChange) = rememberEnumPreference(
@@ -381,12 +383,14 @@ fun AddToPlaylistDialogOnline(
                                                             if (firstSong != null) {
                                                                 val firstSongMedia = firstSong.toMediaMetadata()
                                                                 val firstSongEnt = firstSong.toMediaMetadata().toSongEntity()
+                                                                val likedSong = firstSongEnt.toggleLike()
                                                                 withContext(Dispatchers.IO) {
                                                                     try {
                                                                         database.insert(firstSongMedia)
                                                                         database.query {
-                                                                            update(firstSongEnt.toggleLike())
+                                                                            update(likedSong)
                                                                         }
+                                                                        syncUtils.likeSong(likedSong)
                                                                     } catch (e: Exception) {
                                                                         Timber.tag("Exception").e(e.toString())
                                                                     }

@@ -16,6 +16,7 @@ This fork is maintained by [jajafu](https://github.com/jajafu) and focuses on a 
 - The mini-player's add-to-playlist picker uses large adaptive playlist cards matching the library grid for easier in-car operation.
 - Branded the installed app as `Metrolist_AndroidCar` with a black music-car logo across the launcher, About screen, and playback notifications.
 - New playlists default to YouTube Music sync when the account and sync setting are active. Failed playlist creation, song additions, and song removals are stored outside the App database, retried automatically, and shown as pending in the playlist library; duplicate-song removals preserve the exact YouTube occurrence, and new remote playlists receive a reconciliation grace period.
+- Song like and unlike actions use one ordered, durable synchronization queue. Rapid opposite actions keep the latest state, failed YouTube updates remain pending across App restarts, and duplicate network requests are avoided.
 - Automatic full sync starts its cooldown only after every required component and pending playlist edit succeeds. Partial failures remain visible and can be retried immediately.
 - Rapid queue or radio selections keep only the latest request, preventing slower network responses from replacing the active playback queue.
 - Backup and restore file work runs in the background. Restores validate staged database and settings files before replacing live data, roll back all replacements on failure, and restart into a usable database state when required.

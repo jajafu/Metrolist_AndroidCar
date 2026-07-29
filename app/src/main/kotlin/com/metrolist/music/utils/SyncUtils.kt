@@ -20,6 +20,7 @@ import com.metrolist.music.constants.InnerTubeCookieKey
 import com.metrolist.music.constants.LastFMUseSendLikes
 import com.metrolist.music.constants.LastFullSyncKey
 import com.metrolist.music.constants.PendingPlaylistEditsKey
+import com.metrolist.music.constants.PendingSongLikesKey
 import com.metrolist.music.constants.SYNC_COOLDOWN
 import com.metrolist.music.db.MusicDatabase
 import com.metrolist.music.db.entities.ArtistEntity
@@ -60,6 +61,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 
 sealed class SyncOperation {
     data object FullSync : SyncOperation()
@@ -74,7 +76,7 @@ sealed class SyncOperation {
     data object SavedPlaylists : SyncOperation()
     data object AutoSyncPlaylists : SyncOperation()
     data class SinglePlaylist(val browseId: String, val playlistId: String) : SyncOperation()
-    data class LikeSong(val song: SongEntity) : SyncOperation()
+    data object FlushPendingSongLikes : SyncOperation()
     data class SubscribeChannel(val channelId: String, val subscribe: Boolean) : SyncOperation()
     data class SavePodcast(val podcastId: String, val save: Boolean) : SyncOperation()
     data class SaveEpisode(val episodeId: String, val save: Boolean, val setVideoId: String?) : SyncOperation()
@@ -134,6 +136,8 @@ class SyncUtils @Inject constructor(
     private val playlistsBeingModified = ConcurrentHashMap<String, AtomicInteger>()
     private val playlistEditMutex = Mutex()
     private val pendingPlaylistEditMutex = Mutex()
+    private val pendingSongLikeMutex = Mutex()
+    private val songLikeSequence = AtomicLong(System.currentTimeMillis())
     private var lastPlaylistEditAtMs = 0L
     private val _pendingPlaylistEditCount = MutableStateFlow(0)
     val pendingPlaylistEditCount: StateFlow<Int> = _pendingPlaylistEditCount.asStateFlow()
@@ -188,6 +192,7 @@ class SyncUtils @Inject constructor(
             refreshPendingPlaylistEditCount()
             retryPendingPlaylistEdits()
         }
+        enqueue(SyncOperation.FlushPendingSongLikes)
     }
 
     private fun startProcessingQueue() {
@@ -244,7 +249,7 @@ class SyncUtils @Inject constructor(
         SyncOperation.CleanupDuplicates -> "cleanupDuplicates"
         SyncOperation.ClearAllSynced -> "clearAllSynced"
         SyncOperation.ClearPodcastData -> "clearPodcastData"
-        is SyncOperation.LikeSong,
+        SyncOperation.FlushPendingSongLikes,
         is SyncOperation.SubscribeChannel,
         is SyncOperation.SavePodcast,
         is SyncOperation.SaveEpisode,
@@ -269,7 +274,10 @@ class SyncUtils @Inject constructor(
 
     private suspend fun processOperation(operation: SyncOperation) {
         when (operation) {
-            is SyncOperation.FullSync -> executeFullSync()
+            is SyncOperation.FullSync -> {
+                retryPendingSongLikes()
+                executeFullSync()
+            }
             is SyncOperation.LikedSongs -> executeSyncLikedSongs()
             is SyncOperation.LibrarySongs -> executeSyncLibrarySongs()
             is SyncOperation.UploadedSongs -> executeSyncUploadedSongs()
@@ -281,7 +289,7 @@ class SyncUtils @Inject constructor(
             is SyncOperation.SavedPlaylists -> executeSyncSavedPlaylists()
             is SyncOperation.AutoSyncPlaylists -> executeSyncAutoSyncPlaylists()
             is SyncOperation.SinglePlaylist -> executeSyncPlaylist(operation.browseId, operation.playlistId)
-            is SyncOperation.LikeSong -> executeLikeSong(operation.song)
+            is SyncOperation.FlushPendingSongLikes -> retryPendingSongLikes()
             is SyncOperation.SubscribeChannel -> executeSubscribeChannel(operation.channelId, operation.subscribe)
             is SyncOperation.SavePodcast -> executeSavePodcast(operation.podcastId, operation.save)
             is SyncOperation.SaveEpisode -> executeSaveEpisode(operation.episodeId, operation.save, operation.setVideoId)
@@ -351,6 +359,87 @@ class SyncUtils @Inject constructor(
 
     private suspend fun refreshPendingPlaylistEditCount() {
         _pendingPlaylistEditCount.value = loadPendingPlaylistEdits().size
+    }
+
+    private suspend fun loadPendingSongLikes(): List<PendingSongLike> {
+        val encoded =
+            context.dataStore.data
+                .map { it[PendingSongLikesKey] }
+                .first()
+        return PendingSongLikeCodec.decode(encoded)
+    }
+
+    private suspend fun savePendingSongLikes(updates: List<PendingSongLike>) {
+        val saved =
+            context.safeDataStoreEdit { settings ->
+                if (updates.isEmpty()) {
+                    settings.remove(PendingSongLikesKey)
+                } else {
+                    settings[PendingSongLikesKey] = PendingSongLikeCodec.encode(updates)
+                }
+            }
+        if (!saved) {
+            error("Failed to persist pending song likes")
+        }
+    }
+
+    private suspend fun persistPendingSongLike(update: PendingSongLike) {
+        pendingSongLikeMutex.withLock {
+            savePendingSongLikes(
+                coalescePendingSongLike(
+                    pending = loadPendingSongLikes(),
+                    update = update,
+                ),
+            )
+        }
+    }
+
+    private suspend fun retryPendingSongLikes() {
+        if (!isLoggedIn() || !context.isInternetConnected()) return
+
+        while (true) {
+            val pending =
+                pendingSongLikeMutex.withLock {
+                    loadPendingSongLikes().minByOrNull(PendingSongLike::sequence)
+                } ?: return
+
+            val result =
+                withRetry {
+                    YouTube.likeVideo(pending.songId, pending.liked).getOrThrow()
+                }
+            if (result.isFailure) {
+                Timber.e(result.exceptionOrNull(), "Failed to sync pending song like: ${pending.songId}")
+                return
+            }
+
+            if (lastfmSendLikes) {
+                try {
+                    val dbSong = database.song(pending.songId).firstOrNull()
+                    LastFM.setLoveStatus(
+                        artist = dbSong?.artists?.joinToString { artist -> artist.name } ?: "",
+                        track = pending.title,
+                        love = pending.liked,
+                    )
+                } catch (e: Exception) {
+                    Timber.e(e, "Failed to update LastFM love status")
+                }
+            }
+
+            pendingSongLikeMutex.withLock {
+                savePendingSongLikes(
+                    removeCompletedPendingSongLike(
+                        pending = loadPendingSongLikes(),
+                        completed = pending,
+                    ),
+                )
+            }
+        }
+    }
+
+    private suspend fun clearPendingSongLikes() {
+        pendingSongLikeMutex.withLock {
+            savePendingSongLikes(emptyList())
+        }
     }
 
     private suspend fun enqueuePendingPlaylistEdit(edit: PendingPlaylistEdit) {
@@ -661,7 +750,17 @@ class SyncUtils @Inject constructor(
     }
 
     fun likeSong(s: SongEntity) {
-        enqueue(SyncOperation.LikeSong(s))
+        val pending =
+            PendingSongLike(
+                songId = s.id,
+                title = s.title,
+                liked = s.liked,
+                sequence = songLikeSequence.incrementAndGet(),
+            )
+        syncScope.launch {
+            persistPendingSongLike(pending)
+            enqueue(SyncOperation.FlushPendingSongLikes)
+        }
     }
 
     fun subscribeChannel(channelId: String, subscribe: Boolean) {
@@ -757,6 +856,7 @@ class SyncUtils @Inject constructor(
         Timber.d("[LOGOUT_CLEAR] Starting complete library data cleanup")
         try {
             clearPendingPlaylistEdits()
+            clearPendingSongLikes()
             updateState {
                 copy(
                     overallStatus = SyncStatus.Syncing,
@@ -981,32 +1081,6 @@ class SyncUtils @Inject constructor(
         } catch (e: Exception) {
             Timber.e(e, "Error during full sync")
             updateState { copy(overallStatus = SyncStatus.Error(e.message ?: "Unknown error"), currentOperation = "") }
-        }
-    }
-
-    private suspend fun executeLikeSong(s: SongEntity) = withContext(Dispatchers.IO) {
-        if (!isLoggedIn()) {
-            Timber.w("Skipping likeSong - user not logged in")
-            return@withContext
-        }
-
-        withRetry {
-            YouTube.likeVideo(s.id, s.liked)
-        }.onFailure { e ->
-            Timber.e(e, "Failed to like song on YouTube: ${s.id}")
-        }
-
-        if (lastfmSendLikes) {
-            try {
-                val dbSong = database.song(s.id).firstOrNull()
-                LastFM.setLoveStatus(
-                    artist = dbSong?.artists?.joinToString { a -> a.name } ?: "",
-                    track = s.title,
-                    love = s.liked
-                )
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to update LastFM love status")
-            }
         }
     }
 
@@ -2026,6 +2100,7 @@ class SyncUtils @Inject constructor(
 
         try {
             clearPendingPlaylistEdits()
+            clearPendingSongLikes()
             database.withTransaction {
                 // Clear liked songs
                 val likedSongs = database.likedSongsByNameAsc().first()

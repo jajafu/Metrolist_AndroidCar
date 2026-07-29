@@ -663,6 +663,7 @@ fun SelectionMediaMetadataMenu(
 ) {
     val context = LocalContext.current
     val database = LocalDatabase.current
+    val syncUtils = LocalSyncUtils.current
     val downloadUtil = LocalDownloadUtil.current
     val coroutineScope = rememberCoroutineScope()
     val playerConnection = LocalPlayerConnection.current ?: return
@@ -902,14 +903,16 @@ fun SelectionMediaMetadataMenu(
                                 },
                                 onClick = {
                                     database.query {
-                                        if (allLiked) {
-                                            songSelection.forEach { song ->
-                                                update(song.toSongEntity().toggleLike())
+                                        val songsToToggle =
+                                            if (allLiked) {
+                                                songSelection
+                                            } else {
+                                                songSelection.filter { !it.liked }
                                             }
-                                        } else {
-                                            songSelection.filter { !it.liked }.forEach { song ->
-                                                update(song.toSongEntity().toggleLike())
-                                            }
+                                        songsToToggle.forEach { song ->
+                                            val updatedSong = song.toSongEntity().toggleLike()
+                                            update(updatedSong)
+                                            syncUtils.likeSong(updatedSong)
                                         }
                                     }
                                 },
