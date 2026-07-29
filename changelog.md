@@ -4,6 +4,18 @@
 
 This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.46
+
+### 中文
+
+- 連續使用「播放下一首」時改為依請求先後順序插入，不再讓較新的歌曲插到較舊請求前面。
+- 開啟隨機播放時會將目前歌曲後的完整手動優先區塊排在自動歌曲前；切歌、重複播放、刪除、移動、換新或清空佇列後會同步縮減或重置追蹤狀態。
+
+### English
+
+- Keep repeated Play Next requests in first-in-first-out insertion order instead of placing newer requests before earlier ones.
+- Keep the complete manual-priority block ahead of automatic songs during shuffle, reconciling or resetting its state after transitions, repeats, removals, moves, queue replacement, and clearing.
+
 ## 13.6.45
 
 ### 中文
