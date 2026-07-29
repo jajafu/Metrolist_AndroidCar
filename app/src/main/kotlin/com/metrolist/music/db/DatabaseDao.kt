@@ -699,8 +699,19 @@ interface DatabaseDao {
 
     @Transaction
     @Query("SELECT * FROM song WHERE id IN (:songIds)")
-    suspend fun getSongsByIds(songIds: List<String>): List<Song>
+    suspend fun getSongsByIdsChunk(songIds: List<String>): List<Song>
 
+    @Transaction
+    suspend fun getSongsByIds(songIds: List<String>): List<Song> {
+        val uniqueIds = songIds.distinct()
+        if (uniqueIds.isEmpty()) return emptyList()
+
+        val songsById = uniqueIds
+            .chunked(SQLITE_QUERY_ID_CHUNK_SIZE)
+            .flatMap { getSongsByIdsChunk(it) }
+            .associateBy { it.id }
+        return uniqueIds.mapNotNull(songsById::get)
+    }
 
     @Transaction
     @Query("SELECT * FROM song_artist_map WHERE songId = :songId")
@@ -1125,10 +1136,24 @@ interface DatabaseDao {
     ): Int
 
     @Query("SELECT songId from playlist_song_map WHERE playlistId = :playlistId AND songId IN (:songIds)")
-    fun playlistDuplicates(
+    fun playlistDuplicatesChunk(
         playlistId: String,
         songIds: List<String>,
     ): List<String>
+
+    @Transaction
+    fun playlistDuplicates(
+        playlistId: String,
+        songIds: List<String>,
+    ): List<String> {
+        val uniqueIds = songIds.distinct()
+        if (uniqueIds.isEmpty()) return emptyList()
+
+        val duplicateIds = uniqueIds
+            .chunked(SQLITE_QUERY_ID_CHUNK_SIZE)
+            .flatMapTo(mutableSetOf()) { playlistDuplicatesChunk(playlistId, it) }
+        return uniqueIds.filter(duplicateIds::contains)
+    }
 
     @Query("UPDATE playlist SET lastUpdateTime = :now WHERE id = :playlistId")
     fun updatePlaylistLastUpdated(
@@ -1971,3 +1996,5 @@ interface DatabaseDao {
     @Delete
     fun delete(podcast: PodcastEntity)
 }
+
+private const val SQLITE_QUERY_ID_CHUNK_SIZE = 900

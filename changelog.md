@@ -4,6 +4,18 @@
 
 This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.41
+
+### 中文
+
+- 歌曲批次讀取與播放列表重複歌曲檢查改為每 900 個 ID 分批查詢，避免大型播放列表超過 SQLite 綁定參數上限而崩潰。
+- 空清單不再送入 Room 查詢；重複 ID 只回傳一次，跨批次結果會依輸入 ID 第一次出現的順序排列。
+
+### English
+
+- Split bulk song reads and playlist duplicate checks into queries of 900 IDs to prevent large playlists from exceeding SQLite bind-variable limits.
+- Empty lists bypass Room queries, duplicate IDs produce one result, and combined results follow each input ID's first occurrence.
+
 ## 13.6.40
 
 ### 中文
