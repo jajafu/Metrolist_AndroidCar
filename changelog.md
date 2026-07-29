@@ -4,6 +4,16 @@
 
 This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.35
+
+### 中文
+
+- Return YouTube Dislike 服務無法使用或回傳異常時，仍會保留 YouTube 已成功取得的歌曲媒體資訊，只有觀看、按讚與倒讚數暫時留空。
+
+### English
+
+- Preserve successfully retrieved YouTube media details when Return YouTube Dislike is unavailable or returns an invalid response; only view, like, and dislike counts remain unavailable.
+
 ## 13.6.34
 
 ### 中文

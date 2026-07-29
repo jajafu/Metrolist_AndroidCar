@@ -20,6 +20,7 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
+import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import java.net.Proxy
@@ -817,7 +818,17 @@ class InnerTube {
                     }?.videoPrimaryInfoRenderer
 
             val returnYouTubeDislikeResponse =
-                returnYouTubeDislike(videoId).body<ReturnYouTubeDislikeResponse>()
+                try {
+                    returnYouTubeDislike(videoId).body<ReturnYouTubeDislikeResponse>()
+                } catch (error: CancellationException) {
+                    throw error
+                } catch (error: Exception) {
+                    Timber.w(
+                        error,
+                        "Return YouTube Dislike request failed; continuing without vote counts"
+                    )
+                    null
+                }
 
             return@runCatching MediaInfo(
                 videoId = videoId,
@@ -858,9 +869,9 @@ class InnerTube {
                         ?.subscriberCountText
                         ?.simpleText?.split(" ")?.firstOrNull(),
                 uploadDate = baseForTitle?.dateText?.simpleText,
-                viewCount = returnYouTubeDislikeResponse.viewCount,
-                like = returnYouTubeDislikeResponse.likes,
-                dislike = returnYouTubeDislikeResponse.dislikes,
+                viewCount = returnYouTubeDislikeResponse?.viewCount,
+                like = returnYouTubeDislikeResponse?.likes,
+                dislike = returnYouTubeDislikeResponse?.dislikes,
             )
 
         }
