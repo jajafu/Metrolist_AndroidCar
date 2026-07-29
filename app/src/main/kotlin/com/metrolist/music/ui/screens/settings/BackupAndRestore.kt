@@ -67,6 +67,7 @@ import com.metrolist.music.viewmodels.BackupRestoreViewModel
 import com.metrolist.music.viewmodels.ConvertedSongLog
 import com.metrolist.music.viewmodels.CsvImportState
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -106,6 +107,9 @@ fun BackupAndRestore(
     var backupPreviewInfo by remember { mutableStateOf<BackupPreviewInfo?>(null) }
     var isLoadingAccountInfo by remember { mutableStateOf(false) }
     var accountCheckFailed by remember { mutableStateOf(false) }
+    var restorePreviewJob by remember { mutableStateOf<Job?>(null) }
+    var csvPreviewJob by remember { mutableStateOf<Job?>(null) }
+    var m3uPreviewJob by remember { mutableStateOf<Job?>(null) }
 
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -120,44 +124,57 @@ fun BackupAndRestore(
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
             if (uri != null) {
                 pendingRestoreUri = uri
-                val preview = viewModel.previewBackup(context, uri)
-                backupPreviewInfo = preview
-                showRestoreConfirmDialog = true
-
-                // Fetch account info asynchronously if backup has auth data
+                restorePreviewJob?.cancel()
                 accountCheckFailed = false
-                if (preview.hasAuthData && preview.cookie != null) {
-                    isLoadingAccountInfo = true
-                    coroutineScope.launch(Dispatchers.IO) {
-                        val accountInfo = viewModel.fetchAccountInfoFromBackup(preview.cookie)
-                        if (accountInfo != null) {
-                            backupPreviewInfo = accountInfo
-                        } else {
-                            accountCheckFailed = true
+                isLoadingAccountInfo = false
+                restorePreviewJob =
+                    coroutineScope.launch {
+                        val preview = viewModel.previewBackup(context, uri)
+                        backupPreviewInfo = preview
+                        showRestoreConfirmDialog = true
+
+                        if (preview.hasAuthData && preview.cookie != null) {
+                            isLoadingAccountInfo = true
+                            try {
+                                val accountInfo = viewModel.fetchAccountInfoFromBackup(preview.cookie)
+                                if (accountInfo != null) {
+                                    backupPreviewInfo = accountInfo
+                                } else {
+                                    accountCheckFailed = true
+                                }
+                            } finally {
+                                isLoadingAccountInfo = false
+                            }
                         }
-                        isLoadingAccountInfo = false
                     }
-                }
             }
         }
     val importPlaylistFromCsv =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
             if (uri == null) return@rememberLauncherForActivityResult
             pendingCsvUri = uri
-            val previewState = viewModel.previewCsvFile(context, uri)
-            csvImportState = previewState
-            showCsvColumnMapping = true
+            csvPreviewJob?.cancel()
+            csvPreviewJob =
+                coroutineScope.launch {
+                    val previewState = viewModel.previewCsvFile(context, uri)
+                    csvImportState = previewState
+                    showCsvColumnMapping = true
+                }
         }
     val importM3uLauncherOnline =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
             if (uri == null) return@rememberLauncherForActivityResult
-            val result = viewModel.loadM3UOnline(context, uri)
-            importedSongs.clear()
-            importedSongs.addAll(result)
+            m3uPreviewJob?.cancel()
+            m3uPreviewJob =
+                coroutineScope.launch {
+                    val result = viewModel.loadM3UOnline(context, uri)
+                    importedSongs.clear()
+                    importedSongs.addAll(result)
 
-            if (importedSongs.isNotEmpty()) {
-                showChoosePlaylistDialogOnline = true
-            }
+                    if (importedSongs.isNotEmpty()) {
+                        showChoosePlaylistDialogOnline = true
+                    }
+                }
         }
 
     Column(

@@ -47,7 +47,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import timber.log.Timber
+import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.InputStream
 import javax.inject.Inject
 
 data class BackupPreviewInfo(
@@ -295,14 +297,17 @@ class BackupRestoreViewModel @Inject constructor(
         }
     }
 
-    fun previewBackup(context: Context, uri: Uri): BackupPreviewInfo {
-        return runCatching {
+    suspend fun previewBackup(
+        context: Context,
+        uri: Uri,
+    ): BackupPreviewInfo = withContext(Dispatchers.IO) {
+        runCatching {
             context.applicationContext.contentResolver.openInputStream(uri)?.use { raw ->
                 raw.zipInputStream().use { inputStream ->
                     var entry = tryOrNull { inputStream.nextEntry }
                     while (entry != null) {
                         if (entry.name == SETTINGS_FILENAME) {
-                            val bytes = inputStream.readBytes()
+                            val bytes = inputStream.readUpTo(MAX_SETTINGS_PREVIEW_BYTES)
                             val content = bytes.decodeToString(throwOnInvalidSequence = false)
 
                             // Check for auth data (SAPISID cookie indicates logged in)
@@ -317,7 +322,7 @@ class BackupRestoreViewModel @Inject constructor(
                                 extractAccountNameFromPrefs(content) ?: "YouTube Account"
                             } else null
 
-                            return BackupPreviewInfo(
+                            return@runCatching BackupPreviewInfo(
                                 hasAuthData = hasAuthData,
                                 accountName = accountName,
                                 accountEmail = null,
@@ -457,27 +462,28 @@ class BackupRestoreViewModel @Inject constructor(
         }
     }
 
-    fun previewCsvFile(context: Context, uri: Uri): CsvImportState {
-        val previewRows = mutableListOf<List<String>>()
-        val csvState: CsvImportState
+    suspend fun previewCsvFile(
+        context: Context,
+        uri: Uri,
+    ): CsvImportState = withContext(Dispatchers.IO) {
         runCatching {
-            context.contentResolver.openInputStream(uri)?.use { stream ->
-                val lines = stream.bufferedReader().readLines()
-                val rowsToPreview = lines.take(6).map { parseCsvLine(it) }
-                previewRows.addAll(rowsToPreview)
-
-                val hasHeader = lines.isNotEmpty() && lines[0].contains(",")
-                csvState = CsvImportState(
-                    previewRows = previewRows,
-                    hasHeader = hasHeader,
-                )
-                return csvState
-            }
-        }.onFailure {
+            val lines =
+                context.contentResolver.openInputStream(uri)?.use { stream ->
+                    stream.bufferedReader().useLines { sequence ->
+                        sequence.take(CSV_PREVIEW_LINE_COUNT).toList()
+                    }
+                }.orEmpty()
+            CsvImportState(
+                previewRows = lines.map(::parseCsvLine),
+                hasHeader = lines.firstOrNull()?.contains(",") == true,
+            )
+        }.getOrElse {
             reportException(it)
-            Toast.makeText(context, "Failed to preview CSV file", Toast.LENGTH_SHORT).show()
+            withContext(Dispatchers.Main) {
+                Toast.makeText(context, "Failed to preview CSV file", Toast.LENGTH_SHORT).show()
+            }
+            CsvImportState()
         }
-        return CsvImportState()
     }
 
     suspend fun importPlaylistFromCsv(
@@ -565,18 +571,20 @@ class BackupRestoreViewModel @Inject constructor(
         return result.map { it.trim().trim('"') }
     }
 
-    fun loadM3UOnline(
+    suspend fun loadM3UOnline(
         context: Context,
         uri: Uri,
-    ): ArrayList<Song> {
+    ): ArrayList<Song> = withContext(Dispatchers.IO) {
         val songs = ArrayList<Song>()
 
         runCatching {
             context.applicationContext.contentResolver.openInputStream(uri)?.use { stream ->
-                val lines = stream.bufferedReader().readLines()
-                if (lines.isNotEmpty() && lines.first().startsWith("#EXTM3U")) {
-                    lines.forEachIndexed { _, rawLine ->
-                        if (rawLine.startsWith("#EXTINF:")) {
+                stream.bufferedReader().useLines { lines ->
+                    var validHeader = false
+                    lines.forEachIndexed { index, rawLine ->
+                        if (index == 0) {
+                            validHeader = rawLine.startsWith("#EXTM3U")
+                        } else if (validHeader && rawLine.startsWith("#EXTINF:")) {
                             val artists =
                                 rawLine.substringAfter("#EXTINF:").substringAfter(',').substringBefore(" - ").split(';')
                             val title = rawLine.substringAfter("#EXTINF:").substringAfter(',').substringAfter(" - ")
@@ -596,17 +604,32 @@ class BackupRestoreViewModel @Inject constructor(
         }
 
         if (songs.isEmpty()) {
-            Toast.makeText(
-                context,
-                "No songs found. Invalid file, or perhaps no song matches were found.",
-                Toast.LENGTH_SHORT
-            ).show()
+            withContext(Dispatchers.Main) {
+                Toast.makeText(
+                    context,
+                    "No songs found. Invalid file, or perhaps no song matches were found.",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
         }
-        return songs
+        songs
+    }
+
+    private fun InputStream.readUpTo(maxBytes: Int): ByteArray {
+        val output = ByteArrayOutputStream(minOf(maxBytes, DEFAULT_BUFFER_SIZE))
+        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+        while (output.size() < maxBytes) {
+            val bytesRead = read(buffer, 0, minOf(buffer.size, maxBytes - output.size()))
+            if (bytesRead <= 0) break
+            output.write(buffer, 0, bytesRead)
+        }
+        return output.toByteArray()
     }
 
     companion object {
         const val SETTINGS_FILENAME = "settings.preferences_pb"
+        private const val CSV_PREVIEW_LINE_COUNT = 6
+        private const val MAX_SETTINGS_PREVIEW_BYTES = 5 * 1024 * 1024
         private const val MUSIC_SERVICE_SHUTDOWN_TIMEOUT_MS = 5_000L
     }
 }
