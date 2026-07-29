@@ -30,7 +30,7 @@ object PlayerConfigStore {
     private const val ASSET_NAME = "player_configs.json"
 
     private val REMOTE_URL by lazy {
-        val encoded = "aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL01ldHJvbGlzdEdyb3VwL01ldHJvbGlzdC9tYWluL2FwcC9zcmMvbWFpbi9hc3NldHMvcGxheWVyX2NvbmZpZ3MuanNvbg=="
+        val encoded = "aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL2phamFmdS9NZXRyb2xpc3RfQW5kcm9pZENhci9tYWluL2FwcC9zcmMvbWFpbi9hc3NldHMvcGxheWVyX2NvbmZpZ3MuanNvbg=="
         String(Base64.decode(encoded, Base64.DEFAULT), StandardCharsets.UTF_8)
     }
 

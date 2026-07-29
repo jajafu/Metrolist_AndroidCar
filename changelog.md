@@ -4,6 +4,16 @@
 
 This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.34
+
+### 中文
+
+- 將 App 執行時的播放器設定與日期更新來源改為本專案的 GitHub 儲存庫，降低原始 Metrolist 遠端檔案遺失所造成的風險。
+
+### English
+
+- Point runtime player configuration and date updates to this project's GitHub repository, reducing reliance on the original Metrolist remote files.
+
 ## 13.6.33
 
 ### 中文

@@ -114,3 +114,6 @@ app/src/main/cpp/coverart/
 .cursor*
 .codeium
 .cortexkit
+
+# Local reference documents (never commit)
+/doc/
