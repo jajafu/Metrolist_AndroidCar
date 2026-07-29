@@ -104,8 +104,8 @@ android {
         applicationId = applicationIdOverride ?: baseApplicationId
         minSdk = 26
         targetSdk = 36
-        versionCode = 174
-        versionName = "13.6.25"
+        versionCode = 175
+        versionName = "13.6.26"
         resValue("string", "app_name", "Metrolist_AndroidCar")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -232,8 +232,10 @@ android {
 
     lint {
         lintConfig = file("lint.xml")
+        // Keep inherited findings visible while abortOnError blocks any newly introduced errors.
+        baseline = file("lint-baseline.xml")
         warningsAsErrors = false
-        abortOnError = false
+        abortOnError = true
         checkDependencies = false
     }
 

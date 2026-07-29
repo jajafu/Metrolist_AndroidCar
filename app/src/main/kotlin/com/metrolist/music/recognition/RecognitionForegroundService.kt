@@ -209,18 +209,22 @@ class RecognitionForegroundService : Service() {
         actionIntent: PendingIntent?,
         actionTitle: String?,
     ) {
-        NotificationManagerCompat.from(this).notify(
-            NOTIFICATION_ID,
-            buildNotification(
-                title = title,
-                contentText = contentText,
-                isTerminal = isTerminal,
-                contentIntent = contentIntent,
-                largeIcon = largeIcon,
-                actionIntent = actionIntent,
-                actionTitle = actionTitle,
-            ),
-        )
+        try {
+            NotificationManagerCompat.from(this).notify(
+                NOTIFICATION_ID,
+                buildNotification(
+                    title = title,
+                    contentText = contentText,
+                    isTerminal = isTerminal,
+                    contentIntent = contentIntent,
+                    largeIcon = largeIcon,
+                    actionIntent = actionIntent,
+                    actionTitle = actionTitle,
+                ),
+            )
+        } catch (securityException: SecurityException) {
+            Timber.w(securityException, "Unable to update recognition notification")
+        }
     }
 
     private fun buildNotification(

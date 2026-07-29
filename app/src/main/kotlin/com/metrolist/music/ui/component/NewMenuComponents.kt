@@ -26,11 +26,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -45,7 +41,7 @@ import androidx.compose.ui.unit.sp
 fun NewActionButton(
     icon: @Composable () -> Unit,
     text: String,
-    onClick: @Composable () -> Unit,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     backgroundColor: Color = MaterialTheme.colorScheme.surfaceVariant,
@@ -63,19 +59,10 @@ fun NewActionButton(
         label = "content",
     )
 
-    var performAction by remember { mutableStateOf(false) }
-
-    if (performAction) {
-        onClick()
-        LaunchedEffect(Unit) {
-            performAction = false
-        }
-    }
-
     Card(
         modifier =
             modifier
-                .clickable(enabled = enabled) { performAction = true },
+                .clickable(enabled = enabled, onClick = onClick),
         colors =
             CardDefaults.cardColors(
                 containerColor = animatedBackground,
@@ -212,7 +199,7 @@ fun NewActionGrid(
 data class NewAction(
     val icon: @Composable () -> Unit,
     val text: String,
-    val onClick: @Composable () -> Unit,
+    val onClick: () -> Unit,
     val enabled: Boolean = true,
     val backgroundColor: Color = Color.Unspecified,
     val contentColor: Color = Color.Unspecified,

@@ -1,5 +1,6 @@
 package com.metrolist.music.quicksettings
 
+import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.Intent
 import android.graphics.drawable.Icon
@@ -19,6 +20,8 @@ class MusicRecognizerTileService : TileService() {
         }
     }
 
+    @SuppressLint("StartActivityAndCollapseDeprecated")
+    @Suppress("DEPRECATION")
     override fun onClick() {
         super.onClick()
         val launchIntent =
@@ -36,7 +39,6 @@ class MusicRecognizerTileService : TileService() {
                 )
             startActivityAndCollapse(pendingIntent)
         } else {
-            @Suppress("DEPRECATION")
             startActivityAndCollapse(launchIntent)
         }
     }
