@@ -128,7 +128,6 @@ class SyncUtils @Inject constructor(
     private val fullSyncCoordinator =
         FullSyncCoordinator(syncScope) {
             syncExecutionMutex.withLock {
-                retryPendingSongLikes()
                 executeFullSync()
             }
         }
@@ -395,14 +394,26 @@ class SyncUtils @Inject constructor(
         }
     }
 
-    private suspend fun retryPendingSongLikes() {
-        if (!isLoggedIn() || !context.isInternetConnected()) return
+    private suspend fun retryPendingSongLikes(): Boolean {
+        if (!isLoggedIn() || !context.isInternetConnected()) return false
 
         while (true) {
             val pending =
                 pendingSongLikeMutex.withLock {
                     loadPendingSongLikes().minByOrNull(PendingSongLike::sequence)
-                } ?: return
+                } ?: return true
+
+            if (database.songEntity(pending.songId)?.isLocal == true) {
+                pendingSongLikeMutex.withLock {
+                    savePendingSongLikes(
+                        removeCompletedPendingSongLike(
+                            pending = loadPendingSongLikes(),
+                            completed = pending,
+                        ),
+                    )
+                }
+                continue
+            }
 
             val result =
                 withRetry {
@@ -410,7 +421,7 @@ class SyncUtils @Inject constructor(
                 }
             if (result.isFailure) {
                 Timber.e(result.exceptionOrNull(), "Failed to sync pending song like: ${pending.songId}")
-                return
+                return false
             }
 
             if (lastfmSendLikes) {
@@ -751,6 +762,11 @@ class SyncUtils @Inject constructor(
     }
 
     fun likeSong(s: SongEntity) {
+        if (s.isLocal) {
+            Timber.d("Keeping like state local for device song: ${s.id}")
+            return
+        }
+
         val pending =
             PendingSongLike(
                 songId = s.id,
@@ -1010,6 +1026,13 @@ class SyncUtils @Inject constructor(
                 executeFullSyncPlan(
                     steps =
                         listOf(
+                            FullSyncStep("pending song likes") {
+                                if (retryPendingSongLikes()) {
+                                    SyncStatus.Completed
+                                } else {
+                                    SyncStatus.Error("Pending song likes remain")
+                                }
+                            },
                             FullSyncStep("pending playlist edits") {
                                 if (retryPendingPlaylistEdits()) {
                                     SyncStatus.Completed
@@ -1161,11 +1184,28 @@ class SyncUtils @Inject constructor(
                     val remoteSongs = page.songs
                     val remoteIds = remoteSongs.map { it.id }.toSet()
                     val localSongs = database.likedSongEntitiesByNameAsc()
+                    val pendingBySongId =
+                        pendingSongLikeMutex.withLock {
+                            latestPendingSongLikesById(loadPendingSongLikes())
+                        }
 
-                    // Remove likes from songs not in remote
                     localSongs.filterNot { it.id in remoteIds }.forEach { song ->
                         try {
-                            database.update(song.localToggleLike())
+                            val reconciledLiked =
+                                resolveLikedStateDuringRemoteReconciliation(
+                                    localLiked = song.liked,
+                                    isLocalSong = song.isLocal,
+                                    remoteLiked = false,
+                                    pending = pendingBySongId[song.id],
+                                )
+                            if (song.liked != reconciledLiked) {
+                                database.update(
+                                    song.copy(
+                                        liked = reconciledLiked,
+                                        likedDate = if (reconciledLiked) song.likedDate else null,
+                                    ),
+                                )
+                            }
                             delay(DB_OPERATION_DELAY_MS)
                         } catch (e: Exception) {
                             Timber.e(e, "Failed to update song: ${song.id}")
@@ -1179,14 +1219,41 @@ class SyncUtils @Inject constructor(
                             val dbSong = database.songEntity(song.id)
                             val timestamp = now.minusSeconds(index.toLong())
                             val isVideoSong = song.isVideoSong
+                            val reconciledLiked =
+                                resolveLikedStateDuringRemoteReconciliation(
+                                    localLiked = dbSong?.liked ?: false,
+                                    isLocalSong = dbSong?.isLocal == true,
+                                    remoteLiked = true,
+                                    pending = pendingBySongId[song.id],
+                                )
+                            val reconciledLikedDate =
+                                when {
+                                    !reconciledLiked -> null
+                                    dbSong?.isLocal == true -> dbSong.likedDate
+                                    else -> timestamp
+                                }
 
                             database.withTransaction {
                                 if (dbSong == null) {
                                     insert(song.toMediaMetadata()) {
-                                        it.copy(liked = true, likedDate = timestamp, isVideo = isVideoSong)
+                                        it.copy(
+                                            liked = reconciledLiked,
+                                            likedDate = reconciledLikedDate,
+                                            isVideo = isVideoSong,
+                                        )
                                     }
-                                } else if (!dbSong.liked || dbSong.likedDate != timestamp || dbSong.isVideo != isVideoSong) {
-                                    update(dbSong.copy(liked = true, likedDate = timestamp, isVideo = isVideoSong))
+                                } else if (
+                                    dbSong.liked != reconciledLiked ||
+                                    dbSong.likedDate != reconciledLikedDate ||
+                                    dbSong.isVideo != isVideoSong
+                                ) {
+                                    update(
+                                        dbSong.copy(
+                                            liked = reconciledLiked,
+                                            likedDate = reconciledLikedDate,
+                                            isVideo = isVideoSong,
+                                        ),
+                                    )
                                 }
                             }
                             delay(DB_OPERATION_DELAY_MS)

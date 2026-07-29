@@ -57,4 +57,22 @@ class FullSyncPlanTest {
         assertTrue(isFullSyncCoolingDown(1_000L, 2_799L, 1_800L))
         assertFalse(isFullSyncCoolingDown(1_000L, 2_800L, 1_800L))
     }
+
+    @Test
+    fun `failed pending like retry prevents full sync from advancing success time`() =
+        runBlocking {
+            val result =
+                executeFullSyncPlan(
+                    listOf(
+                        FullSyncStep("pending song likes") {
+                            SyncStatus.Error("Pending song likes remain")
+                        },
+                        FullSyncStep("liked songs") { SyncStatus.Completed },
+                    ),
+                )
+
+            assertFalse(result.isSuccessful)
+            assertEquals(listOf("pending song likes"), result.failedComponents)
+            assertEquals(100L, nextLastSuccessfulSyncEpoch(100L, 200L, result))
+        }
 }

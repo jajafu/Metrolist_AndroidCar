@@ -4,6 +4,18 @@
 
 This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.44
+
+### 中文
+
+- 遠端喜歡歌曲清單核對時，會保留尚未成功送出的最新本機按讚或取消按讚，避免離線操作被遠端舊狀態覆蓋。
+- 沒有待處理本機操作時仍接受遠端取消按讚；裝置本機歌曲不會送往 YouTube，待處理按讚尚未清空時也不會把完整同步誤記為成功。
+
+### English
+
+- Preserve the latest pending local like or unlike while reconciling the remote liked-songs playlist so stale remote state cannot overwrite offline actions.
+- Continue accepting remote unlikes when no local action is pending, never send device-local songs to YouTube, and do not mark a full sync successful while song-like updates remain pending.
+
 ## 13.6.43
 
 ### 中文

@@ -36,6 +36,25 @@ internal fun removeCompletedPendingSongLike(
         it.songId == completed.songId && it.sequence == completed.sequence
     }
 
+internal fun latestPendingSongLikesById(
+    pending: List<PendingSongLike>,
+): Map<String, PendingSongLike> =
+    pending
+        .groupBy(PendingSongLike::songId)
+        .mapValues { (_, updates) -> updates.maxBy(PendingSongLike::sequence) }
+
+internal fun resolveLikedStateDuringRemoteReconciliation(
+    localLiked: Boolean,
+    isLocalSong: Boolean,
+    remoteLiked: Boolean,
+    pending: PendingSongLike?,
+): Boolean =
+    when {
+        isLocalSong -> localLiked
+        pending != null -> pending.liked
+        else -> remoteLiked
+    }
+
 internal object PendingSongLikeCodec {
     private val json =
         Json {

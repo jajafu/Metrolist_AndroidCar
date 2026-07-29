@@ -1,6 +1,7 @@
 package com.metrolist.music.utils
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -59,6 +60,78 @@ class PendingSongLikesTest {
 
         assertEquals(updates, restored)
         assertTrue(PendingSongLikeCodec.decode(null).isEmpty())
+    }
+
+    @Test
+    fun `offline like wins over a stale remote unlike`() {
+        val result =
+            resolveLikedStateDuringRemoteReconciliation(
+                localLiked = true,
+                isLocalSong = false,
+                remoteLiked = false,
+                pending = pending(songId = "song", liked = true, sequence = 1),
+            )
+
+        assertTrue(result)
+    }
+
+    @Test
+    fun `failed pending unlike is not reversed by stale remote like`() {
+        val result =
+            resolveLikedStateDuringRemoteReconciliation(
+                localLiked = false,
+                isLocalSong = false,
+                remoteLiked = true,
+                pending = pending(songId = "song", liked = false, sequence = 2),
+            )
+
+        assertFalse(result)
+    }
+
+    @Test
+    fun `remote unlike wins when there is no pending local action`() {
+        val result =
+            resolveLikedStateDuringRemoteReconciliation(
+                localLiked = true,
+                isLocalSong = false,
+                remoteLiked = false,
+                pending = null,
+            )
+
+        assertFalse(result)
+    }
+
+    @Test
+    fun `local files keep their local liked state`() {
+        val result =
+            resolveLikedStateDuringRemoteReconciliation(
+                localLiked = true,
+                isLocalSong = true,
+                remoteLiked = false,
+                pending = null,
+            )
+
+        assertTrue(result)
+    }
+
+    @Test
+    fun `latest sequence controls reconciliation after rapid opposite actions`() {
+        val latest =
+            latestPendingSongLikesById(
+                listOf(
+                    pending(songId = "song", liked = true, sequence = 1),
+                    pending(songId = "song", liked = false, sequence = 2),
+                ),
+            ).getValue("song")
+
+        assertFalse(
+            resolveLikedStateDuringRemoteReconciliation(
+                localLiked = true,
+                isLocalSong = false,
+                remoteLiked = true,
+                pending = latest,
+            ),
+        )
     }
 
     private fun pending(
