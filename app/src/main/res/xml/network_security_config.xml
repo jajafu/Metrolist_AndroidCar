@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <!-- Allow cleartext traffic for Listen Together local servers -->
-    <!-- We're already using WSS for the prod server -->
+    <!--
+        Android Network Security Config cannot express private IP ranges, CIDR blocks, mDNS,
+        or user-provided LAN hostnames. Cleartext therefore cannot be narrowed to dynamic local
+        Listen Together hosts in this XML. ListenTogetherServerUrlPolicy enforces WSS for remote
+        servers and permits WS only for loopback, link-local, and private LAN destinations.
+        All bundled Internet endpoints use TLS.
+    -->
     <base-config cleartextTrafficPermitted="true">
         <trust-anchors>
             <certificates src="system" />

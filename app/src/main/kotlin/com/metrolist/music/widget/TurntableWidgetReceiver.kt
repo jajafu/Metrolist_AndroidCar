@@ -33,31 +33,6 @@ class TurntableWidgetReceiver : AppWidgetProvider() {
         // If service is not running, widget shows default layout until user opens app
     }
 
-    override fun onReceive(context: Context, intent: Intent) {
-        super.onReceive(context, intent)
-
-        when (intent.action) {
-            ACTION_TURNTABLE_PLAY_PAUSE, ACTION_TURNTABLE_NEXT, ACTION_TURNTABLE_PREVIOUS -> {
-                // User interactions from widget buttons can start the service
-                // Android allows starting FGS from widget PendingIntent clicks
-                val serviceIntent = Intent(context, MusicService::class.java).apply {
-                    action = when (intent.action) {
-                        ACTION_TURNTABLE_PLAY_PAUSE -> MusicWidgetReceiver.ACTION_PLAY_PAUSE
-                        ACTION_TURNTABLE_NEXT -> MusicWidgetReceiver.ACTION_NEXT
-                        ACTION_TURNTABLE_PREVIOUS -> MusicWidgetReceiver.ACTION_PREVIOUS
-                        else -> intent.action
-                    }
-                    putExtras(intent)
-                }
-                try {
-                    context.startService(serviceIntent)
-                } catch (e: Exception) {
-                    // Service might be restricted in background
-                }
-            }
-        }
-    }
-
     companion object {
         const val ACTION_TURNTABLE_PLAY_PAUSE = "com.metrolist.music.widget.TURNTABLE_PLAY_PAUSE"
         const val ACTION_TURNTABLE_NEXT = "com.metrolist.music.widget.TURNTABLE_NEXT"

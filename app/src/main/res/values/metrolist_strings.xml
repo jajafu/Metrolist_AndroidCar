@@ -601,6 +601,7 @@
     <string name="listen_together_choose_server">Choose server</string>
     <string name="listen_together_custom_server">Custom server</string>
     <string name="listen_together_use_custom_server">Use custom server</string>
+    <string name="listen_together_server_url_security_error">Use WSS for remote servers. WS is allowed only for private local-network addresses.</string>
     <string name="listen_together_username">Username</string>
     <string name="listen_together_connected">Connected</string>
     <string name="listen_together_reconnecting">Reconnecting…</string>

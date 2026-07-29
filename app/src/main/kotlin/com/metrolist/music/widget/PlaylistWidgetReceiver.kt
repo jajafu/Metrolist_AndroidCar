@@ -8,9 +8,6 @@ package com.metrolist.music.widget
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
-import android.content.Intent
-import com.metrolist.music.MainActivity
-import com.metrolist.music.playback.MusicService
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -41,29 +38,6 @@ class PlaylistWidgetReceiver : AppWidgetProvider() {
         refreshIdleWidget(appWidgetId, newOptions)
     }
 
-    override fun onReceive(context: Context, intent: Intent) {
-        super.onReceive(context, intent)
-
-        when (intent.action) {
-            ACTION_PLAY_TARGET -> {
-                val serviceIntent = Intent(context, MusicService::class.java).apply {
-                    action = ACTION_PLAY_TARGET
-                    putExtra(EXTRA_TARGET_TYPE, intent.getStringExtra(EXTRA_TARGET_TYPE))
-                    putExtra(EXTRA_TARGET_ID, intent.getStringExtra(EXTRA_TARGET_ID))
-                    putExtra(EXTRA_TARGET_TITLE, intent.getStringExtra(EXTRA_TARGET_TITLE))
-                }
-                try {
-                    context.startService(serviceIntent)
-                } catch (e: Exception) {
-                    Timber.tag(TAG).w(e, "Failed to start playlist widget target")
-                    openTargetInApp(context, intent)
-                }
-            }
-
-            ACTION_UPDATE_WIDGET -> refreshIdleWidgets()
-        }
-    }
-
     private fun refreshIdleWidgets(
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray,
@@ -85,19 +59,6 @@ class PlaylistWidgetReceiver : AppWidgetProvider() {
         }
     }
 
-    private fun refreshIdleWidgets() {
-        val pendingResult = goAsync()
-        CoroutineScope(Dispatchers.Main).launch {
-            try {
-                playlistWidgetManager.updateIdleWidgets()
-            } catch (e: Exception) {
-                Timber.tag(TAG).e(e, "Failed to refresh playlist widgets")
-            } finally {
-                pendingResult.finish()
-            }
-        }
-    }
-
     private fun refreshIdleWidget(appWidgetId: Int, options: android.os.Bundle) {
         val pendingResult = goAsync()
         CoroutineScope(Dispatchers.Main).launch {
@@ -109,22 +70,6 @@ class PlaylistWidgetReceiver : AppWidgetProvider() {
                 pendingResult.finish()
             }
         }
-    }
-
-    private fun openTargetInApp(context: Context, source: Intent) {
-        val activityIntent = Intent(context, MainActivity::class.java).apply {
-            action = MainActivity.ACTION_OPEN_WIDGET_TARGET
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
-            putExtra(
-                MainActivity.EXTRA_WIDGET_TARGET_TYPE,
-                source.getStringExtra(EXTRA_TARGET_TYPE),
-            )
-            putExtra(
-                MainActivity.EXTRA_WIDGET_TARGET_ID,
-                source.getStringExtra(EXTRA_TARGET_ID),
-            )
-        }
-        context.startActivity(activityIntent)
     }
 
     companion object {

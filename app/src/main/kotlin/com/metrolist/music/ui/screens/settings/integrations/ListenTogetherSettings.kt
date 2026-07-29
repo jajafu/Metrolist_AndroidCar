@@ -85,6 +85,7 @@ import com.metrolist.music.constants.ListenTogetherUsernameKey
 import com.metrolist.music.listentogether.ConnectionState
 import com.metrolist.music.listentogether.ListenTogetherEvent
 import com.metrolist.music.listentogether.ListenTogetherServer
+import com.metrolist.music.listentogether.ListenTogetherServerUrlPolicy
 import com.metrolist.music.listentogether.ListenTogetherServers
 import com.metrolist.music.listentogether.LogEntry
 import com.metrolist.music.listentogether.LogLevel
@@ -624,6 +625,7 @@ private fun ServerChooserDialog(
 ) {
     var customUrl by rememberSaveable(currentUrl) { mutableStateOf(currentUrl) }
     val trimmedCustomUrl = customUrl.trim()
+    val customUrlAllowed = ListenTogetherServerUrlPolicy.isAllowed(trimmedCustomUrl)
 
     DefaultDialog(
         onDismiss = onDismiss,
@@ -708,6 +710,12 @@ private fun ServerChooserDialog(
                 value = customUrl,
                 onValueChange = { customUrl = it },
                 label = { Text(stringResource(R.string.listen_together_server_url)) },
+                supportingText = {
+                    if (trimmedCustomUrl.isNotEmpty() && !customUrlAllowed) {
+                        Text(stringResource(R.string.listen_together_server_url_security_error))
+                    }
+                },
+                isError = trimmedCustomUrl.isNotEmpty() && !customUrlAllowed,
                 leadingIcon = {
                     Icon(painterResource(R.drawable.link), contentDescription = null)
                 },
@@ -716,7 +724,7 @@ private fun ServerChooserDialog(
             )
             Button(
                 onClick = { onUseCustom(trimmedCustomUrl) },
-                enabled = trimmedCustomUrl.isNotBlank(),
+                enabled = customUrlAllowed,
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
             ) {

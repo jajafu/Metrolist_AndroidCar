@@ -89,6 +89,12 @@ constructor(
         controller: MediaSession.ControllerInfo,
     ): MediaSession.ConnectionResult {
         val connectionResult = super.onConnect(session, controller)
+        if (!connectionResult.isAccepted ||
+            !MediaControllerCommandPolicy.canUseCustomCommands(controller.isTrusted)
+        ) {
+            return connectionResult
+        }
+
         return MediaSession.ConnectionResult.accept(
             connectionResult.availableSessionCommands
                 .buildUpon()
@@ -109,16 +115,33 @@ constructor(
         customCommand: SessionCommand,
         args: Bundle,
     ): ListenableFuture<SessionResult> {
-        when (customCommand.customAction) {
-            MediaSessionConstants.ACTION_TOGGLE_LIKE -> toggleLike()
-            MediaSessionConstants.ACTION_TOGGLE_START_RADIO -> toggleStartRadio()
-            MediaSessionConstants.ACTION_TOGGLE_LIBRARY -> toggleLibrary()
-            MediaSessionConstants.ACTION_TOGGLE_SHUFFLE -> session.player.shuffleModeEnabled =
-                !session.player.shuffleModeEnabled
-
-            MediaSessionConstants.ACTION_TOGGLE_REPEAT_MODE -> session.player.toggleRepeatMode()
-            MediaSessionConstants.ACTION_ADD_TO_TARGET_PLAYLIST -> addToTargetPlaylist()
+        if (!MediaControllerCommandPolicy.canUseCustomCommands(controller.isTrusted)) {
+            return Futures.immediateFuture(
+                SessionResult(SessionError.ERROR_PERMISSION_DENIED),
+            )
         }
+
+        return when (customCommand.customAction) {
+            MediaSessionConstants.ACTION_TOGGLE_LIKE -> successfulCustomCommand(toggleLike)
+            MediaSessionConstants.ACTION_TOGGLE_START_RADIO -> successfulCustomCommand(toggleStartRadio)
+            MediaSessionConstants.ACTION_TOGGLE_LIBRARY -> successfulCustomCommand(toggleLibrary)
+            MediaSessionConstants.ACTION_TOGGLE_SHUFFLE ->
+                successfulCustomCommand {
+                    session.player.shuffleModeEnabled = !session.player.shuffleModeEnabled
+                }
+
+            MediaSessionConstants.ACTION_TOGGLE_REPEAT_MODE ->
+                successfulCustomCommand(session.player::toggleRepeatMode)
+
+            MediaSessionConstants.ACTION_ADD_TO_TARGET_PLAYLIST ->
+                successfulCustomCommand(addToTargetPlaylist)
+
+            else -> super.onCustomCommand(session, controller, customCommand, args)
+        }
+    }
+
+    private fun successfulCustomCommand(action: () -> Unit): ListenableFuture<SessionResult> {
+        action()
         return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
     }
 

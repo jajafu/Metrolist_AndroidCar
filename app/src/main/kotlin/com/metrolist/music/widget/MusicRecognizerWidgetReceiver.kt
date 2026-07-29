@@ -68,8 +68,10 @@ class MusicRecognizerWidgetReceiver : AppWidgetProvider() {
         updateAllWidgets(context, appWidgetManager)
     }
 
-    override fun onReceive(context: Context, intent: Intent) {
-        super.onReceive(context, intent)
+    internal fun handlePrivateAction(
+        context: Context,
+        intent: Intent,
+    ) {
         when (intent.action) {
             ACTION_START_RECOGNITION -> handleStartRecognition(context)
             ACTION_UPDATE_WIDGET -> updateAllWidgets(context, AppWidgetManager.getInstance(context))
@@ -311,7 +313,7 @@ class MusicRecognizerWidgetReceiver : AppWidgetProvider() {
     private fun getMicIntent(context: Context): PendingIntent =
         PendingIntent.getBroadcast(
             context, 20,
-            Intent(context, MusicRecognizerWidgetReceiver::class.java).apply {
+            Intent(context, WidgetActionReceiver::class.java).apply {
                 action = ACTION_START_RECOGNITION
             },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE

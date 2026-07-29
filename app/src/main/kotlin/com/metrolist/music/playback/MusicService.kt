@@ -222,6 +222,7 @@ import com.metrolist.music.utils.safeDataStoreEdit
 import com.metrolist.music.widget.MetrolistWidgetManager
 import com.metrolist.music.widget.MusicWidgetReceiver
 import com.metrolist.music.widget.PlaylistWidgetReceiver
+import com.metrolist.music.widget.WidgetActionSecurity
 import com.metrolist.music.ui.utils.resize
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CancellationException
@@ -4622,6 +4623,14 @@ class MusicService :
         flags: Int,
         startId: Int,
     ): Int {
+        if (intent != null &&
+            WidgetActionSecurity.requiresAuthentication(intent.action) &&
+            !WidgetActionSecurity.isAuthenticated(intent)
+        ) {
+            Timber.tag(TAG).w("Rejected unauthenticated private widget action: ${intent.action}")
+            return START_NOT_STICKY
+        }
+
         // On Android O+, every startForegroundService() call requires
         // Service.startForeground() to be called within a short timeout.
         // Some OEMs (e.g. MIUI) strictly enforce this even when the

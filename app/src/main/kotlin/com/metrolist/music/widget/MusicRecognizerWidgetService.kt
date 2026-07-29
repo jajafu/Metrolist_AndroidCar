@@ -317,7 +317,7 @@ class MusicRecognizerWidgetService : Service() {
 
     private fun updateAllWidgets() {
         sendBroadcast(
-            Intent(this, MusicRecognizerWidgetReceiver::class.java).apply {
+            Intent(this, WidgetActionReceiver::class.java).apply {
                 action = MusicRecognizerWidgetReceiver.ACTION_UPDATE_WIDGET
             }
         )

@@ -627,7 +627,7 @@ class ListenTogetherClient
             return if (trimmed.contains("metroserver.meowery.eu", ignoreCase = true)) {
                 DEFAULT_SERVER_URL
             } else {
-                trimmed
+                ListenTogetherServerUrlPolicy.normalizeOrDefault(trimmed, DEFAULT_SERVER_URL)
             }
         }
 

@@ -22,6 +22,7 @@ This fork is maintained by [jajafu](https://github.com/jajafu) and focuses on a 
 - Wrapped safely supports listening histories with fewer than five eligible top songs.
 - Automatic queue continuation retries temporary failures with bounded backoff, waits for network recovery without duplicate requests, and offers a manual retry after the final failure.
 - Parallel downloads share a thread-safe URL cache, preventing duplicate resolution and cache races.
+- Security hardening limits cleartext Listen Together connections to local-network servers, isolates private widget actions from exported update receivers, and grants custom media commands only to trusted controllers.
 
 ## Features
 

@@ -391,7 +391,7 @@ class MetrolistWidgetManager @Inject constructor(
     }
 
     private fun getPlayPauseIntent(): PendingIntent {
-        val intent = Intent(context, MusicWidgetReceiver::class.java).apply {
+        val intent = Intent(context, WidgetActionReceiver::class.java).apply {
             action = MusicWidgetReceiver.ACTION_PLAY_PAUSE
         }
         return PendingIntent.getBroadcast(
@@ -403,7 +403,7 @@ class MetrolistWidgetManager @Inject constructor(
     }
 
     private fun getLikeIntent(): PendingIntent {
-        val intent = Intent(context, MusicWidgetReceiver::class.java).apply {
+        val intent = Intent(context, WidgetActionReceiver::class.java).apply {
             action = MusicWidgetReceiver.ACTION_LIKE
         }
         return PendingIntent.getBroadcast(
@@ -415,7 +415,7 @@ class MetrolistWidgetManager @Inject constructor(
     }
 
     private fun getTurntablePlayPauseIntent(): PendingIntent {
-        val intent = Intent(context, TurntableWidgetReceiver::class.java).apply {
+        val intent = Intent(context, WidgetActionReceiver::class.java).apply {
             action = TurntableWidgetReceiver.ACTION_TURNTABLE_PLAY_PAUSE
         }
         return PendingIntent.getBroadcast(
@@ -427,7 +427,7 @@ class MetrolistWidgetManager @Inject constructor(
     }
 
     private fun getTurntableNextIntent(): PendingIntent {
-        val intent = Intent(context, TurntableWidgetReceiver::class.java).apply {
+        val intent = Intent(context, WidgetActionReceiver::class.java).apply {
             action = TurntableWidgetReceiver.ACTION_TURNTABLE_NEXT
         }
         return PendingIntent.getBroadcast(
@@ -439,7 +439,7 @@ class MetrolistWidgetManager @Inject constructor(
     }
 
     private fun getTurntablePreviousIntent(): PendingIntent {
-        val intent = Intent(context, TurntableWidgetReceiver::class.java).apply {
+        val intent = Intent(context, WidgetActionReceiver::class.java).apply {
             action = TurntableWidgetReceiver.ACTION_TURNTABLE_PREVIOUS
         }
         return PendingIntent.getBroadcast(
