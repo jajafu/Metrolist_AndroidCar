@@ -4,6 +4,18 @@
 
 This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.38
+
+### 中文
+
+- 音樂庫下拉重新整理現在會加入已排隊或執行中的完整同步，避免自動同步後立刻重複執行第二次完整同步。
+- 重複下拉會共用同一個同步工作，旋轉指示會持續到實際工作完成；部分同步失敗時會顯示重試提示。
+
+### English
+
+- Make library pull-to-refresh join a queued or running full sync, preventing a second complete sync from running immediately after auto-sync.
+- Repeated pulls now share one sync operation, keep the refresh indicator active until the actual work finishes, and show a retry message after partial failure.
+
 ## 13.6.37
 
 ### 中文

@@ -26,6 +26,7 @@
     <string name="filter_uploaded">Uploaded</string>
     <string name="sync_playlist">Sync playlist</string>
     <string name="sync_disabled">Sync disabled</string>
+    <string name="library_refresh_partial_failure">Some library items could not be refreshed. Check your connection and pull down to retry.</string>
     <string name="playlist_create_failed">Could not create the playlist. Check your connection and try again.</string>
     <string name="playlist_sync_queued">Playlist saved locally. YouTube Music sync will retry automatically.</string>
     <string name="playlist_song_sync_failed">Added locally. %1$d song(s) will retry YouTube Music sync automatically.</string>

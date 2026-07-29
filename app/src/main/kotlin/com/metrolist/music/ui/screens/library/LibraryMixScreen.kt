@@ -5,6 +5,7 @@
 
 package com.metrolist.music.ui.screens.library
 
+import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -48,6 +49,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -106,8 +108,6 @@ import com.metrolist.music.ui.menu.SongMenu
 import com.metrolist.music.utils.rememberEnumPreference
 import com.metrolist.music.utils.rememberPreference
 import com.metrolist.music.viewmodels.LibraryMixViewModel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.text.Collator
 import java.time.LocalDateTime
 import java.util.UUID
@@ -122,6 +122,7 @@ fun LibraryMixScreen(
     val menuState = LocalMenuState.current
     val haptic = LocalHapticFeedback.current
     val keyboardController = LocalSoftwareKeyboardController.current
+    val context = LocalContext.current
     val queueSearchedSongsStr = stringResource(R.string.queue_searched_songs)
     val playerConnection = LocalPlayerConnection.current ?: return
     val isPlaying by playerConnection.isEffectivelyPlaying.collectAsStateWithLifecycle()
@@ -371,9 +372,17 @@ fun LibraryMixScreen(
 
     LaunchedEffect(Unit) {
         if (ytmSync) {
-            withContext(Dispatchers.IO) {
-                viewModel.syncAllLibrary()
-            }
+            viewModel.syncAllLibrary()
+        }
+    }
+
+    LaunchedEffect(viewModel) {
+        viewModel.refreshFailures.collect {
+            Toast.makeText(
+                context,
+                R.string.library_refresh_partial_failure,
+                Toast.LENGTH_LONG,
+            ).show()
         }
     }
 

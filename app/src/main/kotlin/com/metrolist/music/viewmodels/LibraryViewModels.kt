@@ -59,9 +59,12 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
@@ -347,6 +350,9 @@ constructor(
 ) : ViewModel() {
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing = _isRefreshing.asStateFlow()
+    private val _refreshFailures = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val refreshFailures = _refreshFailures.asSharedFlow()
+    private var refreshJob: Job? = null
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
@@ -358,17 +364,23 @@ constructor(
         _searchQuery.value = query
     }
 
-    val syncAllLibrary = {
-         viewModelScope.launch(Dispatchers.IO) {
-             syncUtils.tryAutoSync()
-         }
+    fun syncAllLibrary() {
+        syncUtils.tryAutoSync()
     }
 
     fun refresh() {
-        viewModelScope.launch(Dispatchers.IO) {
+        if (refreshJob?.isActive == true) return
+
+        refreshJob = viewModelScope.launch(Dispatchers.IO) {
             _isRefreshing.value = true
-            syncUtils.performFullSyncSuspend()
-            _isRefreshing.value = false
+            try {
+                val result = syncUtils.performFullSyncSuspend()
+                if (!result.isSuccessful) {
+                    _refreshFailures.emit(Unit)
+                }
+            } finally {
+                _isRefreshing.value = false
+            }
         }
     }
 

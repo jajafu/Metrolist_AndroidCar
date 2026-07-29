@@ -64,7 +64,6 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 
 sealed class SyncOperation {
-    data object FullSync : SyncOperation()
     data object LikedSongs : SyncOperation()
     data object LibrarySongs : SyncOperation()
     data object UploadedSongs : SyncOperation()
@@ -126,6 +125,13 @@ class SyncUtils @Inject constructor(
     private val syncChannel = Channel<SyncOperation>(Channel.BUFFERED)
     private var processingJob: Job? = null
     private val syncExecutionMutex = Mutex()
+    private val fullSyncCoordinator =
+        FullSyncCoordinator(syncScope) {
+            syncExecutionMutex.withLock {
+                retryPendingSongLikes()
+                executeFullSync()
+            }
+        }
     private val queuedOperationKeys = ConcurrentHashMap.newKeySet<String>()
 
     private val _syncState = MutableStateFlow(SyncState())
@@ -199,7 +205,7 @@ class SyncUtils @Inject constructor(
         processingJob = syncScope.launch {
             for (operation in syncChannel) {
                 try {
-                    if (operation.isCoveredByFullSync() && "full" in queuedOperationKeys) {
+                    if (operation.isCoveredByFullSync() && fullSyncCoordinator.isActive) {
                         Timber.d("Skipping $operation because a full sync is queued or running")
                     } else {
                         syncExecutionMutex.withLock {
@@ -234,7 +240,6 @@ class SyncUtils @Inject constructor(
     }
 
     private fun SyncOperation.coalescingKey(): String? = when (this) {
-        SyncOperation.FullSync -> "full"
         SyncOperation.LikedSongs -> "likedSongs"
         SyncOperation.LibrarySongs -> "librarySongs"
         SyncOperation.UploadedSongs -> "uploadedSongs"
@@ -274,10 +279,6 @@ class SyncUtils @Inject constructor(
 
     private suspend fun processOperation(operation: SyncOperation) {
         when (operation) {
-            is SyncOperation.FullSync -> {
-                retryPendingSongLikes()
-                executeFullSync()
-            }
             is SyncOperation.LikedSongs -> executeSyncLikedSongs()
             is SyncOperation.LibrarySongs -> executeSyncLibrarySongs()
             is SyncOperation.UploadedSongs -> executeSyncUploadedSongs()
@@ -710,15 +711,17 @@ class SyncUtils @Inject constructor(
     // Public API methods - Queue operations
 
     fun performFullSync() {
-        enqueue(SyncOperation.FullSync)
+        syncScope.launch {
+            performFullSyncSuspend()
+        }
     }
 
-    suspend fun performFullSyncSuspend() {
+    suspend fun performFullSyncSuspend(): FullSyncResult {
         if (!isLoggedIn()) {
             Timber.w("Skipping full sync - user not logged in")
-            return
+            return FullSyncResult(listOf("account"))
         }
-        syncExecutionMutex.withLock { executeFullSync() }
+        return fullSyncCoordinator.request().await()
     }
 
     fun tryAutoSync() {
@@ -732,8 +735,6 @@ class SyncUtils @Inject constructor(
                 return@launch
             }
 
-            retryPendingPlaylistEdits()
-
             val lastSync = context.dataStore.get(LastFullSyncKey, 0L)
             val effectiveLastSync = maxOf(lastSync, cachedLastSyncEpoch)
             val currentTime = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC)
@@ -741,7 +742,7 @@ class SyncUtils @Inject constructor(
                 return@launch
             }
 
-            enqueue(SyncOperation.FullSync)
+            fullSyncCoordinator.request().await()
         }
     }
 
@@ -984,10 +985,10 @@ class SyncUtils @Inject constructor(
 
     // Private execution methods
 
-    private suspend fun executeFullSync() = withContext(Dispatchers.IO) {
+    private suspend fun executeFullSync(): FullSyncResult = withContext(Dispatchers.IO) {
         if (!isLoggedIn()) {
             Timber.w("Skipping full sync - user not logged in")
-            return@withContext
+            return@withContext FullSyncResult(listOf("account"))
         }
 
         updateState {
@@ -1058,7 +1059,7 @@ class SyncUtils @Inject constructor(
                 val message = "Partial sync failure: ${result.failedComponents.joinToString()}"
                 updateState { copy(overallStatus = SyncStatus.Error(message), currentOperation = "") }
                 Timber.w(message)
-                return@withContext
+                return@withContext result
             }
 
             val now = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC)
@@ -1076,11 +1077,13 @@ class SyncUtils @Inject constructor(
 
             updateState { copy(overallStatus = SyncStatus.Completed, currentOperation = "") }
             Timber.d("Full sync completed successfully")
+            result
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             Timber.e(e, "Error during full sync")
             updateState { copy(overallStatus = SyncStatus.Error(e.message ?: "Unknown error"), currentOperation = "") }
+            FullSyncResult(listOf("full sync"))
         }
     }
 
@@ -2251,6 +2254,7 @@ class SyncUtils @Inject constructor(
         processingJob = null
         syncScope.launch {
             jobToCancel?.cancelAndJoin()
+            fullSyncCoordinator.cancelActive()
             while (syncChannel.tryReceive().isSuccess) {
                 // Drain operations owned by the cancelled processor.
             }
