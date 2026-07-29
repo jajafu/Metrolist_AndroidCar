@@ -189,6 +189,7 @@ class PlayerConnection(
     val currentStreamClient = service.currentStreamClient
 
     val waitingForNetworkConnection = service.waitingForNetworkConnection
+    val autoLoadMoreState = service.autoLoadMoreState
 
     // Callback to check if playback changes should be blocked (e.g., Listen Together guest)
     var shouldBlockPlaybackChanges: (() -> Boolean)? = null
@@ -323,6 +324,10 @@ class PlayerConnection(
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "Error in toggleLibrary")
         }
+    }
+
+    fun retryAutoLoadMore() {
+        service.retryAutoLoadMore()
     }
 
     /**

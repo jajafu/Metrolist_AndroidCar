@@ -20,6 +20,7 @@ This fork is maintained by [jajafu](https://github.com/jajafu) and focuses on a 
 - Backup and restore file work runs in the background. Restores validate staged database and settings files before replacing live data, roll back all replacements on failure, and restart into a usable database state when required.
 - Foreground-service startup handling and widget themes are compatible with Android 8.0 (API 26) through current Android releases.
 - Wrapped safely supports listening histories with fewer than five eligible top songs.
+- Automatic queue continuation retries temporary failures with bounded backoff, waits for network recovery without duplicate requests, and offers a manual retry after the final failure.
 
 ## Features
 

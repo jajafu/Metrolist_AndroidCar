@@ -340,6 +340,9 @@ class MusicService :
     private val playbackRequestTracker = PlaybackRequestTracker()
     private var playbackRequestJob: Job? = null
     private var loadMoreJob: Job? = null
+    private val loadMoreRetryTracker = AutoLoadMoreRetryTracker()
+    private val _autoLoadMoreState = MutableStateFlow<AutoLoadMoreState>(AutoLoadMoreState.Idle)
+    val autoLoadMoreState = _autoLoadMoreState.asStateFlow()
     private var resumePlaybackAfterLoadMore = false
     var queueTitle: String? = null
 
@@ -1174,7 +1177,12 @@ class MusicService :
             dataStore.data.map { it[AutoplayKey] ?: true }.distinctUntilChanged().collect { cachedAutoplay = it }
         }
         scope.launch {
-            dataStore.data.map { it[DisableLoadMoreWhenRepeatAllKey] ?: false }.distinctUntilChanged().collect { cachedDisableLoadMoreWhenRepeatAll = it }
+            dataStore.data.map { it[DisableLoadMoreWhenRepeatAllKey] ?: false }.distinctUntilChanged().collect { disabled ->
+                cachedDisableLoadMoreWhenRepeatAll = disabled
+                if (disabled && player.repeatMode == REPEAT_MODE_ALL) {
+                    resetLoadMoreRecovery()
+                }
+            }
         }
         scope.launch {
             dataStore.data.map { it[HideExplicitKey] ?: false }.distinctUntilChanged().collect { cachedHideExplicit = it }
@@ -1186,7 +1194,12 @@ class MusicService :
             dataStore.data.map { it[ShufflePlaylistFirstKey] ?: false }.distinctUntilChanged().collect { cachedShufflePlaylistFirst = it }
         }
         scope.launch {
-            dataStore.data.map { it[AutoLoadMoreKey] ?: true }.distinctUntilChanged().collect { cachedAutoLoadMore = it }
+            dataStore.data.map { it[AutoLoadMoreKey] ?: true }.distinctUntilChanged().collect { enabled ->
+                cachedAutoLoadMore = enabled
+                if (!enabled) {
+                    resetLoadMoreRecovery()
+                }
+            }
         }
         scope.launch {
             dataStore.data
@@ -1955,9 +1968,7 @@ class MusicService :
 
         resetPlaybackRecoveryForUserAction()
 
-        loadMoreJob?.cancel()
-        loadMoreJob = null
-        resumePlaybackAfterLoadMore = false
+        resetLoadMoreRecovery()
         currentQueue = queue
         queueTitle = null
         val persistShuffleAcrossQueues = dataStore.get(PersistentShuffleAcrossQueuesKey, false)
@@ -2061,9 +2072,7 @@ class MusicService :
                         return@launch
                     }
 
-                    loadMoreJob?.cancel()
-                    loadMoreJob = null
-                    resumePlaybackAfterLoadMore = false
+                    resetLoadMoreRecovery()
                     if (initialStatus.title != null) {
                         queueTitle = initialStatus.title
                     }
@@ -2109,9 +2118,7 @@ class MusicService :
                                 .orEmpty()
 
                         if (radioItems.isNotEmpty()) {
-                            loadMoreJob?.cancel()
-                            loadMoreJob = null
-                            resumePlaybackAfterLoadMore = false
+                            resetLoadMoreRecovery()
                             replaceUpcomingItemsWithRadio(
                                 currentIndex = currentIndex,
                                 radioItems = radioItems,
@@ -2677,11 +2684,12 @@ class MusicService :
     private fun loadMoreIfNeeded(
         resumePlaybackWhenAdded: Boolean = false,
     ) {
-        if (!cachedAutoLoadMore ||
-            (cachedDisableLoadMoreWhenRepeatAll && player.repeatMode == REPEAT_MODE_ALL)
-        ) {
+        if (!isAutoLoadMoreAllowed()) {
+            resetLoadMoreRecovery()
             return
         }
+
+        if (_autoLoadMoreState.value is AutoLoadMoreState.Failed) return
 
         if (resumePlaybackWhenAdded) {
             resumePlaybackAfterLoadMore = true
@@ -2689,80 +2697,174 @@ class MusicService :
 
         if (loadMoreJob?.isActive == true) return
 
-        val remainingItemCount = player.mediaItemCount - player.currentMediaItemIndex
-        if (!resumePlaybackWhenAdded && remainingItemCount > LOAD_MORE_THRESHOLD) return
-
-        val queue = currentQueue
-        if (!queue.hasNextPage()) {
-            resumePlaybackAfterLoadMore = false
+        if (!isNearQueueEnd()) {
+            resetLoadMoreRecovery()
             return
         }
 
-        val existingMediaIds =
-            buildSet {
-                repeat(player.mediaItemCount) { index ->
-                    add(player.getMediaItemAt(index).mediaId)
-                }
-            }
+        val queue = currentQueue
+        if (!queue.hasNextPage()) {
+            finishLoadMoreRecovery()
+            return
+        }
 
         loadMoreJob =
             scope.launch {
+                var delayBeforeAttempt = 0L
                 try {
-                    val mediaItems =
-                        withContext(Dispatchers.IO) {
-                            var playableItems = emptyList<MediaItem>()
-                            var checkedPageCount = 0
-                            while (playableItems.isEmpty() &&
-                                queue.hasNextPage() &&
-                                checkedPageCount < MAX_EMPTY_LOAD_MORE_PAGES
-                            ) {
-                                playableItems =
-                                    queue
-                                        .nextPage()
-                                        .filterExplicit(cachedHideExplicit)
-                                        .filterVideoSongs(cachedHideVideoSongs)
-                                        .filterNot { item -> item.mediaId in existingMediaIds }
-                                checkedPageCount++
+                    while (isAutoLoadMoreAllowed() &&
+                        queue === currentQueue &&
+                        queue.hasNextPage() &&
+                        isNearQueueEnd()
+                    ) {
+                        if (!isNetworkConnected.value) {
+                            _autoLoadMoreState.value =
+                                AutoLoadMoreState.WaitingForNetwork(loadMoreRetryTracker.nextAttempt)
+                            isNetworkConnected.first { it }
+                            delayBeforeAttempt = 0L
+                            if (queue !== currentQueue || !isNearQueueEnd()) {
+                                finishLoadMoreRecovery()
+                                return@launch
                             }
-                            playableItems
                         }
 
-                    if (queue !== currentQueue ||
-                        player.playbackState == STATE_IDLE ||
-                        mediaItems.isEmpty()
-                    ) {
+                        if (delayBeforeAttempt > 0L) {
+                            _autoLoadMoreState.value =
+                                AutoLoadMoreState.Retrying(
+                                    attempt = loadMoreRetryTracker.nextAttempt,
+                                    delayMillis = delayBeforeAttempt,
+                                )
+                            delay(delayBeforeAttempt)
+                            delayBeforeAttempt = 0L
+                            continue
+                        }
+
+                        _autoLoadMoreState.value =
+                            AutoLoadMoreState.Loading(loadMoreRetryTracker.nextAttempt)
+
+                        val existingMediaIds =
+                            buildSet {
+                                repeat(player.mediaItemCount) { index ->
+                                    add(player.getMediaItemAt(index).mediaId)
+                                }
+                            }
+                        val mediaItems =
+                            try {
+                                withContext(Dispatchers.IO) {
+                                    var playableItems = emptyList<MediaItem>()
+                                    var checkedPageCount = 0
+                                    while (playableItems.isEmpty() &&
+                                        queue.hasNextPage() &&
+                                        checkedPageCount < MAX_EMPTY_LOAD_MORE_PAGES
+                                    ) {
+                                        playableItems =
+                                            queue
+                                                .nextPage()
+                                                .filterExplicit(cachedHideExplicit)
+                                                .filterVideoSongs(cachedHideVideoSongs)
+                                                .filterNot { item -> item.mediaId in existingMediaIds }
+                                        checkedPageCount++
+                                    }
+                                    playableItems
+                                }
+                            } catch (error: CancellationException) {
+                                throw error
+                            } catch (error: Exception) {
+                                val retryDelay = loadMoreRetryTracker.recordFailure()
+                                if (retryDelay == null) {
+                                    Timber.tag(TAG).w(error, "Failed to load more queue items after all retries")
+                                    _autoLoadMoreState.value =
+                                        AutoLoadMoreState.Failed(loadMoreRetryTracker.failedAttempts)
+                                    return@launch
+                                }
+
+                                Timber
+                                    .tag(TAG)
+                                    .w(
+                                        error,
+                                        "Failed to load more queue items; retrying attempt ${loadMoreRetryTracker.nextAttempt}",
+                                    )
+                                delayBeforeAttempt = retryDelay
+                                continue
+                            }
+
+                        if (queue !== currentQueue || player.playbackState == STATE_IDLE) {
+                            finishLoadMoreRecovery()
+                            return@launch
+                        }
+
+                        if (mediaItems.isEmpty()) {
+                            if (queue.hasNextPage()) {
+                                _autoLoadMoreState.value =
+                                    AutoLoadMoreState.Failed(loadMoreRetryTracker.failedAttempts + 1)
+                            } else {
+                                finishLoadMoreRecovery()
+                            }
+                            return@launch
+                        }
+
+                        val shouldResume =
+                            resumePlaybackAfterLoadMore &&
+                                player.playbackState == Player.STATE_ENDED
+                        player.addMediaItems(mediaItems)
+                        if (player.shuffleModeEnabled) {
+                            applyShuffleOrder(
+                                player.currentMediaItemIndex,
+                                player.mediaItemCount,
+                                cachedShufflePlaylistFirst,
+                            )
+                        }
+                        if (shouldResume) {
+                            player.seekToNextMediaItem()
+                            player.prepare()
+                            if (castConnectionHandler?.isCasting?.value != true) {
+                                player.play()
+                            }
+                        }
+                        finishLoadMoreRecovery()
                         return@launch
                     }
-
-                    val shouldResume =
-                        resumePlaybackAfterLoadMore &&
-                            player.playbackState == Player.STATE_ENDED
-                    player.addMediaItems(mediaItems)
-                    if (player.shuffleModeEnabled) {
-                        applyShuffleOrder(
-                            player.currentMediaItemIndex,
-                            player.mediaItemCount,
-                            cachedShufflePlaylistFirst,
-                        )
-                    }
-                    if (shouldResume) {
-                        player.seekToNextMediaItem()
-                        player.prepare()
-                        if (castConnectionHandler?.isCasting?.value != true) {
-                            player.play()
-                        }
-                    }
+                    finishLoadMoreRecovery()
                 } catch (error: CancellationException) {
                     throw error
-                } catch (error: Exception) {
-                    Timber.tag(TAG).w(error, "Failed to load more queue items")
                 } finally {
-                    if (queue === currentQueue) {
-                        resumePlaybackAfterLoadMore = false
+                    if (loadMoreJob === coroutineContext[Job]) {
+                        loadMoreJob = null
                     }
-                    loadMoreJob = null
                 }
             }
+    }
+
+    fun retryAutoLoadMore() {
+        if (_autoLoadMoreState.value !is AutoLoadMoreState.Failed || !isNearQueueEnd()) return
+        loadMoreJob?.cancel()
+        loadMoreJob = null
+        loadMoreRetryTracker.reset()
+        _autoLoadMoreState.value = AutoLoadMoreState.Idle
+        loadMoreIfNeeded(resumePlaybackWhenAdded = player.playbackState == Player.STATE_ENDED)
+    }
+
+    private fun isAutoLoadMoreAllowed(): Boolean =
+        cachedAutoLoadMore &&
+            !(cachedDisableLoadMoreWhenRepeatAll && player.repeatMode == REPEAT_MODE_ALL)
+
+    private fun isNearQueueEnd(): Boolean {
+        val itemCount = player.mediaItemCount
+        val currentIndex = player.currentMediaItemIndex
+        if (itemCount == 0 || currentIndex !in 0 until itemCount) return false
+        return itemCount - currentIndex <= LOAD_MORE_THRESHOLD
+    }
+
+    private fun finishLoadMoreRecovery() {
+        loadMoreRetryTracker.reset()
+        resumePlaybackAfterLoadMore = false
+        _autoLoadMoreState.value = AutoLoadMoreState.Idle
+    }
+
+    private fun resetLoadMoreRecovery() {
+        loadMoreJob?.cancel()
+        loadMoreJob = null
+        finishLoadMoreRecovery()
     }
 
     /**
@@ -3066,6 +3168,11 @@ class MusicService :
 
         if (cachedPersistentQueue) {
             saveQueueToDisk()
+        }
+        if (cachedDisableLoadMoreWhenRepeatAll && repeatMode == REPEAT_MODE_ALL) {
+            resetLoadMoreRecovery()
+        } else {
+            loadMoreIfNeeded()
         }
         scheduleNextTracksPrefetch(force = true)
     }
