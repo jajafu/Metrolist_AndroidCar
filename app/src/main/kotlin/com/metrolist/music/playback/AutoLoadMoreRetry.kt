@@ -72,3 +72,9 @@ internal class AutoLoadMoreRetryTracker(
         failedAttempts = 0
     }
 }
+
+internal fun canRequestMoreQueueItems(
+    hasNextPage: Boolean,
+    similarContentEnabled: Boolean,
+    hasFallbackSeed: Boolean,
+): Boolean = hasNextPage || (similarContentEnabled && hasFallbackSeed)

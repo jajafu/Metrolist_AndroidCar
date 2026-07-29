@@ -190,6 +190,7 @@ import com.metrolist.music.extensions.toMediaItem
 import com.metrolist.music.extensions.toPersistQueue
 import com.metrolist.music.extensions.toQueue
 import com.metrolist.music.lyrics.LyricsHelper
+import com.metrolist.music.models.MediaMetadata
 import com.metrolist.music.models.PersistPlayerState
 import com.metrolist.music.models.PersistQueue
 import com.metrolist.music.models.toMediaMetadata
@@ -501,6 +502,8 @@ class MusicService :
     private var cachedShufflePlaylistFirst = false
     @Volatile
     private var cachedAutoLoadMore = true
+    @Volatile
+    private var cachedSimilarContent = true
     @Volatile
     private var cachedEnableSongCache = true
     @Volatile
@@ -1200,6 +1203,11 @@ class MusicService :
                 if (!enabled) {
                     resetLoadMoreRecovery()
                 }
+            }
+        }
+        scope.launch {
+            dataStore.data.map { it[SimilarContent] ?: true }.distinctUntilChanged().collect { enabled ->
+                cachedSimilarContent = enabled
             }
         }
         scope.launch {
@@ -2682,6 +2690,11 @@ class MusicService :
     private var lastTransitionedMediaId: String? = null
     private var previousEpisodePosition: Long = 0L
 
+    private data class LoadedQueuePage(
+        val mediaItems: List<MediaItem>,
+        val replacementQueue: Queue? = null,
+    )
+
     private fun loadMoreIfNeeded(
         resumePlaybackWhenAdded: Boolean = false,
     ) {
@@ -2704,7 +2717,8 @@ class MusicService :
         }
 
         val queue = currentQueue
-        if (!queue.hasNextPage()) {
+        val fallbackSeed = player.currentMetadata
+        if (!canLoadMore(queue, fallbackSeed)) {
             finishLoadMoreRecovery()
             return
         }
@@ -2715,7 +2729,7 @@ class MusicService :
                 try {
                     while (isAutoLoadMoreAllowed() &&
                         queue === currentQueue &&
-                        queue.hasNextPage() &&
+                        canLoadMore(queue, fallbackSeed) &&
                         isNearQueueEnd()
                     ) {
                         if (!isNetworkConnected.value) {
@@ -2749,24 +2763,39 @@ class MusicService :
                                     add(player.getMediaItemAt(index).mediaId)
                                 }
                             }
-                        val mediaItems =
+                        val loadedPage =
                             try {
                                 withContext(Dispatchers.IO) {
                                     var playableItems = emptyList<MediaItem>()
                                     var checkedPageCount = 0
+                                    var pageQueue = queue
+                                    var replacementQueue: Queue? = null
                                     while (playableItems.isEmpty() &&
-                                        queue.hasNextPage() &&
+                                        canLoadMore(pageQueue, fallbackSeed) &&
                                         checkedPageCount < MAX_EMPTY_LOAD_MORE_PAGES
                                     ) {
+                                        val pageItems =
+                                            if (pageQueue.hasNextPage()) {
+                                                pageQueue.nextPage()
+                                            } else {
+                                                val radioQueue =
+                                                    fallbackSeed?.let(YouTubeQueue::radio)
+                                                        ?: break
+                                                pageQueue = radioQueue
+                                                replacementQueue = radioQueue
+                                                radioQueue.getInitialStatus().items
+                                            }
                                         playableItems =
-                                            queue
-                                                .nextPage()
+                                            pageItems
                                                 .filterExplicit(cachedHideExplicit)
                                                 .filterVideoSongs(cachedHideVideoSongs)
                                                 .filterNot { item -> item.mediaId in existingMediaIds }
                                         checkedPageCount++
                                     }
-                                    playableItems
+                                    LoadedQueuePage(
+                                        mediaItems = playableItems,
+                                        replacementQueue = replacementQueue,
+                                    )
                                 }
                             } catch (error: CancellationException) {
                                 throw error
@@ -2794,8 +2823,10 @@ class MusicService :
                             return@launch
                         }
 
+                        val mediaItems = loadedPage.mediaItems
                         if (mediaItems.isEmpty()) {
-                            if (queue.hasNextPage()) {
+                            val effectiveQueue = loadedPage.replacementQueue ?: queue
+                            if (canLoadMore(effectiveQueue, fallbackSeed)) {
                                 _autoLoadMoreState.value =
                                     AutoLoadMoreState.Failed(loadMoreRetryTracker.failedAttempts + 1)
                             } else {
@@ -2804,6 +2835,7 @@ class MusicService :
                             return@launch
                         }
 
+                        loadedPage.replacementQueue?.let { currentQueue = it }
                         val shouldResume =
                             resumePlaybackAfterLoadMore &&
                                 player.playbackState == Player.STATE_ENDED
@@ -2848,6 +2880,16 @@ class MusicService :
     private fun isAutoLoadMoreAllowed(): Boolean =
         cachedAutoLoadMore &&
             !(cachedDisableLoadMoreWhenRepeatAll && player.repeatMode == REPEAT_MODE_ALL)
+
+    private fun canLoadMore(
+        queue: Queue,
+        fallbackSeed: MediaMetadata?,
+    ): Boolean =
+        canRequestMoreQueueItems(
+            hasNextPage = queue.hasNextPage(),
+            similarContentEnabled = cachedSimilarContent,
+            hasFallbackSeed = fallbackSeed != null,
+        )
 
     private fun isNearQueueEnd(): Boolean {
         val itemCount = player.mediaItemCount

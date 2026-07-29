@@ -1,7 +1,9 @@
 package com.metrolist.music.playback
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AutoLoadMoreRetryTest {
@@ -51,5 +53,38 @@ class AutoLoadMoreRetryTest {
 
         assertEquals(0, tracker.failedAttempts)
         assertEquals(1, tracker.nextAttempt)
+    }
+
+    @Test
+    fun `continuation page remains available without similar content`() {
+        assertTrue(
+            canRequestMoreQueueItems(
+                hasNextPage = true,
+                similarContentEnabled = false,
+                hasFallbackSeed = false,
+            ),
+        )
+    }
+
+    @Test
+    fun `exhausted continuation uses similar-content fallback when a seed exists`() {
+        assertTrue(
+            canRequestMoreQueueItems(
+                hasNextPage = false,
+                similarContentEnabled = true,
+                hasFallbackSeed = true,
+            ),
+        )
+    }
+
+    @Test
+    fun `exhausted continuation stops when similar content is disabled`() {
+        assertFalse(
+            canRequestMoreQueueItems(
+                hasNextPage = false,
+                similarContentEnabled = false,
+                hasFallbackSeed = true,
+            ),
+        )
     }
 }
