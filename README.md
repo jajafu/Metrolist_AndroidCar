@@ -13,6 +13,7 @@ This fork is maintained by [jajafu](https://github.com/jajafu) and focuses on a 
 - Increased dark-mode contrast by changing adjustment-button outlines to pure white.
 - Increased the cached playback queue to three tracks.
 - Removed the sleep button from the playback cover and enlarged the other buttons.
+- The mini-player's add-to-playlist picker uses large adaptive playlist cards matching the library grid for easier in-car operation.
 - Branded the installed app as `Metrolist_AndroidCar` with a black music-car logo across the launcher, About screen, and playback notifications.
 - New playlists default to YouTube Music sync when the account and sync setting are active. Failed playlist creation, song additions, and song removals are stored outside the App database, retried automatically, and shown as pending in the playlist library; duplicate-song removals preserve the exact YouTube occurrence, and new remote playlists receive a reconciliation grace period.
 - Automatic full sync starts its cooldown only after every required component and pending playlist edit succeeds. Partial failures remain visible and can be retried immediately.

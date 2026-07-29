@@ -495,6 +495,7 @@ private fun NewMiniPlayer(
                             menuState.show {
                                 AddToPlaylistDialog(
                                     isVisible = true,
+                                    useGridLayout = true,
                                     onGetSong = { listOf(metadata.id) },
                                     onDismiss = menuState::dismiss,
                                 )
