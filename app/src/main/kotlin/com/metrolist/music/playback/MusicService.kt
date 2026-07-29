@@ -496,6 +496,7 @@ class MusicService :
     // and necessary — to explicitly resume playback once connectivity returns, rather than
     // leaving the player "prepared but paused" forever.
     private var pausedDueToNetworkError = false
+    @Volatile
     private var silenceSkipJob: Job? = null
 
     // Cached preferences to avoid runBlocking DataStore reads in hot paths
@@ -1392,7 +1393,10 @@ class MusicService :
         val eqProcessor = CustomEqualizerAudioProcessor()
         equalizerService.addAudioProcessor(eqProcessor)
 
-        val silenceProcessor = SilenceDetectorAudioProcessor { handleLongSilenceDetected() }
+        var silenceSourcePlayer: ExoPlayer? = null
+        val silenceProcessor = SilenceDetectorAudioProcessor {
+            silenceSourcePlayer?.let(::handleLongSilenceDetected)
+        }
 
         val skipSilence = effectivePrefs?.get(SkipSilenceKey) ?: false
         val instantSkip = effectivePrefs?.get(SkipSilenceInstantKey) ?: false
@@ -1427,6 +1431,7 @@ class MusicService :
                 .setSeekForwardIncrementMs(5000)
                 .setDeviceVolumeControlEnabled(true)
                 .build()
+        silenceSourcePlayer = player
 
         playerNormalizationProcessors[player] = normalizationProcessor
         playerSilenceProcessors[player] = silenceProcessor
@@ -2974,6 +2979,8 @@ class MusicService :
         mediaItem: MediaItem?,
         reason: Int,
     ) {
+        resetInstantSilenceSkipState()
+
         // The track that was playing before this transition only gets marked as
         // "fully cached" if it advanced AUTOmatically (i.e. it actually finished),
         // never on a manual skip/seek. lastTransitionedMediaId must be read BEFORE
@@ -3917,35 +3924,73 @@ class MusicService :
 
     private var isSilenceSkipping = false
 
-    private fun handleLongSilenceDetected() {
+    private fun handleLongSilenceDetected(sourcePlayer: ExoPlayer) {
         if (!instantSilenceSkipEnabled.value) return
+        if (sourcePlayer !== player) return
         if (silenceSkipJob?.isActive == true) return
 
         silenceSkipJob =
             scope.launch {
-                // Debounce so short fades or transitions do not trigger a jump.
-                delay(200)
-                performInstantSilenceSkip()
+                val expectedPlayer = sourcePlayer
+                val expectedTarget = expectedPlayer.currentMediaItem?.mediaId?.let { mediaId ->
+                    SilenceSkipTarget(
+                        mediaId = mediaId,
+                        mediaItemIndex = expectedPlayer.currentMediaItemIndex,
+                    )
+                } ?: return@launch
+
+                try {
+                    // Debounce so short fades or transitions do not trigger a jump.
+                    delay(200)
+                    performInstantSilenceSkip(expectedPlayer, expectedTarget)
+                } finally {
+                    if (silenceSkipJob === coroutineContext[Job]) {
+                        silenceSkipJob = null
+                    }
+                }
             }
     }
 
-    private suspend fun performInstantSilenceSkip() {
-        val duration = player.duration.takeIf { it != C.TIME_UNSET && it > 0 } ?: return
+    private suspend fun performInstantSilenceSkip(
+        expectedPlayer: ExoPlayer,
+        expectedTarget: SilenceSkipTarget,
+    ) {
+        if (player !== expectedPlayer ||
+            !isCurrentSilenceSkipTarget(
+                expected = expectedTarget,
+                currentMediaId = expectedPlayer.currentMediaItem?.mediaId,
+                currentMediaItemIndex = expectedPlayer.currentMediaItemIndex,
+            )
+        ) {
+            return
+        }
+
+        val duration = expectedPlayer.duration.takeIf { it != C.TIME_UNSET && it > 0 } ?: return
         if (duration <= INSTANT_SILENCE_SKIP_STEP_MS) return
 
         isSilenceSkipping = true
         try {
             var hops = 0
-            val silenceProcessor = playerSilenceProcessors[player] ?: return
+            val silenceProcessor = playerSilenceProcessors[expectedPlayer] ?: return
             while (coroutineContext.isActive && instantSilenceSkipEnabled.value && silenceProcessor.isCurrentlySilent()) {
-                val current = player.currentPosition
+                if (player !== expectedPlayer ||
+                    !isCurrentSilenceSkipTarget(
+                        expected = expectedTarget,
+                        currentMediaId = expectedPlayer.currentMediaItem?.mediaId,
+                        currentMediaItemIndex = expectedPlayer.currentMediaItemIndex,
+                    )
+                ) {
+                    break
+                }
+
+                val current = expectedPlayer.currentPosition
                 val target = (current + INSTANT_SILENCE_SKIP_STEP_MS).coerceAtMost(duration - 500)
 
                 if (target <= current) break
 
                 // Reset silence tracking before seeking to prevent immediate re-trigger
                 silenceProcessor.resetTracking()
-                player.seekTo(target)
+                expectedPlayer.seekTo(target)
                 hops++
 
                 if (hops >= 80 || target >= duration - 500) break
@@ -3958,6 +4003,13 @@ class MusicService :
         } finally {
             isSilenceSkipping = false
         }
+    }
+
+    private fun resetInstantSilenceSkipState() {
+        silenceSkipJob?.cancel()
+        silenceSkipJob = null
+        isSilenceSkipping = false
+        playerSilenceProcessors[player]?.resetTracking()
     }
 
     private fun syncDiscordState() {

@@ -26,6 +26,7 @@ This fork is maintained by [jajafu](https://github.com/jajafu) and focuses on a 
 - Foreground-service startup handling and widget themes are compatible with Android 8.0 (API 26) through current Android releases.
 - Wrapped safely supports listening histories with fewer than five eligible top songs.
 - Automatic queue continuation retries temporary failures with bounded backoff, waits for network recovery without duplicate requests, and offers a manual retry after the final failure. When a YouTube continuation ends, enabled similar content starts a new radio from the current tail song so playback can keep extending beyond the first 99 tracks without duplicating queued songs. End-of-queue checks follow the actual shuffled playback order, and YouTube continuation state survives an App service restart.
+- Instant silence skipping resets its detector and cancels delayed seek work whenever the track changes, preventing silence from one song from skipping into the next.
 - Parallel downloads share a thread-safe URL cache, preventing duplicate resolution and cache races.
 - Security hardening limits cleartext Listen Together connections to local-network servers, isolates private widget actions from exported update receivers, and grants custom media commands only to trusted controllers.
 

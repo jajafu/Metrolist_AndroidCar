@@ -4,6 +4,18 @@
 
 This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.43
+
+### 中文
+
+- 切換歌曲時會取消仍在等待的即時靜音跳轉、清除服務狀態並重置目前播放器的靜音偵測器。
+- 延遲跳轉及每次連續跳轉前都會核對播放器、歌曲 ID 與佇列索引，避免上一首的靜音工作跳轉下一首。
+
+### English
+
+- Cancel pending instant-silence seek work, clear service state, and reset the active player's silence detector whenever the track changes.
+- Verify the player, media ID, and queue index after the debounce and before every follow-up seek so stale work from the previous track cannot move the next one.
+
 ## 13.6.42
 
 ### 中文
