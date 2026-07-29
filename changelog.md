@@ -4,6 +4,18 @@
 
 This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.37
+
+### 中文
+
+- 將車機首頁精簡為分類按鈕、12 個本機快速存取項目、帳號播放列表及最多 3 個 YouTube 官方推薦區塊。
+- 停止載入重複且耗費資源的每日探索、社區歌單、自訂相似推薦、情境與類型、隨機首頁排序及無限分頁，並移除對應的內容設定選項。
+
+### English
+
+- Streamline the car home screen to category chips, 12 local quick-access items, account playlists, and at most three official YouTube recommendation sections.
+- Stop loading duplicate and resource-intensive daily discovery, community playlist, custom similar recommendation, mood-and-genre, randomized home ordering, and infinite pagination sections, and remove the related content settings.
+
 ## 13.6.36
 
 ### 中文

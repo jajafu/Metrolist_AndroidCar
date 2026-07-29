@@ -74,9 +74,6 @@ import com.metrolist.music.constants.ProxyPasswordKey
 import com.metrolist.music.constants.ProxyTypeKey
 import com.metrolist.music.constants.ProxyUrlKey
 import com.metrolist.music.constants.ProxyUsernameKey
-import com.metrolist.music.constants.QuickPicks
-import com.metrolist.music.constants.QuickPicksKey
-import com.metrolist.music.constants.RandomizeHomeOrderKey
 import com.metrolist.music.constants.SYSTEM_DEFAULT
 import com.metrolist.music.constants.ShowArtistDescriptionKey
 import com.metrolist.music.constants.ShowMostStatsPlaylistsKey
@@ -129,15 +126,9 @@ fun ContentSettings(
         defaultValue = LyricsProviderRegistry.serializeProviderOrder(LyricsProviderRegistry.getDefaultProviderOrder())
     )
     val (lengthTop, onLengthTopChange) = rememberPreference(key = TopSize, defaultValue = "50")
-    val (quickPicks, onQuickPicksChange) = rememberEnumPreference(key = QuickPicksKey, defaultValue = QuickPicks.QUICK_PICKS)
     val (showWrappedCard, onShowWrappedCardChange) = rememberPreference(key = ShowWrappedCardKey, defaultValue = false)
     val (showMostStatsPlaylists, onShowMostStatsPlaylistsChange) =
         rememberPreference(key = ShowMostStatsPlaylistsKey, defaultValue = true)
-    val (randomizeHomeOrder, onRandomizeHomeOrderChange) = rememberPreference(
-        RandomizeHomeOrderKey,
-        defaultValue = true
-    )
-
     LaunchedEffect(showMostStatsPlaylists) {
         if (!showMostStatsPlaylists) {
             database.withTransaction {
@@ -527,29 +518,6 @@ fun ContentSettings(
                     onClick = { showProviderSelectionDialog = false }
                 ) {
                     Text(stringResource(R.string.close))
-                }
-            }
-        )
-    }
-
-    var showQuickPicksDialog by rememberSaveable {
-        mutableStateOf(false)
-    }
-
-    if (showQuickPicksDialog) {
-        EnumDialog(
-            onDismiss = { showQuickPicksDialog = false },
-            onSelect = {
-                onQuickPicksChange(it)
-                showQuickPicksDialog = false
-            },
-            title = stringResource(R.string.set_quick_picks),
-            current = quickPicks,
-            values = QuickPicks.values().toList(),
-            valueText = {
-                when (it) {
-                    QuickPicks.QUICK_PICKS -> stringResource(R.string.quick_picks)
-                    QuickPicks.LAST_LISTEN -> stringResource(R.string.last_song_listened)
                 }
             }
         )
@@ -980,44 +948,10 @@ fun ContentSettings(
             title = stringResource(R.string.misc),
             items = listOf(
                 Material3SettingsItem(
-                    icon = painterResource(R.drawable.shuffle),
-                    title = { Text(stringResource(R.string.randomize_home_order)) },
-                    description = { Text(stringResource(R.string.randomize_home_order_desc)) },
-                    trailingContent = {
-                        Switch(
-                            checked = randomizeHomeOrder,
-                            onCheckedChange = onRandomizeHomeOrderChange,
-                            thumbContent = {
-                                Icon(
-                                    painter = painterResource(
-                                        id = if (randomizeHomeOrder) R.drawable.check else R.drawable.close
-                                    ),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(SwitchDefaults.IconSize)
-                                )
-                            }
-                        )
-                    },
-                    onClick = { onRandomizeHomeOrderChange(!randomizeHomeOrder) }
-                ),
-                Material3SettingsItem(
                     icon = painterResource(R.drawable.trending_up),
                     title = { Text(stringResource(R.string.top_length)) },
                     description = { Text(lengthTop) },
                     onClick = { showTopLengthDialog = true }
-                ),
-                Material3SettingsItem(
-                    icon = painterResource(R.drawable.home_outlined),
-                    title = { Text(stringResource(R.string.set_quick_picks)) },
-                    description = {
-                        Text(
-                            when (quickPicks) {
-                                QuickPicks.QUICK_PICKS -> stringResource(R.string.quick_picks)
-                                QuickPicks.LAST_LISTEN -> stringResource(R.string.last_song_listened)
-                            }
-                        )
-                    },
-                    onClick = { showQuickPicksDialog = true }
                 )
             )
         )

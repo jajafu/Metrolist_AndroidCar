@@ -14,6 +14,7 @@ This fork is maintained by [jajafu](https://github.com/jajafu) and focuses on a 
 - Increased the cached playback queue to three tracks.
 - Removed the sleep button from the playback cover and enlarged the other buttons.
 - The mini-player's add-to-playlist picker uses large adaptive playlist cards matching the library grid for easier in-car operation.
+- The home screen is reduced to category chips, 12 local quick-access items, account playlists, and at most three official YouTube recommendation sections. Expensive duplicate discovery, community, similar-content, mood-and-genre, random-order, and infinite-pagination sections are not loaded.
 - Branded the installed app as `Metrolist_AndroidCar` with a black music-car logo across the launcher, About screen, and playback notifications.
 - New playlists default to YouTube Music sync when the account and sync setting are active. Failed playlist creation, song additions, and song removals are stored outside the App database, retried automatically, and shown as pending in the playlist library; duplicate-song removals preserve the exact YouTube occurrence, and new remote playlists receive a reconciliation grace period.
 - Song like and unlike actions use one ordered, durable synchronization queue. Rapid opposite actions keep the latest state, failed YouTube updates remain pending across App restarts, and duplicate network requests are avoided.

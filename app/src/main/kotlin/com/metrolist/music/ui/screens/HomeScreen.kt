@@ -63,13 +63,10 @@ import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -117,7 +114,6 @@ import com.metrolist.music.constants.GridThumbnailHeight
 import com.metrolist.music.constants.InnerTubeCookieKey
 import com.metrolist.music.constants.ListItemHeight
 import com.metrolist.music.constants.ListThumbnailSize
-import com.metrolist.music.constants.RandomizeHomeOrderKey
 import com.metrolist.music.constants.SmallGridThumbnailHeight
 import com.metrolist.music.constants.ThumbnailCornerRadius
 import com.metrolist.music.db.entities.Album
@@ -675,7 +671,6 @@ fun HomeScreen(
     val accountName by viewModel.accountName.collectAsStateWithLifecycle()
     val accountImageUrl by viewModel.accountImageUrl.collectAsStateWithLifecycle()
     val innerTubeCookie by rememberPreference(InnerTubeCookieKey, "")
-    val (randomizeHomeOrder) = rememberPreference(RandomizeHomeOrderKey, true)
     val autoRadioQueue by rememberPreference(AutoRadioQueueKey, defaultValue = true)
 
     LaunchedEffect(Unit) { viewModel.loadHomeData() }
@@ -746,14 +741,6 @@ fun HomeScreen(
         ?.getStateFlow("wrapped_seen", false)
         ?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(false) }
 
-    var randomSeed by rememberSaveable { mutableLongStateOf(System.currentTimeMillis()) }
-
-    LaunchedEffect(isRefreshing) {
-        if (isRefreshing) {
-            randomSeed = System.currentTimeMillis()
-        }
-    }
-
     val foundInSettings = stringResource(R.string.found_in_settings_content)
     LaunchedEffect(wrappedDismissed) {
         if (wrappedDismissed) {
@@ -769,19 +756,6 @@ fun HomeScreen(
         if (scrollToTop?.value == true) {
             lazylistState.animateScrollToItem(0)
             backStackEntry?.savedStateHandle?.set("scrollToTop", false)
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        snapshotFlow {
-            lazylistState.layoutInfo.visibleItemsInfo
-                .lastOrNull()
-                ?.index
-        }.collect { lastVisibleIndex ->
-            val len = lazylistState.layoutInfo.totalItemsCount
-            if (lastVisibleIndex != null && lastVisibleIndex >= len - 3) {
-                viewModel.loadMoreYouTubeItems(homePage?.continuation)
-            }
         }
     }
 
@@ -1008,125 +982,23 @@ fun HomeScreen(
 
     val homeSections =
         remember(
-            randomizeHomeOrder,
-            randomSeed,
             selectedChip,
             speedDialItems,
-            quickPicks,
-            dailyDiscover,
-            keepListening,
             accountPlaylists,
-            forgottenFavorites,
-            communityPlaylists,
-            similarRecommendations,
             homePage?.sections,
-            explorePage?.moodAndGenres,
         ) {
             val list = mutableListOf<HomeSection>()
             val chipActive = selectedChip != null
 
             if (!chipActive && speedDialItems.isNotEmpty()) list.add(HomeSection.SpeedDial)
-            if (!chipActive && quickPicks?.isNotEmpty() == true) list.add(HomeSection.QuickPicks)
-            if (!chipActive && communityPlaylists?.isNotEmpty() == true) list.add(HomeSection.FromTheCommunity)
-            if (!chipActive && dailyDiscover?.isNotEmpty() == true) list.add(HomeSection.DailyDiscover)
-            if (!chipActive && keepListening?.isNotEmpty() == true) list.add(HomeSection.KeepListening)
             if (!chipActive && accountPlaylists?.isNotEmpty() == true) list.add(HomeSection.AccountPlaylists)
-            if (!chipActive && forgottenFavorites?.isNotEmpty() == true) list.add(HomeSection.ForgottenFavorites)
-
-            if (!chipActive) {
-                similarRecommendations?.indices?.forEach { i ->
-                    list.add(HomeSection.SimilarRecommendation(i))
-                }
-            }
 
             homePage?.sections?.indices?.forEach { i ->
                 list.add(HomeSection.HomePageSection(i))
             }
 
-            if (explorePage?.moodAndGenres != null) list.add(HomeSection.MoodAndGenres)
-
-            if (randomizeHomeOrder) {
-                list.sortedByDescending { section ->
-                    // Use a stable seed for each section based on the session seed + section ID hash
-                    // This ensures the weight for a specific section remains constant during a session (until refresh)
-                    // even if other sections appear/disappear, preventing jumping.
-                    val sectionRandom = Random(randomSeed + section.id.hashCode())
-
-                    // Flatten the base values to allow for more overlap and variation
-                    // All "main" sections start closer together
-                    val base =
-                        when (section) {
-                            HomeSection.SpeedDial,
-                            HomeSection.QuickPicks,
-                            HomeSection.DailyDiscover,
-                            -> 500
-
-                            // Top tier starts equal
-
-                            HomeSection.KeepListening,
-                            HomeSection.AccountPlaylists,
-                            HomeSection.ForgottenFavorites,
-                            HomeSection.FromTheCommunity,
-                            -> 300
-
-                            // Middle tier starts equal
-
-                            else -> 100 // Bottom tier
-                        }
-
-                    val modifier =
-                        when (section) {
-                            // Top tier: High variance to allow shuffling among themselves
-                            // Range: [500-200, 500+400] = [300, 900]
-                            HomeSection.SpeedDial,
-                            HomeSection.QuickPicks,
-                            HomeSection.DailyDiscover,
-                            -> sectionRandom.nextInt(-200, 400)
-
-                            // Middle tier: Can jump up to challenge top tier, or drop lower
-                            // Range: [300-100, 300+400] = [200, 700]
-                            // This allows them to occasionally appear above a "bad roll" top tier item
-                            HomeSection.KeepListening,
-                            HomeSection.AccountPlaylists,
-                            HomeSection.ForgottenFavorites,
-                            HomeSection.FromTheCommunity,
-                            -> sectionRandom.nextInt(-100, 400)
-
-                            // Bottom tier: Standard variance
-                            else -> sectionRandom.nextInt(-50, 50)
-                        }
-                    base + modifier
-                }
-            } else {
-                val defaultOrder =
-                    mapOf(
-                        HomeSection.SpeedDial to 100,
-                        HomeSection.QuickPicks to 90,
-                        HomeSection.FromTheCommunity to 80,
-                        HomeSection.DailyDiscover to 70,
-                        HomeSection.KeepListening to 60,
-                        HomeSection.AccountPlaylists to 50,
-                        HomeSection.ForgottenFavorites to 40,
-                        HomeSection.MoodAndGenres to 10,
-                    )
-
-                list.sortedByDescending { section ->
-                    when (section) {
-                        is HomeSection.SimilarRecommendation -> 30 - section.index
-                        is HomeSection.HomePageSection -> 20 - section.index
-                        else -> defaultOrder[section] ?: 0
-                    }
-                }
-            }
+            list
         }
-
-    LaunchedEffect(quickPicks) {
-        quickPicksLazyGridState.scrollToItem(0)
-    }
-
-    LaunchedEffect(forgottenFavorites) {
-        forgottenFavoritesLazyGridState.scrollToItem(0)
-    }
 
     PullToRefreshBox(
         state = pullRefreshState,
