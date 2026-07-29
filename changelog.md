@@ -4,6 +4,18 @@
 
 This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.47
+
+### 中文
+
+- Android Auto 搜尋與語音播放改用 YouTube 搜尋摘要中的相關性歌曲排序，相同回應會穩定選擇相同的最佳歌曲。
+- 線上結果會直接建立播放器項目，背景寫入 Room 不再立即查回，避免冷資料庫競態丟失歌曲；語音播放會建立可續頁的相關歌曲 Radio queue，沿用既有自動延伸與重試機制。
+
+### English
+
+- Use relevance-ranked songs from YouTube search summaries for Android Auto search and voice playback, making selection deterministic for the same response.
+- Build playable items directly from online results instead of racing an asynchronous Room insert/read, and seed an extendable related-song radio queue that uses the existing continuation and retry system.
+
 ## 13.6.46
 
 ### 中文

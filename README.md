@@ -43,7 +43,7 @@ This fork is maintained by [jajafu](https://github.com/jajafu) and focuses on a 
 - Library, local playlist and account synchronization.
 - Listen together with other users.
 - Material 3 interface with light, dark, black, dynamic and preset color themes.
-- Android Auto-focused layout and playback controls.
+- Android Auto-focused layout and playback controls. Voice playback uses YouTube's relevance-ranked song results directly, so a cold local database cannot drop the best match, and continues through an extendable related-song radio instead of stopping after a finite search list.
 - High-resolution image URL handling for YouTube's current image CDN formats.
 - Car-focused defaults with large grids and a minimal set of generated playlists.
 

@@ -28,6 +28,7 @@ import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.metrolist.innertube.YouTube
+import com.metrolist.innertube.YouTubeConstants
 import com.metrolist.innertube.models.PlaylistItem
 import com.metrolist.innertube.models.SongItem
 import com.metrolist.innertube.models.filterExplicit
@@ -546,13 +547,8 @@ constructor(
                 }
 
                 try {
-                    val onlineResults = YouTube.search(query, YouTube.SearchFilter.FILTER_SONG)
-                        .getOrNull()
-                        ?.items
-                        ?.filterIsInstance<SongItem>()
-                        ?.filterExplicit(context.dataStore.get(HideExplicitKey, false))
-                        ?.filterVideoSongs(context.dataStore.get(HideVideoSongsKey, false))
-                        ?.filter { onlineSong ->
+                    val onlineResults = searchOnlineSongs(query)
+                        .filter { onlineSong ->
                             !allLocalSongs.any { localSong ->
                                 localSong.id == onlineSong.id ||
                                 (localSong.song.title.equals(onlineSong.title, ignoreCase = true) &&
@@ -562,7 +558,7 @@ constructor(
                                      }
                                  })
                             }
-                        } ?: emptyList()
+                        }
 
                     onlineResults.forEach { songItem ->
                         try {
@@ -724,8 +720,7 @@ constructor(
                 MusicService.SEARCH -> {
                     val songId = path.getOrNull(2) ?: return@future defaultResult
                     val searchQuery = path.getOrNull(1) ?: return@future defaultResult
-                    
-                    val searchResults = mutableListOf<Song>()
+                    val isVoicePlay = songId.isBlank()
 
                     val localSongs = database.allSongs().first().filter { song ->
                         song.song.title.contains(searchQuery, ignoreCase = true) ||
@@ -747,49 +742,38 @@ constructor(
 
                     val allLocalSongs = (localSongs + artistSongs + albumSongs + playlistSongs)
                         .distinctBy { it.id }
-                    
-                    searchResults.addAll(allLocalSongs)
-                    
-                    try {
-                        val onlineResults = YouTube.search(searchQuery, YouTube.SearchFilter.FILTER_SONG)
-                            .getOrNull()
-                            ?.items
-                            ?.filterIsInstance<SongItem>()
-                            ?.filterExplicit(context.dataStore.get(HideExplicitKey, false))
-                            ?.filterVideoSongs(context.dataStore.get(HideVideoSongsKey, false))
-                            ?.filter { onlineSong ->
-                                !allLocalSongs.any { localSong ->
-                                    localSong.id == onlineSong.id ||
-                                    (localSong.song.title.equals(onlineSong.title, ignoreCase = true) &&
-                                     localSong.artists.any { artist ->
-                                         onlineSong.artists.any {
-                                             it.name.equals(artist.name, ignoreCase = true)
-                                         }
-                                     })
-                                }
-                            } ?: emptyList()
 
-                        onlineResults.forEach { songItem ->
-                            try {
-                                database.query { insert(songItem.toMediaMetadata()) }
-                                database.song(songItem.id).first()?.let { newSong ->
-                                    searchResults.add(newSong)
-                                }
-                            } catch (e: Exception) {
-                            }
-                        }
+                    val onlineSongItems = try {
+                        searchOnlineSongs(searchQuery)
                     } catch (e: Exception) {
                         reportException(e)
+                        emptyList()
                     }
-                    
-                    if (searchResults.isEmpty()) {
+                    onlineSongItems.forEach { songItem ->
+                        database.query { insert(songItem.toMediaMetadata()) }
+                    }
+
+                    val orderedMetadata =
+                        orderSearchMetadata(
+                            online = onlineSongItems.map { it.toMediaMetadata() },
+                            local = allLocalSongs.map { it.toMediaMetadata() },
+                            prioritizeOnline = isVoicePlay,
+                        )
+                    if (orderedMetadata.isEmpty()) {
                         return@future defaultResult
                     }
-                    
-                    val targetIndex = searchResults.indexOfFirst { it.id == songId }
-                    
+
+                    if (isVoicePlay && onlineSongItems.isNotEmpty()) {
+                        service.buildVoiceRadioQueue(orderedMetadata.first())?.let {
+                            return@future it
+                        }
+                    }
+
+                    val searchResults = orderedMetadata.map { it.toMediaItem() }
+                    val targetIndex = searchResults.indexOfFirst { it.mediaId == songId }
+
                     MediaItemsWithStartPosition(
-                        searchResults.map { it.toMediaItem() },
+                        searchResults,
                         if (targetIndex >= 0) targetIndex else 0,
                         C.TIME_UNSET
                     )
@@ -798,6 +782,16 @@ constructor(
                 else -> defaultResult
             }
         }
+
+    private suspend fun searchOnlineSongs(query: String): List<SongItem> {
+        val summaries = YouTube.searchSummary(query).getOrNull()?.summaries ?: return emptyList()
+        return rankVoiceSearchSongs(
+            summaries = summaries,
+            topResultSectionTitle = YouTubeConstants.DEFAULT_TOP_RESULT,
+        )
+            .filterExplicit(context.dataStore.get(HideExplicitKey, false))
+            .filterVideoSongs(context.dataStore.get(HideVideoSongsKey, false))
+    }
 
     private fun drawableUri(
         @DrawableRes id: Int,

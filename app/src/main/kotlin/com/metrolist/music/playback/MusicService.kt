@@ -2068,6 +2068,46 @@ class MusicService :
             }
     }
 
+    internal suspend fun buildVoiceRadioQueue(
+        seed: MediaMetadata,
+    ): MediaSession.MediaItemsWithStartPosition? {
+        val radioQueue = YouTubeQueue.radio(seed)
+        val initialStatus =
+            try {
+                withContext(Dispatchers.IO) {
+                    radioQueue
+                        .getInitialStatus()
+                        .filterExplicit(dataStore.get(HideExplicitKey, false))
+                        .filterVideoSongs(dataStore.get(HideVideoSongsKey, false))
+                }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                reportException(error)
+                return null
+            }
+
+        val plan =
+            buildVoiceRadioMediaPlan(
+                seed = seed.toMediaItem(),
+                radioItems = initialStatus.items,
+            )
+        withContext(Dispatchers.Main.immediate) {
+            resetPlaybackRecoveryForUserAction()
+            resetLoadMoreRecovery()
+            manualQueueTracker.reset()
+            currentQueue = radioQueue
+            queueTitle = initialStatus.title
+            originalQueueSize = plan.items.size
+        }
+
+        return MediaSession.MediaItemsWithStartPosition(
+            plan.items,
+            plan.startIndex,
+            C.TIME_UNSET,
+        )
+    }
+
     fun startRadioSeamlessly() {
         if (!playerInitialized.value) {
             Timber.tag(TAG).w("startRadioSeamlessly called before player initialization")

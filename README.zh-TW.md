@@ -43,7 +43,7 @@ Metrolist Android Car 是 [Metrolist](https://github.com/MetrolistGroup/Metrolis
 - 音樂庫、本機播放列表與帳號同步。
 - 與其他使用者一起聆聽。
 - Material 3 介面，支援亮色、暗色、全黑、動態與預設配色主題。
-- 針對 Android Auto 調整版面與播放控制。
+- 針對 Android Auto 調整版面與播放控制。語音播放會直接採用 YouTube 依相關性排序的歌曲結果，避免本機資料庫尚未寫入時遺失最佳歌曲，並以可持續延伸的相關歌曲電台接續播放，不再於有限搜尋清單結束後停止。
 - 支援 YouTube 目前圖片 CDN 格式的高解析度圖片網址處理。
 - 車機導向的預設設定，包含大型網格與精簡的自動生成播放列表。
 
