@@ -524,6 +524,7 @@
     <string name="error_file_open">Failed to open file: %1$s</string>
     <string name="import_error_title">Import error</string>
     <string name="error_title">Error</string>
+    <string name="content_load_failed">Couldn\'t load this content. Check your connection and try again.</string>
     <string name="error_eq_apply_failed">Failed to apply equalizer profile: %1$s</string>
 
     <!-- EQ Wizard -->

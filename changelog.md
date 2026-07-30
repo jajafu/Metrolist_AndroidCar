@@ -4,6 +4,18 @@
 
 This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.48
+
+### 中文
+
+- 排行榜與探索頁改用明確的內容、載入與錯誤狀態；請求失敗時會停止載入動畫並顯示重試操作，成功載入的另一部分內容仍可保留顯示。
+- 首頁載入與下拉重新整理加入單次執行及 `finally` 狀態復原，資料庫或網路處理發生例外時不再永久顯示旋轉指示。
+
+### English
+
+- Give Charts and Explore explicit content, loading, and error states so failed requests stop the loading animation, offer retry, and preserve any other content that loaded successfully.
+- Make Home loading and pull-to-refresh single-flight operations restore their indicators in `finally`, preventing database or network exceptions from leaving a permanent spinner.
+
 ## 13.6.47
 
 ### 中文

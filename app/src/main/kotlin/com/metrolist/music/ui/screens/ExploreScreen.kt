@@ -66,6 +66,7 @@ import com.metrolist.music.R
 import com.metrolist.music.constants.ListItemHeight
 import com.metrolist.music.models.toMediaMetadata
 import com.metrolist.music.playback.queues.YouTubeQueue
+import com.metrolist.music.ui.component.LoadErrorContent
 import com.metrolist.music.ui.component.LocalMenuState
 import com.metrolist.music.ui.component.NavigationTitle
 import com.metrolist.music.ui.component.YouTubeGridItem
@@ -92,9 +93,10 @@ fun ExploreScreen(
     val isPlaying by playerConnection.isEffectivelyPlaying.collectAsStateWithLifecycle()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsStateWithLifecycle()
 
-    val explorePage by exploreViewModel.explorePage.collectAsStateWithLifecycle()
-    val chartsPage by chartsViewModel.chartsPage.collectAsStateWithLifecycle()
-    val isChartsLoading by chartsViewModel.isLoading.collectAsStateWithLifecycle()
+    val exploreUiState by exploreViewModel.uiState.collectAsStateWithLifecycle()
+    val chartsUiState by chartsViewModel.uiState.collectAsStateWithLifecycle()
+    val explorePage = exploreUiState.content
+    val chartsPage = chartsUiState.content
 
     val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
@@ -106,7 +108,7 @@ fun ExploreScreen(
         ?.collectAsStateWithLifecycle() ?: return
 
     LaunchedEffect(Unit) {
-        if (chartsPage == null) {
+        if (chartsUiState.isWaitingForInitialContent) {
             chartsViewModel.loadCharts()
         }
     }
@@ -130,7 +132,7 @@ fun ExploreScreen(
                 ),
             )
 
-            if (isChartsLoading || chartsPage == null || explorePage == null) {
+            if (chartsUiState.isWaitingForInitialContent || exploreUiState.isWaitingForInitialContent) {
                 ShimmerHost {
                     TextPlaceholder(
                         height = 36.dp,
@@ -240,6 +242,15 @@ fun ExploreScreen(
                     }
                 }
             } else {
+                if (chartsPage == null || explorePage == null) {
+                    LoadErrorContent(
+                        onRetry = {
+                            if (chartsPage == null) chartsViewModel.loadCharts()
+                            if (explorePage == null) exploreViewModel.retry()
+                        },
+                    )
+                }
+
                 chartsPage?.sections?.filter { it.title != "Top music videos" }?.forEach { section ->
                     NavigationTitle(
                         title =

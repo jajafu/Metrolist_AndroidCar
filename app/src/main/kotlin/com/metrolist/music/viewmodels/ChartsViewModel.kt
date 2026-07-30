@@ -9,7 +9,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.metrolist.innertube.YouTube
 import com.metrolist.innertube.pages.ChartsPage
+import com.metrolist.music.utils.reportException
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -17,48 +19,58 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ChartsViewModel @Inject constructor() : ViewModel() {
-    private val _chartsPage = MutableStateFlow<ChartsPage?>(null)
-    val chartsPage = _chartsPage.asStateFlow()
-
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading = _isLoading.asStateFlow()
-
-    private val _error = MutableStateFlow<String?>(null)
-    val error = _error.asStateFlow()
+    private val _uiState = MutableStateFlow(ContentLoadState<ChartsPage>())
+    internal val uiState = _uiState.asStateFlow()
 
     fun loadCharts() {
+        if (_uiState.value.isLoading) return
+        _uiState.value = _uiState.value.loading()
+
         viewModelScope.launch {
-            _isLoading.value = true
-            _error.value = null
-            
-            YouTube.getChartsPage()
-                .onSuccess { page ->
-                    _chartsPage.value = page
-                }
-                .onFailure { e ->
-                    _error.value = "Failed to load charts: ${e.message}"
-                }
-            
-            _isLoading.value = false
+            try {
+                YouTube
+                    .getChartsPage()
+                    .onSuccess { page ->
+                        _uiState.value = _uiState.value.loaded(page)
+                    }.onFailure(::handleFailure)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                handleFailure(e)
+            }
         }
     }
 
     fun loadMore() {
+        if (_uiState.value.isLoading) return
+        val currentPage = _uiState.value.content ?: return
+        val continuation = currentPage.continuation ?: return
+        _uiState.value = _uiState.value.loading()
+
         viewModelScope.launch {
-            _chartsPage.value?.continuation?.let { continuation ->
-                _isLoading.value = true
-                YouTube.getChartsPage(continuation)
+            try {
+                YouTube
+                    .getChartsPage(continuation)
                     .onSuccess { newPage ->
-                        _chartsPage.value = _chartsPage.value?.copy(
-                            sections = _chartsPage.value?.sections.orEmpty() + newPage.sections,
-                            continuation = newPage.continuation
-                        )
-                    }
-                    .onFailure { e ->
-                        _error.value = "Failed to load more: ${e.message}"
-                    }
-                _isLoading.value = false
+                        _uiState.value =
+                            _uiState.value.loaded(
+                                currentPage.copy(
+                                    sections = currentPage.sections + newPage.sections,
+                                    continuation = newPage.continuation,
+                                ),
+                            )
+                    }.onFailure(::handleFailure)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                handleFailure(e)
             }
         }
+    }
+
+    private fun handleFailure(error: Throwable) {
+        if (error is CancellationException) throw error
+        _uiState.value = _uiState.value.failed(error)
+        reportException(error)
     }
 }

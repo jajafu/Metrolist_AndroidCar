@@ -46,6 +46,7 @@ import com.metrolist.music.utils.get
 import com.metrolist.music.utils.reportException
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -422,51 +423,54 @@ class HomeViewModel @Inject constructor(
 
     private suspend fun load() {
         isLoading.value = true
-        val hideExplicit = context.dataStore.get(HideExplicitKey, false)
-        val hideVideoSongs = context.dataStore.get(HideVideoSongsKey, false)
-        val hideYoutubeShorts = context.dataStore.get(HideYoutubeShortsKey, false)
-        val fromTimeStamp = LocalDateTime.now().minusWeeks(2)
+        try {
+            val hideExplicit = context.dataStore.get(HideExplicitKey, false)
+            val hideVideoSongs = context.dataStore.get(HideVideoSongsKey, false)
+            val hideYoutubeShorts = context.dataStore.get(HideYoutubeShortsKey, false)
+            val fromTimeStamp = LocalDateTime.now().minusWeeks(2)
 
-        // Load only the car-friendly home sources: local quick access, recent
-        // listening, account playlists, and three official YouTube sections.
-        coroutineScope {
-            launch(Dispatchers.IO) { getQuickPicks() }
+            // Load only the car-friendly home sources: local quick access, recent
+            // listening, account playlists, and three official YouTube sections.
+            coroutineScope {
+                launch(Dispatchers.IO) { getQuickPicks() }
 
-            launch(Dispatchers.IO) {
-                val songs = database.mostPlayedSongs(fromTimeStamp = fromTimeStamp, limit = 15, offset = 5, toTimeStamp = LocalDateTime.now()).first()
-                    .filterVideoSongs(hideVideoSongs).shuffled().take(10)
-                val albums = database.mostPlayedAlbums(fromTimeStamp, limit = 8, offset = 2).first()
-                    .filter { it.album.thumbnailUrl != null }.shuffled().take(5)
-                val artists = database.mostPlayedArtists(fromTimeStamp).first()
-                    .filter { it.artist.isYouTubeArtist && it.artist.thumbnailUrl != null }.shuffled().take(5)
-                keepListening.value = (songs + albums + artists).shuffled()
+                launch(Dispatchers.IO) {
+                    val songs = database.mostPlayedSongs(fromTimeStamp = fromTimeStamp, limit = 15, offset = 5, toTimeStamp = LocalDateTime.now()).first()
+                        .filterVideoSongs(hideVideoSongs).shuffled().take(10)
+                    val albums = database.mostPlayedAlbums(fromTimeStamp, limit = 8, offset = 2).first()
+                        .filter { it.album.thumbnailUrl != null }.shuffled().take(5)
+                    val artists = database.mostPlayedArtists(fromTimeStamp).first()
+                        .filter { it.artist.isYouTubeArtist && it.artist.thumbnailUrl != null }.shuffled().take(5)
+                    keepListening.value = (songs + albums + artists).shuffled()
+                }
+
+                launch(Dispatchers.IO) {
+                    YouTube.home().onSuccess { page ->
+                        homePage.value = page.copy(
+                            continuation = null,
+                            sections = page.sections.mapNotNull { section ->
+                                val filtered = section.items
+                                    .filterOutNulls()
+                                    .filterExplicit(hideExplicit)
+                                    .filterVideoSongs(hideVideoSongs)
+                                    .filterYoutubeShorts(hideYoutubeShorts)
+                                if (filtered.isEmpty()) null else section.copy(items = filtered)
+                            }.take(HOME_SECTION_LIMIT)
+                        )
+                    }.onFailure { reportException(it) }
+                }
+
+                if (YouTube.cookie != null) {
+                    launch(Dispatchers.IO) { loadAccountPlaylists() }
+                }
             }
 
-            launch(Dispatchers.IO) {
-                YouTube.home().onSuccess { page ->
-                    homePage.value = page.copy(
-                        continuation = null,
-                        sections = page.sections.mapNotNull { section ->
-                            val filtered = section.items
-                                .filterOutNulls()
-                                .filterExplicit(hideExplicit)
-                                .filterVideoSongs(hideVideoSongs)
-                                .filterYoutubeShorts(hideYoutubeShorts)
-                            if (filtered.isEmpty()) null else section.copy(items = filtered)
-                        }.take(HOME_SECTION_LIMIT)
-                    )
-                }.onFailure { reportException(it) }
-            }
-
-            if (YouTube.cookie != null) {
-                launch(Dispatchers.IO) { loadAccountPlaylists() }
-            }
+            allLocalItems.value = (quickPicks.value.orEmpty() + keepListening.value.orEmpty())
+                .filter { it is Song || it is Album }
+            allYtItems.value = homePage.value?.sections?.flatMap { it.items }.orEmpty()
+        } finally {
+            isLoading.value = false
         }
-
-        allLocalItems.value = (quickPicks.value.orEmpty() + keepListening.value.orEmpty())
-            .filter { it is Song || it is Album }
-        allYtItems.value = homePage.value?.sections?.flatMap { it.items }.orEmpty()
-        isLoading.value = false
     }
 
     fun toggleChip(chip: HomePage.Chip?) {
@@ -539,28 +543,35 @@ class HomeViewModel @Inject constructor(
         (this as List<T?>).filterNotNull()
 
     fun refresh() {
-        if (isRefreshing.value) return
-        isRefreshing.value = true
+        if (!isRefreshing.compareAndSet(expect = false, update = true)) return
+
         viewModelScope.launch(Dispatchers.IO) {
-            // If a chip is selected, reload the chip's content instead of the default home
-            val currentChip = selectedChip.value
-            if (currentChip != null) {
-                val hideExplicit = context.dataStore.get(HideExplicitKey, false)
-                val hideVideoSongs = context.dataStore.get(HideVideoSongsKey, false)
-                val hideYoutubeShorts = context.dataStore.get(HideYoutubeShortsKey, false)
-                val nextSections = YouTube.home(params = currentChip.endpoint?.params).getOrNull()
-                if (nextSections != null) {
-                    homePage.value = nextSections.copy(
-                        chips = homePage.value?.chips,
-                        sections = nextSections.sections.mapNotNull { section ->
-                            section.copy(items = section.items.filterOutNulls().filterExplicit(hideExplicit).filterVideoSongs(hideVideoSongs).filterYoutubeShorts(hideYoutubeShorts))
-                        }
-                    )
+            try {
+                // If a chip is selected, reload the chip's content instead of the default home
+                val currentChip = selectedChip.value
+                if (currentChip != null) {
+                    val hideExplicit = context.dataStore.get(HideExplicitKey, false)
+                    val hideVideoSongs = context.dataStore.get(HideVideoSongsKey, false)
+                    val hideYoutubeShorts = context.dataStore.get(HideYoutubeShortsKey, false)
+                    val nextSections = YouTube.home(params = currentChip.endpoint?.params).getOrNull()
+                    if (nextSections != null) {
+                        homePage.value = nextSections.copy(
+                            chips = homePage.value?.chips,
+                            sections = nextSections.sections.mapNotNull { section ->
+                                section.copy(items = section.items.filterOutNulls().filterExplicit(hideExplicit).filterVideoSongs(hideVideoSongs).filterYoutubeShorts(hideYoutubeShorts))
+                            }
+                        )
+                    }
+                } else {
+                    load()
                 }
-            } else {
-                load()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                reportException(e)
+            } finally {
+                isRefreshing.value = false
             }
-            isRefreshing.value = false
         }
         // Run sync when user manually refreshes
         viewModelScope.launch(Dispatchers.IO) {

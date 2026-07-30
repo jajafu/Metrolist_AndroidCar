@@ -69,6 +69,7 @@ import com.metrolist.music.constants.ListItemHeight
 import com.metrolist.music.models.toMediaMetadata
 import com.metrolist.music.playback.queues.YouTubeQueue
 import com.metrolist.music.ui.component.IconButton
+import com.metrolist.music.ui.component.LoadErrorContent
 import com.metrolist.music.ui.component.LocalMenuState
 import com.metrolist.music.ui.component.NavigationTitle
 import com.metrolist.music.ui.component.YouTubeGridItem
@@ -93,14 +94,14 @@ fun ChartsScreen(
     val isPlaying by playerConnection.isEffectivelyPlaying.collectAsStateWithLifecycle()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsStateWithLifecycle()
 
-    val chartsPage by viewModel.chartsPage.collectAsStateWithLifecycle()
-    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val chartsPage = uiState.content
 
     val lazyListState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
-        if (chartsPage == null) {
+        if (uiState.isWaitingForInitialContent) {
             viewModel.loadCharts()
         }
     }
@@ -129,7 +130,7 @@ fun ChartsScreen(
                     .fillMaxSize()
                     .padding(paddingValues),
         ) {
-            if (isLoading || chartsPage == null) {
+            if (uiState.isWaitingForInitialContent) {
                 ShimmerHost(
                     modifier = Modifier.fillMaxSize(),
                 ) {
@@ -209,6 +210,11 @@ fun ChartsScreen(
                         }
                     }
                 }
+            } else if (chartsPage == null) {
+                LoadErrorContent(
+                    onRetry = viewModel::loadCharts,
+                    modifier = Modifier.fillMaxSize(),
+                )
             } else {
                 LazyColumn(
                     state = lazyListState,
