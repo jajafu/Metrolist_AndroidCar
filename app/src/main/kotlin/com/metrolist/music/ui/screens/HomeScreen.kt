@@ -1085,7 +1085,11 @@ fun HomeScreen(
                             NavigationTitle(
                                 title = stringResource(R.string.your_shows),
                                 onClick = {
-                                    navController.navigate("youtube_browse/FEmusic_library_non_music_audio_list")
+                                    navController.navigate(
+                                        YouTubeBrowseDestination(
+                                            browseId = "FEmusic_library_non_music_audio_list",
+                                        ),
+                                    )
                                 },
                             )
                         }
@@ -1207,7 +1211,10 @@ fun HomeScreen(
 
                                                     endpoint.params != null -> {
                                                         navController.navigate(
-                                                            "youtube_browse/${endpoint.browseId}?params=${endpoint.params}",
+                                                            YouTubeBrowseDestination(
+                                                                browseId = endpoint.browseId,
+                                                                params = endpoint.params,
+                                                            ),
                                                         )
                                                     }
 
@@ -2174,12 +2181,19 @@ fun HomeScreen(
                                                         // Handle podcast-related browse endpoints
                                                         endpoint.browseId.startsWith("FEmusic_library_non_music_audio") ||
                                                             endpoint.browseId.startsWith("FEmusic_non_music_audio") -> {
-                                                            navController.navigate("youtube_browse/${endpoint.browseId}")
+                                                            navController.navigate(
+                                                                YouTubeBrowseDestination(
+                                                                    browseId = endpoint.browseId,
+                                                                ),
+                                                            )
                                                         }
 
                                                         endpoint.params != null -> {
                                                             navController.navigate(
-                                                                "youtube_browse/${endpoint.browseId}?params=${endpoint.params}",
+                                                                YouTubeBrowseDestination(
+                                                                    browseId = endpoint.browseId,
+                                                                    params = endpoint.params,
+                                                                ),
                                                             )
                                                         }
 
@@ -2329,7 +2343,10 @@ fun HomeScreen(
                                                 title = it.title,
                                                 onClick = {
                                                     navController.navigate(
-                                                        "youtube_browse/${it.endpoint.browseId}?params=${it.endpoint.params}",
+                                                        YouTubeBrowseDestination(
+                                                            browseId = it.endpoint.browseId,
+                                                            params = it.endpoint.params,
+                                                        ),
                                                     )
                                                 },
                                                 modifier =

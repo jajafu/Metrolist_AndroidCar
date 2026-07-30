@@ -236,23 +236,7 @@ fun NavGraphBuilder.navigationBuilder(
         ArtistAlbumsScreen(navController, scrollBehavior)
     }
 
-    composable(
-        route = "artist/{artistId}/items?browseId={browseId}?params={params}",
-        arguments =
-            listOf(
-                navArgument("artistId") {
-                    type = NavType.StringType
-                },
-                navArgument("browseId") {
-                    type = NavType.StringType
-                    nullable = true
-                },
-                navArgument("params") {
-                    type = NavType.StringType
-                    nullable = true
-                },
-            ),
-    ) {
+    composable<ArtistItemsDestination> {
         ArtistItemsScreen(navController)
     }
 
@@ -328,20 +312,7 @@ fun NavGraphBuilder.navigationBuilder(
         TopPlaylistScreen(navController)
     }
 
-    composable(
-        route = "youtube_browse/{browseId}?params={params}",
-        arguments =
-            listOf(
-                navArgument("browseId") {
-                    type = NavType.StringType
-                    nullable = true
-                },
-                navArgument("params") {
-                    type = NavType.StringType
-                    nullable = true
-                },
-            ),
-    ) {
+    composable<YouTubeBrowseDestination> {
         YouTubeBrowseScreen(navController)
     }
 

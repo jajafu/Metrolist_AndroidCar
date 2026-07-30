@@ -4,6 +4,18 @@
 
 This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.50
+
+### 中文
+
+- 藝術家延伸內容與 YouTube 瀏覽頁改用型別安全導航，移除容易混淆多個查詢參數的手動路由字串。
+- 導航系統會安全保存含有斜線、問號、井號與 `&` 的 YouTube 參數，避免頁面開啟時參數遭截斷或遺失。
+
+### English
+
+- Use type-safe destinations for artist overflow content and YouTube browse pages, removing manually assembled routes that could confuse multiple query parameters.
+- Preserve YouTube parameters containing slashes, question marks, hashes, and ampersands so navigation no longer truncates or loses them while opening a page.
+
 ## 13.6.49
 
 ### 中文

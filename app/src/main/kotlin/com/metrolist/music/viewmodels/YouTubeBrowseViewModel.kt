@@ -9,12 +9,14 @@ import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.toRoute
 import com.metrolist.innertube.YouTube
 import com.metrolist.innertube.models.filterYoutubeShorts
 import com.metrolist.innertube.pages.BrowseResult
 import com.metrolist.music.constants.HideExplicitKey
 import com.metrolist.music.constants.HideVideoSongsKey
 import com.metrolist.music.constants.HideYoutubeShortsKey
+import com.metrolist.music.ui.screens.YouTubeBrowseDestination
 import com.metrolist.music.utils.dataStore
 import com.metrolist.music.utils.get
 import com.metrolist.music.utils.reportException
@@ -31,8 +33,9 @@ constructor(
     @ApplicationContext val context: Context,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
-    private val browseId = savedStateHandle.get<String>("browseId")!!
-    private val params = savedStateHandle.get<String>("params")
+    private val destination = savedStateHandle.toRoute<YouTubeBrowseDestination>()
+    private val browseId = destination.browseId
+    private val params = destination.params
 
     val result = MutableStateFlow<BrowseResult?>(null)
 

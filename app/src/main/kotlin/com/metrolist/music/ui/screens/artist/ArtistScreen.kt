@@ -116,6 +116,7 @@ import com.metrolist.music.ui.component.shimmer.ShimmerHost
 import com.metrolist.music.ui.component.shimmer.TextPlaceholder
 import com.metrolist.music.ui.menu.AlbumMenu
 import com.metrolist.music.ui.menu.SongMenu
+import com.metrolist.music.ui.screens.ArtistItemsDestination
 import com.metrolist.music.ui.menu.YouTubeAlbumMenu
 import com.metrolist.music.ui.menu.YouTubeArtistMenu
 import com.metrolist.music.ui.menu.YouTubePlaylistMenu
@@ -667,7 +668,11 @@ fun ArtistScreen(
                                         section.moreEndpoint?.let {
                                             {
                                                 navController.navigate(
-                                                    "artist/${viewModel.artistId}/items?browseId=${it.browseId}?params=${it.params}",
+                                                    ArtistItemsDestination(
+                                                        artistId = viewModel.artistId,
+                                                        browseId = it.browseId,
+                                                        params = it.params,
+                                                    ),
                                                 )
                                             }
                                         },
