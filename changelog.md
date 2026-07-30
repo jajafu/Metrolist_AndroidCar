@@ -4,6 +4,20 @@
 
 This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.49
+
+### 中文
+
+- 等化器、播放速度標題與 Parametric EQ 匯出使用明確地區格式，避免不同語系產生不一致或無法匯入的數字。
+- 線上播放清單與 Podcast 標題改為只在捲動狀態跨越顯示門檻時重組；小工具預覽中的裝飾圖像明確排除無障礙朗讀。
+- 移除 9 個可確認沒有程式或動態名稱引用的舊圖示、字型別名與啟動畫面資源。
+
+### English
+
+- Use explicit locale formatting for equalizer labels, playback-speed titles, and Parametric EQ exports so numbers remain appropriate for display and portable for file import.
+- Recompose online playlist and podcast titles only when scrolling crosses the visibility threshold, and explicitly exclude decorative widget-preview images from accessibility announcements.
+- Remove nine obsolete icons, a font alias, and launcher resources with no code or dynamic-name references.
+
 ## 13.6.48
 
 ### 中文

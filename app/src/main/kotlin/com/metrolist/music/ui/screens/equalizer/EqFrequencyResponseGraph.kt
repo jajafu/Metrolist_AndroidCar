@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.metrolist.music.eq.data.FilterType
 import com.metrolist.music.eq.data.ParametricEQBand
+import java.util.Locale
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.ceil
@@ -129,7 +130,7 @@ fun EqFrequencyResponseGraph(
                     // Label
                     val labelText = if (db == 0.0) "0" else {
                         if (db == db.toLong().toDouble()) db.toLong().toString()
-                        else String.format("%.1f", db)
+                        else String.format(Locale.getDefault(), "%.1f", db)
                     }
                     drawDbLabel(textMeasurer, labelText, labelStyle, y, plotLeft)
                     db += dbStep

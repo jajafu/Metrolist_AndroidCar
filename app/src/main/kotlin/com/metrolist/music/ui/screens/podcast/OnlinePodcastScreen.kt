@@ -39,7 +39,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -65,6 +65,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAny
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
@@ -108,6 +109,9 @@ fun OnlinePodcastScreen(
     val libraryPodcast by viewModel.libraryPodcast.collectAsStateWithLifecycle()
 
     val lazyListState = rememberLazyListState()
+    val showCollapsedTitle by remember {
+        derivedStateOf { lazyListState.firstVisibleItemIndex > 0 }
+    }
 
     var isSearching by rememberSaveable { mutableStateOf(false) }
     var query by rememberSaveable(stateSaver = TextFieldValue.Saver) { mutableStateOf(TextFieldValue()) }
@@ -260,7 +264,7 @@ fun OnlinePodcastScreen(
                             .fillMaxWidth()
                             .focusRequester(focusRequester)
                     )
-                } else if (lazyListState.firstVisibleItemIndex > 0) {
+                } else if (showCollapsedTitle) {
                     Text(podcast?.title ?: "")
                 }
             },

@@ -2,6 +2,7 @@ package com.metrolist.music.eq.data
 
 import timber.log.Timber
 import java.io.File
+import java.util.Locale
 
 /**
  * Parser for AutoEq ParametricEQ.txt files.
@@ -182,7 +183,7 @@ object ParametricEQParser {
                 "Filter ${index + 1}: ON ${band.filterType} " +
                         "Fc ${band.frequency.toInt()} Hz " +
                         "Gain ${band.gain} dB " +
-                        "Q ${String.format("%.2f", band.q)}"
+                        "Q ${String.format(Locale.ROOT, "%.2f", band.q)}"
             )
         }
         return sb.toString()

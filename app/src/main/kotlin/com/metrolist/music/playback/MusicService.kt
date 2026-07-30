@@ -258,9 +258,10 @@ import timber.log.Timber
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
 import java.time.LocalDateTime
+import java.util.Collections
+import java.util.Locale
 import javax.inject.Inject
 import kotlin.random.Random
-import java.util.Collections
 
 private const val INSTANT_SILENCE_SKIP_STEP_MS = 15_000L
 private const val INSTANT_SILENCE_SKIP_SETTLE_MS = 350L
@@ -4150,7 +4151,7 @@ class MusicService :
         val artistName = song.artists.joinToString { it.name }.ifEmpty { DiscordDefaults.UNKNOWN_ARTIST }
         val albumName = song.album?.title
         val songTitle = if (speed != 1.0f) {
-            "${song.song.title} [${String.format("%.2fx", speed)}]"
+            "${song.song.title} [${String.format(Locale.getDefault(), "%.2fx", speed)}]"
         } else {
             song.song.title
         }

@@ -44,6 +44,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -137,6 +138,9 @@ fun OnlinePlaylistScreen(
     val hideExplicit by rememberPreference(key = HideExplicitKey, defaultValue = false)
 
     val lazyListState = rememberLazyListState()
+    val showCollapsedTitle by remember {
+        derivedStateOf { lazyListState.firstVisibleItemIndex > 0 }
+    }
     val snackbarHostState = remember { SnackbarHostState() }
 
     var isSearching by rememberSaveable { mutableStateOf(false) }
@@ -397,7 +401,7 @@ fun OnlinePlaylistScreen(
                                 .fillMaxWidth()
                                 .focusRequester(focusRequester),
                     )
-                } else if (lazyListState.firstVisibleItemIndex > 0) {
+                } else if (showCollapsedTitle) {
                     Text(playlist?.title ?: "")
                 }
             },
