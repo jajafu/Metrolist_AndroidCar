@@ -4,6 +4,18 @@
 
 This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.51
+
+### 中文
+
+- 修正 YouTube 在串流來源尚未辨識完成前回傳「Sign in to confirm you're not a bot」時，播放器會立即停止且顯示 `IO_UNSPECIFIED (2000)` 的問題。
+- 未解析完成的串流錯誤現在會清除舊來源資訊並有限次數重新取得播放網址；既有的重試上限仍會防止持續失敗或無限迴圈。
+
+### English
+
+- Fix playback stopping immediately with `IO_UNSPECIFIED (2000)` when YouTube returns “Sign in to confirm you're not a bot” before a stream client has been identified.
+- Unresolved stream failures now discard stale client information and retry URL resolution a bounded number of times, while the existing retry limit still prevents repeated failures or retry loops.
+
 ## 13.6.50
 
 ### 中文

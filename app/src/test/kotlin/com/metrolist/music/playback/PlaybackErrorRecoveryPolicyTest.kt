@@ -7,6 +7,17 @@ import org.junit.Test
 
 class PlaybackErrorRecoveryPolicyTest {
     @Test
+    fun `unspecified IO before client selection retries stream resolution`() {
+        assertEquals(
+            PlaybackIoRecoveryAction.RETRY_STREAM_RESOLUTION,
+            playbackIoRecoveryAction(
+                PlaybackException.ERROR_CODE_IO_UNSPECIFIED,
+                streamClient = null,
+            )
+        )
+    }
+
+    @Test
     fun `WEB_REMIX unspecified IO advances to fallback client`() {
         assertEquals(
             PlaybackIoRecoveryAction.TRY_FALLBACK_CLIENT,

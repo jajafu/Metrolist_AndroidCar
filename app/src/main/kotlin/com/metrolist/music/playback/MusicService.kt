@@ -3565,6 +3565,12 @@ class MusicService :
                 return
             }
 
+            PlaybackIoRecoveryAction.RETRY_STREAM_RESOLUTION -> {
+                Timber.tag(TAG).d("IO error ${error.errorCode} occurred before stream resolution, resolving again")
+                handleGenericIOError(mediaId)
+                return
+            }
+
             PlaybackIoRecoveryAction.TRY_FALLBACK_CLIENT -> {
                 Timber.tag(TAG).d("WEB_REMIX IO error detected (${error.errorCode}), trying fallback clients")
                 handleStreamClientFallback(mediaId)
@@ -4351,6 +4357,9 @@ class MusicService :
             }
 
             Timber.tag(TAG).i("FETCHING STREAM: $mediaId | quality=$audioQuality")
+            // A failure below happened before a new client was selected. Discard the previous
+            // resolution so recovery does not mistake stale client data for the current attempt.
+            streamClientByMediaId.remove(mediaId)
             val playbackData =
                 runBlocking(Dispatchers.IO) {
                     val song = database.songEntity(mediaId)
