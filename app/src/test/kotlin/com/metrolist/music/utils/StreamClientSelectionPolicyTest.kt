@@ -29,9 +29,4 @@ class StreamClientSelectionPolicyTest {
         }
     }
 
-    @Test
-    fun `failed WEB_REMIX client is excluded on the next resolution`() {
-        assertTrue(shouldSkipFailedWebRemixClient("WEB_REMIX", webRemixPreviouslyFailed = true))
-        assertFalse(shouldSkipFailedWebRemixClient("TVHTML5", webRemixPreviouslyFailed = true))
-    }
 }

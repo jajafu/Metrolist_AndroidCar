@@ -18,8 +18,3 @@ internal fun shouldSkipWebRemixValidation(
     clientName == "WEB_REMIX" &&
         !webRemixPreviouslyFailed &&
         !isUgcPodcastOrUnknown(musicVideoType)
-
-internal fun shouldSkipFailedWebRemixClient(
-    clientName: String,
-    webRemixPreviouslyFailed: Boolean,
-): Boolean = clientName == "WEB_REMIX" && webRemixPreviouslyFailed

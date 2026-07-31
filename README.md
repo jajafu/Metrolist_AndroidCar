@@ -17,13 +17,14 @@ This fork is maintained by [jajafu](https://github.com/jajafu) and focuses on a 
 - The home screen is reduced to category chips, 12 local quick-access items, account playlists, and at most three official YouTube recommendation sections. Expensive duplicate discovery, community, similar-content, mood-and-genre, random-order, and infinite-pagination sections are not loaded, and quick-access items remain safe if a song is removed during synchronization.
 - Charts and Explore show a retry action instead of an endless loading animation after a failed request, while Home always releases its loading and pull-to-refresh indicators after errors.
 - Branded the installed app as `Metrolist_AndroidCar` with a black music-car logo across the launcher, About screen, and playback notifications.
+- Uses the dedicated Android package ID `com.jajafu.metrolist.androidcar`, allowing this fork and the original Metrolist app to be installed at the same time.
 - New playlists default to YouTube Music sync when the account and sync setting are active. Failed playlist creation, song additions, and song removals are stored outside the App database, retried automatically, and shown as pending in the playlist library; duplicate-song removals preserve the exact YouTube occurrence, new remote playlists receive a reconciliation grace period, duplicate remote playlists reconcile to one protected local record without losing downloaded songs, and large song-ID operations are split below SQLite limits.
 - Song like and unlike actions use one ordered, durable synchronization queue. Rapid opposite actions keep the latest state, failed YouTube updates remain pending across App restarts, and duplicate network requests are avoided. Remote reconciliation preserves the latest pending local choice while respecting remote changes when no local action remains; likes for device-local files never reach YouTube.
 - Automatic full sync starts its cooldown only after every required component and pending song-like or playlist edit succeeds. Partial failures remain visible and can be retried immediately.
 - Library pull-to-refresh joins an already queued or running full sync, ignores repeated pull gestures, keeps the indicator active until the shared operation finishes, and reports partial failures instead of running duplicate back-to-back syncs.
 - Rapid queue or radio selections keep only the latest request, preventing slower network responses from replacing the active playback queue.
 - Repeated Play Next requests remain first-in-first-out. Their full manual-priority block stays ahead of the automatic queue when shuffle is enabled and is safely updated after transitions, repeats, removals, queue replacement, clearing, or service restoration.
-- Podcast, UGC, and unknown media types validate WEB_REMIX streams before playback and automatically exclude a failed WEB_REMIX source when resolving a fallback client.
+- Podcast, UGC, and unknown media types validate WEB_REMIX streams before playback. Player configuration refreshes use this repository's mirror first and consult the authoritative zemer-cipher source only when the current YouTube player is still missing, avoiding playback outages during mirror lag.
 - Backup, restore, CSV preview, and M3U import file work runs in the background. File previews stream or cap input to avoid loading large documents into memory, and newer selections cancel stale preview work. Restores validate staged database and settings files before replacing live data, roll back all replacements on failure, and restart into a usable database state when required.
 - Foreground-service startup handling and widget themes are compatible with Android 8.0 (API 26) through current Android releases.
 - Wrapped safely supports listening histories with fewer than five eligible top songs.
@@ -62,7 +63,7 @@ The in-app updater checks [this repository's releases](https://github.com/jajafu
 
 Release names may include the `-car` suffix; the updater compares their numeric version components with the installed app version, so the current release is not reported as a new update.
 
-The first installation from an earlier Debug APK requires uninstalling that Debug package because it uses a different application ID. Subsequent FOSS Release APKs use the same signing key and can update in place.
+Starting with version `13.6.52`, this fork uses the dedicated package ID `com.jajafu.metrolist.androidcar` and can coexist with the original Metrolist app. Android treats it as a new App, so installing it over `13.6.51` or earlier will not migrate that package's local settings, login, downloads, or database automatically. Sign in again after the one-time transition and keep or remove the old installation as needed. Later FOSS Release APKs with this package ID and the same signing key can update in place.
 
 ## Original project and acknowledgements
 

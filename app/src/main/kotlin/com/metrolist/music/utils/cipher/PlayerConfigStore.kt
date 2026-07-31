@@ -34,6 +34,11 @@ object PlayerConfigStore {
         String(Base64.decode(encoded, Base64.DEFAULT), StandardCharsets.UTF_8)
     }
 
+    private val AUTHORITATIVE_FALLBACK_URL by lazy {
+        val encoded = "aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL1plbWVyVGVhbS96ZW1lci1jaXBoZXIvbWFzdGVyL2xpYnJhcnkvc3JjL21haW4vYXNzZXRzL3BsYXllcl9jb25maWdzLmpzb24="
+        String(Base64.decode(encoded, Base64.DEFAULT), StandardCharsets.UTF_8)
+    }
+
     // Mirrors PlayerJsFetcher.CACHE_TTL_MS.
     private const val REFRESH_TTL_MS = 6 * 60 * 60 * 1000L
 
@@ -203,6 +208,17 @@ object PlayerConfigStore {
             }
             lastForcedAttemptMs = now
             fetchAndApplyResetting { lastForcedAttemptMs = 0L }
+            if (!mergedConfigs.containsKey(missingHash)) {
+                Timber.tag(TAG).w(
+                    "Self-hosted configs do not contain $missingHash; checking authoritative fallback",
+                )
+                fetchAndApply(
+                    remoteUrl = AUTHORITATIVE_FALLBACK_URL,
+                    useCachedEtag = false,
+                    sourceLabel = "authoritative fallback",
+                )
+                if (!lastAttemptReachedServer) lastForcedAttemptMs = 0L
+            }
             mergedConfigs.containsKey(missingHash)
         }
     }
@@ -224,7 +240,19 @@ object PlayerConfigStore {
                 return@withLock false
             }
             lastRejectionAttemptMs = now
-            fetchAndApplyResetting { lastRejectionAttemptMs = 0L }
+            val changed = fetchAndApplyResetting { lastRejectionAttemptMs = 0L }
+            if (changed) {
+                true
+            } else {
+                Timber.tag(TAG).d("Self-hosted configs unchanged after stream rejection; checking fallback")
+                fetchAndApply(
+                    remoteUrl = AUTHORITATIVE_FALLBACK_URL,
+                    useCachedEtag = false,
+                    sourceLabel = "authoritative fallback",
+                ).also {
+                    if (!lastAttemptReachedServer) lastRejectionAttemptMs = 0L
+                }
+            }
         }
     }
 
@@ -259,12 +287,16 @@ object PlayerConfigStore {
      * branch), network exception, or validation failure — keeps the previous map and cache.
      * lastFetchMs is only advanced on 200/304 so transient failures retry on the next trigger.
      */
-    private fun fetchAndApply(): Boolean {
+    private fun fetchAndApply(
+        remoteUrl: String = REMOTE_URL,
+        useCachedEtag: Boolean = true,
+        sourceLabel: String = "self-hosted",
+    ): Boolean {
         lastAttemptReachedServer = false
         try {
-            val etag = readMeta()?.first
+            val etag = readMeta()?.first.takeIf { useCachedEtag }
             val request = Request.Builder()
-                .url(REMOTE_URL)
+                .url(remoteUrl)
                 .header("User-Agent", "Mozilla/5.0")
                 .apply { if (!etag.isNullOrEmpty()) header("If-None-Match", etag) }
                 .build()
@@ -272,38 +304,41 @@ object PlayerConfigStore {
             httpClient.newCall(request).execute().use { response ->
                 lastAttemptReachedServer = true
                 if (response.code == 304) {
-                    Timber.tag(TAG).d("Remote configs unchanged (304)")
+                    Timber.tag(TAG).d("$sourceLabel configs unchanged (304)")
                     writeMeta(etag.orEmpty(), System.currentTimeMillis())
                     return false
                 }
                 if (!response.isSuccessful) {
-                    Timber.tag(TAG).w("Remote config fetch HTTP ${response.code} — keeping previous configs")
+                    Timber.tag(TAG).w("$sourceLabel config fetch HTTP ${response.code} — keeping previous configs")
                     return false
                 }
 
                 val body = response.body?.string()
                 if (body.isNullOrEmpty()) {
-                    Timber.tag(TAG).w("Remote config fetch returned empty body — keeping previous configs")
+                    Timber.tag(TAG).w("$sourceLabel config fetch returned empty body — keeping previous configs")
                     return false
                 }
 
                 val remote = when (val result = PlayerConfigParser.parse(body)) {
                     is PlayerConfigParser.ParseResult.Failure -> {
-                        Timber.tag(TAG).w("Remote configs rejected: ${result.reason} — keeping previous configs")
+                        Timber.tag(TAG).w("$sourceLabel configs rejected: ${result.reason} — keeping previous configs")
                         return false
                     }
                     is PlayerConfigParser.ParseResult.Success -> {
                         if (result.skippedEntries.isNotEmpty()) {
-                            Timber.tag(TAG).w("Remote configs: skipped invalid entries ${result.skippedEntries}")
+                            Timber.tag(TAG).w(
+                                "$sourceLabel configs: skipped invalid entries ${result.skippedEntries}",
+                            )
                         }
                         result.configs
                     }
                 }
 
-                return applyRemote(remote, body, response.header("ETag").orEmpty())
+                val persistedEtag = response.header("ETag").orEmpty().takeIf { useCachedEtag }.orEmpty()
+                return applyRemote(remote, body, persistedEtag)
             }
         } catch (e: Exception) {
-            Timber.tag(TAG).w(e, "Remote config fetch failed: ${e.message} — keeping previous configs")
+            Timber.tag(TAG).w(e, "$sourceLabel config fetch failed: ${e.message} — keeping previous configs")
             return false
         }
     }

@@ -4,6 +4,22 @@
 
 This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.52
+
+### 中文
+
+- 修正目前 YouTube 播放器版本 `ca042962` 尚未同步至本專案鏡像，導致所有歌曲顯示 `IO_UNSPECIFIED (2000)` 的問題；內建設定已與最新權威資料對齊。
+- 播放器設定仍優先由本專案自行託管；偵測到目前播放器版本缺失時，會直接查詢 zemer-cipher 權威來源並保存有效結果，避免每日鏡像同步空窗再次中斷播放。
+- 移除無法解決設定缺失、只會讓每首歌曲重試三次後跳到下一首的回復流程，恢復與上游一致的錯誤處理。
+- Release 套件識別碼改為 `com.jajafu.metrolist.androidcar`，可與原始 Metrolist 同時安裝。這次轉換會被 Android 視為新 App，舊版的本機資料與登入不會自動移轉；後續版本仍可用固定簽章直接覆蓋更新。
+
+### English
+
+- Fix every song failing with `IO_UNSPECIFIED (2000)` because the current YouTube player `ca042962` had not reached this repository's mirror; the bundled table now matches the latest authoritative data.
+- Continue preferring this project's self-hosted player configurations, but fetch and cache the authoritative zemer-cipher table when the current player remains missing so a mirror-sync window cannot interrupt playback again.
+- Remove the ineffective recovery path that retried each song three times and advanced to the next track without repairing a missing configuration, restoring upstream-aligned error handling.
+- Change the Release package ID to `com.jajafu.metrolist.androidcar` so it can coexist with the original Metrolist app. Android treats this one-time transition as a new App, so old local data and login state are not migrated automatically; later versions still update in place with the fixed signing key.
+
 ## 13.6.51
 
 ### 中文

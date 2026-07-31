@@ -226,15 +226,6 @@ object YTPlayerUtils {
                 continue
             }
 
-            if (shouldSkipFailedWebRemixClient(
-                    clientName = client.clientName,
-                    webRemixPreviouslyFailed = webRemixFailedIds.contains(videoId),
-                )
-            ) {
-                Timber.tag(logTag).d("Skipping WEB_REMIX after a playback failure for videoId=$videoId")
-                continue
-            }
-
             if (client.loginRequired && !isLoggedIn) {
                 Timber.tag(logTag).d("Skipping client ${client.clientName} - requires login")
                 continue
