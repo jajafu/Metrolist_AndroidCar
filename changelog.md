@@ -4,6 +4,16 @@
 
 This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.53
+
+### 中文
+
+- 首頁不再顯示 YouTube 推薦中的「再聽一次」與「翻唱與重混」區塊，並由後續的其他推薦補足最多 3 個區塊。
+
+### English
+
+- Hide YouTube's “Listen again” and “Covers & remixes” rows from Home, allowing later recommendations to fill the three-row limit.
+
 ## 13.6.52
 
 ### 中文

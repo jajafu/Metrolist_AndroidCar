@@ -448,14 +448,22 @@ class HomeViewModel @Inject constructor(
                     YouTube.home().onSuccess { page ->
                         homePage.value = page.copy(
                             continuation = null,
-                            sections = page.sections.mapNotNull { section ->
-                                val filtered = section.items
-                                    .filterOutNulls()
-                                    .filterExplicit(hideExplicit)
-                                    .filterVideoSongs(hideVideoSongs)
-                                    .filterYoutubeShorts(hideYoutubeShorts)
-                                if (filtered.isEmpty()) null else section.copy(items = filtered)
-                            }.take(HOME_SECTION_LIMIT)
+                            sections =
+                                page.sections
+                                    .filterNot { section ->
+                                        shouldHideHomeSection(
+                                            title = section.title,
+                                            browseId = section.endpoint?.browseId,
+                                        )
+                                    }.mapNotNull { section ->
+                                        val filtered =
+                                            section.items
+                                                .filterOutNulls()
+                                                .filterExplicit(hideExplicit)
+                                                .filterVideoSongs(hideVideoSongs)
+                                                .filterYoutubeShorts(hideYoutubeShorts)
+                                        if (filtered.isEmpty()) null else section.copy(items = filtered)
+                                    }.take(HOME_SECTION_LIMIT),
                         )
                     }.onFailure { reportException(it) }
                 }

@@ -14,7 +14,7 @@ This fork is maintained by [jajafu](https://github.com/jajafu) and focuses on a 
 - Increased the cached playback queue to three tracks.
 - Removed the sleep button from the playback cover and enlarged the other buttons.
 - The mini-player's add-to-playlist picker uses large adaptive playlist cards matching the library grid for easier in-car operation.
-- The home screen is reduced to category chips, 12 local quick-access items, account playlists, and at most three official YouTube recommendation sections. Expensive duplicate discovery, community, similar-content, mood-and-genre, random-order, and infinite-pagination sections are not loaded, and quick-access items remain safe if a song is removed during synchronization.
+- The home screen is reduced to category chips, 12 local quick-access items, account playlists, and at most three official YouTube recommendation sections, excluding “Listen again” and “Covers & remixes.” Expensive duplicate discovery, community, similar-content, mood-and-genre, random-order, and infinite-pagination sections are not loaded, and quick-access items remain safe if a song is removed during synchronization.
 - Charts and Explore show a retry action instead of an endless loading animation after a failed request, while Home always releases its loading and pull-to-refresh indicators after errors.
 - Branded the installed app as `Metrolist_AndroidCar` with a black music-car logo across the launcher, About screen, and playback notifications.
 - Uses the dedicated Android package ID `com.jajafu.metrolist.androidcar`, allowing this fork and the original Metrolist app to be installed at the same time.
