@@ -2,6 +2,7 @@ package com.metrolist.music.playback.alarm
 
 import android.app.AlarmManager
 import android.app.PendingIntent
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -48,7 +49,8 @@ object MusicAlarmScheduler {
         context: Context,
         alarm: MusicAlarmEntry
     ): PendingIntent {
-        val intent = Intent(context, MusicService::class.java)
+        val intent = Intent()
+            .setComponent(ComponentName(context, MusicService::class.java))
             .setAction(MusicService.ACTION_ALARM_TRIGGER)
             .putExtra(MusicService.EXTRA_ALARM_ID, alarm.id)
             .putExtra(MusicService.EXTRA_ALARM_PLAYLIST_ID, alarm.playlistId)
@@ -58,7 +60,8 @@ object MusicAlarmScheduler {
     }
 
     private fun alarmPendingIntent(context: Context, alarmId: String): PendingIntent {
-        val intent = Intent(context, MusicService::class.java)
+        val intent = Intent()
+            .setComponent(ComponentName(context, MusicService::class.java))
             .setAction(MusicService.ACTION_ALARM_TRIGGER)
             .putExtra(MusicService.EXTRA_ALARM_ID, alarmId)
 
@@ -79,7 +82,8 @@ object MusicAlarmScheduler {
     }
 
     private fun legacyAlarmPendingIntent(context: Context, alarmId: String): PendingIntent {
-        val intent = Intent(context, MusicAlarmReceiver::class.java)
+        val intent = Intent()
+            .setComponent(ComponentName(context, MusicAlarmReceiver::class.java))
             .setAction(MusicAlarmReceiver.ACTION_TRIGGER_ALARM)
             .putExtra(MusicService.EXTRA_ALARM_ID, alarmId)
 

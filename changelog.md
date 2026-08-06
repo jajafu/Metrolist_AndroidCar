@@ -4,6 +4,16 @@
 
 This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.55
+
+### 中文
+
+- 更新通知、一起聆聽操作、音樂鬧鐘與歌曲辨識結果使用明確目的元件建立不可變 PendingIntent，防止通知或排程動作被其他應用程式攔截或重新導向，同時保留原有 action、資料、request code 與操作行為。
+
+### English
+
+- Use explicit destination components for immutable PendingIntents in update notifications, Listen Together actions, music alarms, and recognition results, preventing interception or redirection while preserving their existing actions, data, request codes, and behavior.
+
 ## 13.6.53
 
 ### 中文

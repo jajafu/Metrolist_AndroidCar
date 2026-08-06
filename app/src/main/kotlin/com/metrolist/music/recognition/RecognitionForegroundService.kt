@@ -4,9 +4,10 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.ComponentName
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
@@ -315,13 +316,13 @@ class RecognitionForegroundService : Service() {
 
     private fun createResultPendingIntent(result: RecognitionResult): PendingIntent {
         val launchIntent =
-            Intent(this, MainActivity::class.java).apply {
-                action = MainActivity.ACTION_RECOGNITION
-                putExtra(EXTRA_RECOGNITION_TRACK_ID, result.trackId)
-                putExtra(EXTRA_RECOGNITION_TITLE, result.title)
-                putExtra(EXTRA_RECOGNITION_ARTIST, result.artist)
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
-            }
+            Intent()
+                .setComponent(ComponentName(this, MainActivity::class.java))
+                .setAction(MainActivity.ACTION_RECOGNITION)
+                .putExtra(EXTRA_RECOGNITION_TRACK_ID, result.trackId)
+                .putExtra(EXTRA_RECOGNITION_TITLE, result.title)
+                .putExtra(EXTRA_RECOGNITION_ARTIST, result.artist)
+                .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
 
         return PendingIntent.getActivity(
             this,

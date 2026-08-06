@@ -9,6 +9,7 @@ import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -928,17 +929,17 @@ class ListenTogetherClient
             joinRequestNotifications[payload.userId] = notifId
 
             val approveIntent =
-                Intent(context, ListenTogetherActionReceiver::class.java).apply {
-                    action = ACTION_APPROVE_JOIN
-                    putExtra(EXTRA_USER_ID, payload.userId)
-                    putExtra(EXTRA_NOTIFICATION_ID, notifId)
-                }
+                Intent()
+                    .setComponent(ComponentName(context, ListenTogetherActionReceiver::class.java))
+                    .setAction(ACTION_APPROVE_JOIN)
+                    .putExtra(EXTRA_USER_ID, payload.userId)
+                    .putExtra(EXTRA_NOTIFICATION_ID, notifId)
             val rejectIntent =
-                Intent(context, ListenTogetherActionReceiver::class.java).apply {
-                    action = ACTION_REJECT_JOIN
-                    putExtra(EXTRA_USER_ID, payload.userId)
-                    putExtra(EXTRA_NOTIFICATION_ID, notifId)
-                }
+                Intent()
+                    .setComponent(ComponentName(context, ListenTogetherActionReceiver::class.java))
+                    .setAction(ACTION_REJECT_JOIN)
+                    .putExtra(EXTRA_USER_ID, payload.userId)
+                    .putExtra(EXTRA_NOTIFICATION_ID, notifId)
 
             val approvePI =
                 PendingIntent.getBroadcast(
@@ -981,17 +982,17 @@ class ListenTogetherClient
             suggestionNotifications[payload.suggestionId] = notifId
 
             val approveIntent =
-                Intent(context, ListenTogetherActionReceiver::class.java).apply {
-                    action = ACTION_APPROVE_SUGGESTION
-                    putExtra(EXTRA_SUGGESTION_ID, payload.suggestionId)
-                    putExtra(EXTRA_NOTIFICATION_ID, notifId)
-                }
+                Intent()
+                    .setComponent(ComponentName(context, ListenTogetherActionReceiver::class.java))
+                    .setAction(ACTION_APPROVE_SUGGESTION)
+                    .putExtra(EXTRA_SUGGESTION_ID, payload.suggestionId)
+                    .putExtra(EXTRA_NOTIFICATION_ID, notifId)
             val rejectIntent =
-                Intent(context, ListenTogetherActionReceiver::class.java).apply {
-                    action = ACTION_REJECT_SUGGESTION
-                    putExtra(EXTRA_SUGGESTION_ID, payload.suggestionId)
-                    putExtra(EXTRA_NOTIFICATION_ID, notifId)
-                }
+                Intent()
+                    .setComponent(ComponentName(context, ListenTogetherActionReceiver::class.java))
+                    .setAction(ACTION_REJECT_SUGGESTION)
+                    .putExtra(EXTRA_SUGGESTION_ID, payload.suggestionId)
+                    .putExtra(EXTRA_NOTIFICATION_ID, notifId)
 
             val approvePI =
                 PendingIntent.getBroadcast(
