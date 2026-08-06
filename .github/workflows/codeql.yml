@@ -27,7 +27,7 @@ jobs:
       matrix:
         include:
           - language: java-kotlin
-            build-mode: autobuild
+            build-mode: manual
 
     steps:
       - name: Checkout repository
@@ -50,8 +50,8 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
+      - name: Build Foss debug variant
+        run: ./gradlew :app:assembleFossDebug --console=plain --warning-mode summary
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
