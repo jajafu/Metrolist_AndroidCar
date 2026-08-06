@@ -109,36 +109,30 @@ jobs:
           TAG="v${VERSION_NAME}-car"
           APK="release/${RELEASE_NAME}"
           NOTES_FILE="$RUNNER_TEMP/release-notes.md"
+          CHANGELOG_SECTION="$RUNNER_TEMP/changelog-section.md"
+
+          awk -v heading="## ${VERSION_NAME}" '
+            $0 == heading { capture = 1 }
+            capture && $0 != heading && $0 ~ /^## / { exit }
+            capture { print }
+          ' changelog.md > "$CHANGELOG_SECTION"
+
+          if [ ! -s "$CHANGELOG_SECTION" ]; then
+            echo "::error::changelog.md is missing the ## ${VERSION_NAME} release notes."
+            exit 1
+          fi
+
           PREVIOUS_TAG="$(
-            git tag --list 'v*-car' --sort=-version:refname |
+            git tag --merged "$GITHUB_SHA" --list 'v*-car' --sort=-version:refname |
               grep -Fxv "$TAG" |
               head -n 1 || true
           )"
-
-          if [ -n "$PREVIOUS_TAG" ]; then
-            COMMIT_RANGE="$PREVIOUS_TAG..$GITHUB_SHA"
-          else
-            COMMIT_RANGE="$GITHUB_SHA"
-          fi
 
           {
             echo "# Metrolist Android Car $TAG"
             echo
             echo "## What's changed"
-
-            if git rev-list --quiet "$COMMIT_RANGE" && [ -n "$(git rev-list "$COMMIT_RANGE")" ]; then
-              while IFS= read -r commit; do
-                subject="$(git show -s --format=%s "$commit")"
-                body="$(git show -s --format=%b "$commit")"
-                short_commit="$(git rev-parse --short "$commit")"
-                printf -- '- %s (`%s`)\n' "$subject" "$short_commit"
-                if [ -n "$body" ]; then
-                  printf '%s\n' "$body" | sed 's/^/  /'
-                fi
-              done < <(git rev-list --reverse "$COMMIT_RANGE")
-            else
-              echo "- Maintenance release."
-            fi
+            tail -n +2 "$CHANGELOG_SECTION"
 
             echo
             echo "## Build"
@@ -150,6 +144,12 @@ jobs:
               echo "[Full comparison](https://github.com/$GITHUB_REPOSITORY/compare/$PREVIOUS_TAG...$TAG)"
             fi
           } > "$NOTES_FILE"
+
+          NOTES_SIZE="$(wc -c < "$NOTES_FILE")"
+          if [ "$NOTES_SIZE" -gt 120000 ]; then
+            echo "::error::Release notes are ${NOTES_SIZE} bytes; keep the current changelog entry below 120000 bytes."
+            exit 1
+          fi
 
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release edit "$TAG" \
