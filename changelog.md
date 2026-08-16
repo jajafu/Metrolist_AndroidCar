@@ -4,6 +4,16 @@
 
 This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.56
+
+### 中文
+
+- 在暫停狀態使用上一首或下一首後會自動開始播放，並統一套用於播放器按鈕、封面與迷你播放器滑動、桌面小工具、播放通知、鎖定畫面及車機媒體控制。
+
+### English
+
+- Automatically start playback after using Previous or Next while paused, consistently covering player buttons, artwork and mini-player swipes, home-screen widgets, playback notifications, the lock screen, and car media controls.
+
 ## 13.6.55
 
 ### 中文

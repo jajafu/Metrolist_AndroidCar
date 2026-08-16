@@ -14,6 +14,11 @@ import androidx.core.net.toUri
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.Player
+import androidx.media3.common.Player.COMMAND_SEEK_TO_NEXT
+import androidx.media3.common.Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM
+import androidx.media3.common.Player.COMMAND_SEEK_TO_PREVIOUS
+import androidx.media3.common.Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM
 import androidx.media3.exoplayer.offline.Download
 import androidx.media3.session.LibraryResult
 import androidx.media3.session.MediaLibraryService
@@ -66,6 +71,15 @@ import com.metrolist.music.constants.AndroidAutoYouTubePlaylistsKey
 import com.metrolist.music.ui.screens.settings.AndroidAutoSection
 import com.metrolist.music.ui.screens.settings.deserializeSections
 import com.metrolist.music.ui.screens.settings.serializeSections
+
+internal fun isManualSkipCommand(command: Int): Boolean =
+    command == COMMAND_SEEK_TO_NEXT ||
+        command == COMMAND_SEEK_TO_NEXT_MEDIA_ITEM ||
+        command == COMMAND_SEEK_TO_PREVIOUS ||
+        command == COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM
+
+internal fun Player.Commands.containsManualSkipCommand(): Boolean =
+    (0 until size()).any { index -> isManualSkipCommand(get(index)) }
 
 class MediaLibrarySessionCallback
 @Inject
@@ -138,6 +152,16 @@ constructor(
                 successfulCustomCommand(addToTargetPlaylist)
 
             else -> super.onCustomCommand(session, controller, customCommand, args)
+        }
+    }
+
+    override fun onPlayerInteractionFinished(
+        session: MediaSession,
+        controllerInfo: MediaSession.ControllerInfo,
+        playerCommands: Player.Commands,
+    ) {
+        if (playerCommands.containsManualSkipCommand()) {
+            service.resumePlaybackAfterManualSkip()
         }
     }
 

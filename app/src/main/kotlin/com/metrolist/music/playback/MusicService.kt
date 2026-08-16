@@ -2243,6 +2243,14 @@ class MusicService :
         }
     }
 
+    fun resumePlaybackAfterManualSkip() {
+        resetPlaybackRecoveryForUserAction()
+        if (player.playbackState == STATE_IDLE || player.playbackState == Player.STATE_ENDED) {
+            player.prepare()
+        }
+        player.playWhenReady = true
+    }
+
     fun getAutomixAlbum(albumId: String) {
         scope.launch(operationErrorHandler("Album automix lookup")) {
             YouTube
@@ -4850,11 +4858,13 @@ class MusicService :
 
             MusicWidgetReceiver.ACTION_NEXT -> {
                 player.seekToNext()
+                resumePlaybackAfterManualSkip()
                 updateWidgetUI(player.isPlaying)
             }
 
             MusicWidgetReceiver.ACTION_PREVIOUS -> {
                 player.seekToPrevious()
+                resumePlaybackAfterManualSkip()
                 updateWidgetUI(player.isPlaying)
             }
 

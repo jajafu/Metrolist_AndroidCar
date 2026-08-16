@@ -411,14 +411,11 @@ class PlayerConnection(
             val castHandler = service.castConnectionHandler
             if (castHandler?.isCasting?.value == true) {
                 castHandler.skipToNext()
+                castHandler.play()
                 return
             }
-            service.resetPlaybackRecoveryForUserAction()
             player.seekToNext()
-            if (player.playbackState == Player.STATE_IDLE || player.playbackState == Player.STATE_ENDED) {
-                player.prepare()
-            }
-            player.playWhenReady = true
+            service.resumePlaybackAfterManualSkip()
             onSkipNext?.invoke()
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "Error in seekToNext")
@@ -433,31 +430,41 @@ class PlayerConnection(
             val castHandler = service.castConnectionHandler
             if (castHandler?.isCasting?.value == true) {
                 castHandler.skipToPrevious()
+                castHandler.play()
                 return
             }
-
-            service.resetPlaybackRecoveryForUserAction()
 
             // Logic to mimic standard seekToPrevious behavior but with explicit callbacks
             // If we are more than 3 seconds in, just restart the song
             if (player.currentPosition > 3000 || !player.hasPreviousMediaItem()) {
                 player.seekTo(0)
-                if (player.playbackState == Player.STATE_IDLE || player.playbackState == Player.STATE_ENDED) {
-                    player.prepare()
-                }
-                player.playWhenReady = true
+                service.resumePlaybackAfterManualSkip()
                 onRestartSong?.invoke()
             } else {
                 // Otherwise go to previous media item
                 player.seekToPreviousMediaItem()
-                if (player.playbackState == Player.STATE_IDLE || player.playbackState == Player.STATE_ENDED) {
-                    player.prepare()
-                }
-                player.playWhenReady = true
+                service.resumePlaybackAfterManualSkip()
                 onSkipPrevious?.invoke()
             }
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "Error in seekToPrevious")
+        }
+    }
+
+    fun seekToPreviousMediaItem() {
+        try {
+            val castHandler = service.castConnectionHandler
+            if (castHandler?.isCasting?.value == true) {
+                castHandler.skipToPrevious()
+                castHandler.play()
+                return
+            }
+
+            player.seekToPreviousMediaItem()
+            service.resumePlaybackAfterManualSkip()
+            onSkipPrevious?.invoke()
+        } catch (e: Exception) {
+            Timber.tag(TAG).e(e, "Error in seekToPreviousMediaItem")
         }
     }
 

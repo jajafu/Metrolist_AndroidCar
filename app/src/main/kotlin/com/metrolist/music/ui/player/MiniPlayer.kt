@@ -363,9 +363,9 @@ private fun NewMiniPlayer(
 
                                     if (shouldChangeSong) {
                                         if (currentOffset > 0 && canSkipPrevious) {
-                                            playerConnection.player.seekToPreviousMediaItem()
+                                            playerConnection.seekToPreviousMediaItem()
                                         } else if (currentOffset <= 0 && canSkipNext) {
-                                            playerConnection.player.seekToNext()
+                                            playerConnection.seekToNext()
                                         }
                                     }
                                     coroutineScope.launch {
@@ -840,9 +840,9 @@ private fun LegacyMiniPlayer(
 
                                     if (shouldChangeSong) {
                                         if (currentOffset > 0 && canSkipPrevious) {
-                                            playerConnection.player.seekToPreviousMediaItem()
+                                            playerConnection.seekToPreviousMediaItem()
                                         } else if (currentOffset <= 0 && canSkipNext) {
-                                            playerConnection.player.seekToNext()
+                                            playerConnection.seekToNext()
                                         }
                                     }
                                     coroutineScope.launch { offsetXAnimatable.animateTo(0f, animationSpec) }
