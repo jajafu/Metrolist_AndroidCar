@@ -117,3 +117,4 @@ app/src/main/cpp/coverart/
 
 # Local reference documents (never commit)
 /doc/
+/photo_plan.md
