@@ -362,19 +362,7 @@ fun LyricsMenu(
         }
     }
 
-    var showRomanizationDialog by rememberSaveable {
-        mutableStateOf(false)
-    }
-
-    var showRomanization by rememberSaveable { mutableStateOf(false) }
-    var isChecked by remember { mutableStateOf(songProvider()?.romanizeLyrics ?: true) }
-
     var lyricsOffset by rememberSaveable { mutableIntStateOf(songProvider()?.lyricsOffset ?: 0) }
-
-    // Sync isChecked with song changes
-    LaunchedEffect(songProvider()) {
-        isChecked = songProvider()?.romanizeLyrics ?: true
-    }
 
     LaunchedEffect(songProvider()) {
         lyricsOffset = songProvider()?.lyricsOffset ?: 0
@@ -633,53 +621,6 @@ fun LyricsMenu(
                                     text = "${if (lyricsOffset >= 0) "+" else ""}${lyricsOffset}ms",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        )
-                    )
-                    
-                    add(
-                        Material3MenuItemData(
-                            title = { Text(text = stringResource(R.string.romanize_current_track)) },
-                            icon = {
-                                Icon(
-                                    painter = painterResource(R.drawable.language_korean_latin),
-                                    contentDescription = null,
-                                )
-                            },
-                            onClick = {
-                                isChecked = !isChecked
-                                songProvider()?.let { song ->
-                                    database.query {
-                                        upsert(song.copy(romanizeLyrics = isChecked))
-                                    }
-                                }
-                            },
-                            trailingContent = {
-                                Switch(
-                                    checked = isChecked,
-                                    onCheckedChange = { newCheckedState ->
-                                        isChecked = newCheckedState
-                                        songProvider()?.let { song ->
-                                            database.query {
-                                                upsert(song.copy(romanizeLyrics = newCheckedState))
-                                            }
-                                        }
-                                    },
-                                    thumbContent = {
-                                        Icon(
-                                            painter = painterResource(
-                                                id = if (isChecked) R.drawable.check else R.drawable.close
-                                            ),
-                                            contentDescription = null,
-                                            modifier = Modifier.size(SwitchDefaults.IconSize)
-                                        )
-                                    },
-                                    colors = SwitchDefaults.colors(
-                                        uncheckedThumbColor = MaterialTheme.colorScheme.primaryContainer,
-                                        checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-                                        checkedTrackColor = MaterialTheme.colorScheme.primary
-                                    )
                                 )
                             }
                         )

@@ -133,9 +133,6 @@ internal fun LyricsLine(
     respectAgentPositioning: Boolean,
     isAutoScrollEnabled: Boolean,
     displayedCurrentLineIndex: Int,
-    romanizeAsMain: Boolean,
-    enabledLanguages: List<String>,
-    romanizeLyrics: Boolean,
     onSizeChanged: (Int) -> Unit,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
@@ -212,12 +209,7 @@ internal fun LyricsLine(
                 val animatedAlpha by animateFloatAsState(targetAlpha, tween(250), label = "lyricsLineAlpha")
                 val lineColor = expressiveAccent.copy(alpha = if (item.isBackground) focusedAlpha else animatedAlpha)
                 
-                val romanizedTextState by item.romanizedTextFlow.collectAsStateWithLifecycle()
-                val isRomanizedAvailable = romanizedTextState != null
-                val mainTextRaw = if (romanizeAsMain && isRomanizedAvailable) romanizedTextState else item.text
-                val subTextRaw = if (romanizeAsMain && isRomanizedAvailable) item.text else romanizedTextState
-                val mainText = if (item.isBackground) mainTextRaw?.removePrefix("(")?.removeSuffix(")") else mainTextRaw
-                val subText = if (item.isBackground) subTextRaw?.removePrefix("(")?.removeSuffix(")") else subTextRaw
+                val mainText = if (item.isBackground) item.text.removePrefix("(").removeSuffix(")") else item.text
 
                 val lyricStyle = TextStyle(
                     fontSize = if (item.isBackground) (lyricsTextSize * 0.7f).sp else lyricsTextSize.sp,
@@ -274,19 +266,6 @@ internal fun LyricsLine(
                         style = lyricStyle.copy(color = if (isActiveLine) expressiveAccent else lineColor),
                         modifier = Modifier.fillMaxWidth()
                     )
-                }
-                
-                if (romanizeLyrics && enabledLanguages.isNotEmpty()) {
-                    subText?.let { 
-                        Text(
-                            text = it,
-                            fontSize = 18.sp,
-                            color = expressiveAccent.copy(alpha = 0.6f),
-                            textAlign = agentTextAlign,
-                            fontWeight = FontWeight.Normal,
-                            modifier = Modifier.padding(top = 2.dp)
-                        )
-                    }
                 }
                 
                 val transText by item.translatedTextFlow.collectAsStateWithLifecycle()

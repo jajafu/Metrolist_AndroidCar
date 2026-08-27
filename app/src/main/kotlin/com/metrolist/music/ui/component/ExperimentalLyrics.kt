@@ -93,9 +93,6 @@ import com.metrolist.music.constants.AiSystemPromptKey
 import com.metrolist.music.constants.DeeplApiKey
 import com.metrolist.music.constants.DeeplFormalityKey
 import com.metrolist.music.constants.LyricsClickKey
-import com.metrolist.music.constants.LyricsRomanizeAsMainKey
-import com.metrolist.music.constants.LyricsRomanizeCyrillicByLineKey
-import com.metrolist.music.constants.LyricsRomanizeList
 import com.metrolist.music.constants.LyricsTextPositionKey
 import com.metrolist.music.constants.OpenRouterApiKey
 import com.metrolist.music.constants.OpenRouterBaseUrlKey
@@ -116,7 +113,6 @@ import com.metrolist.music.lyrics.lyricsTextLooksSynced
 import com.metrolist.music.ui.component.shimmer.ShimmerHost
 import com.metrolist.music.ui.component.shimmer.TextPlaceholder
 import com.metrolist.music.ui.screens.settings.LyricsPosition
-import com.metrolist.music.ui.screens.settings.defaultList
 import com.metrolist.music.ui.utils.fadingEdge
 import com.metrolist.music.utils.ComposeToImage
 import com.metrolist.music.utils.rememberEnumPreference
@@ -162,9 +158,6 @@ fun ExperimentalLyrics(
 
     val lyricsTextPosition by rememberEnumPreference(LyricsTextPositionKey, LyricsPosition.CENTER)
     val changeLyrics by rememberPreference(LyricsClickKey, true)
-    val romanizeLyricsList = rememberPreference(LyricsRomanizeList, "")
-    val romanizeAsMain by rememberPreference(LyricsRomanizeAsMainKey, false)
-    val romanizeCyrillicByLine by rememberPreference(LyricsRomanizeCyrillicByLineKey, false)
     val respectAgentPositioning by rememberPreference(RespectAgentPositioningKey, true)
     val showIntervalIndicator by rememberPreference(ShowIntervalIndicatorKey, true)
     
@@ -209,22 +202,11 @@ fun ExperimentalLyrics(
         defaultValue = PlayerBackgroundStyle.DEFAULT
     )
 
-    val enabledLanguages = remember(romanizeLyricsList.value) {
-        if (romanizeLyricsList.value.isEmpty()) {
-            defaultList
-        } else {
-            romanizeLyricsList.value.split(",").map { entry ->
-                val (lang, checked) = entry.split(":")
-                Pair(lang, checked.toBoolean())
-            }
-        }.filter { it.second }.map { it.first }
-    }
-
     val lines by lyricsViewModel.lines.collectAsStateWithLifecycle()
     val mergedLyricsList by lyricsViewModel.mergedLyricsList.collectAsStateWithLifecycle()
 
-    LaunchedEffect(lyrics, enabledLanguages, romanizeCyrillicByLine, showIntervalIndicator) {
-        lyricsViewModel.processLyrics(lyrics, enabledLanguages, romanizeCyrillicByLine, showIntervalIndicator)
+    LaunchedEffect(lyrics, showIntervalIndicator) {
+        lyricsViewModel.processLyrics(lyrics, showIntervalIndicator)
     }
 
     val isSynced = remember(lyrics) { lyricsTextLooksSynced(lyrics) }
@@ -783,8 +765,7 @@ fun ExperimentalLyrics(
                                         playerConnection = playerConnection, lyricsTextSize = 36f, lyricsLineSpacing = 1.3f,
                                         expressiveAccent = expressiveAccent, lyricsTextPosition = lyricsTextPosition,
                                         respectAgentPositioning = respectAgentPositioning, isAutoScrollEnabled = isAutoScrollEnabled,
-                                        displayedCurrentLineIndex = deferredCurrentLineIndex, romanizeAsMain = romanizeAsMain,
-                                        enabledLanguages = enabledLanguages, romanizeLyrics = currentSong?.romanizeLyrics == true,
+                                        displayedCurrentLineIndex = deferredCurrentLineIndex,
                                         onSizeChanged = { itemHeights[listIndex] = it },
                                         onClick = {
                                             if (isSelectionModeActive) {

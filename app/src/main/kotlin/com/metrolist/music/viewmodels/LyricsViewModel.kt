@@ -36,8 +36,6 @@ class LyricsViewModel @Inject constructor() : ViewModel() {
 
     fun processLyrics(
         lyrics: String?,
-        enabledLanguages: List<String>,
-        romanizeCyrillicByLine: Boolean,
         showIntervalIndicator: Boolean
     ) {
         processJob?.cancel()
@@ -65,21 +63,6 @@ class LyricsViewModel @Inject constructor() : ViewModel() {
             
             _lines.value = processedLines
             updateMergedList(processedLines, showIntervalIndicator)
-
-            // Romanize in the background after the UI has been updated
-            if (lyrics != null && lyrics != LYRICS_NOT_FOUND && enabledLanguages.isNotEmpty()) {
-                launch(Dispatchers.Default) {
-                    processedLines.forEach { entry ->
-                        if (entry == LyricsEntry.HEAD_LYRICS_ENTRY) return@forEach
-                        entry.romanizedTextFlow.value = LyricsUtils.romanize(
-                            text = lyrics,
-                            line = entry.text,
-                            enabledLanguages = enabledLanguages,
-                            romanizeCyrillicByLine = romanizeCyrillicByLine
-                        )
-                    }
-                }
-            }
         }
     }
 

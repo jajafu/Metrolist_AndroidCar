@@ -884,11 +884,6 @@ fun ContentSettings(
                     title = { Text(stringResource(R.string.lyrics_provider_priority)) },
                     description = { Text(stringResource(R.string.lyrics_provider_priority_desc)) },
                     onClick = { showProviderPriorityDialog = true }
-                ),
-                Material3SettingsItem(
-                    icon = painterResource(R.drawable.language_korean_latin),
-                    title = { Text(stringResource(R.string.lyrics_romanization)) },
-                    onClick = { navController.navigate("settings/content/romanization") }
                 )
             )
         )
