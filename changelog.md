@@ -4,6 +4,18 @@
 
 This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.59
+
+### 中文
+
+- 移除歌詞羅馬化功能、相關設定與內建轉寫字典，縮減 APK 體積；一般原文歌詞與同步歌詞顯示維持不變。
+- 清理羅馬化移除後的未使用資源與物件狀態，並修正 Discord 連線說明文字遺失問題。
+
+### English
+
+- Remove lyric romanization, its settings, and bundled transliteration dictionaries to reduce APK size; original and synced lyric display remain available.
+- Clean up unused resources and object state left by the removal, and restore the missing Discord connection information text.
+
 ## 13.6.56
 
 ### 中文
