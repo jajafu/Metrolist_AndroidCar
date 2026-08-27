@@ -103,8 +103,6 @@
     <string name="playlist_add_local_to_synced_note">REMARQUE : L’ajout de titres locaux à des playlists synchronisées ou distantes n’est pas pris en charge. Toute autre combinaison est valide</string>
     <string name="import_online">Importer une playlist M3U</string>
     <string name="import_csv">Importer une playlist CSV</string>
-    <string name="lyrics_romanize_japanese">Romaniser les paroles japonaises</string>
-    <string name="lyrics_romanize_korean">Romaniser les paroles coréennes</string>
     <string name="yt_sync">Synchronisation automatique avec le compte</string>
     <string name="more_content">Plus de contenu</string>
     <string name="new_player_design">Nouveau design du lecteur</string>
@@ -135,20 +133,6 @@
     <string name="proxy_username">Nom d\'utilisateur du proxy</string>
     <string name="proxy_password">Mot de passe proxy</string>
     <string name="enable_authentication">Activer l\'authentification</string>
-    <string name="lyrics_romanization_cyrillic">Cyrillique</string>
-    <string name="lyrics_romanize_title">Romanisation</string>
-    <string name="lyrics_romanization">Romanisation des paroles</string>
-    <string name="lyrics_romanize_russian">Romaniser les paroles russes</string>
-    <string name="lyrics_romanize_ukrainian">Romaniser les paroles ukrainiennes</string>
-    <string name="lyrics_romanize_belarusian">Romaniser les paroles biélorusses</string>
-    <string name="lyrics_romanize_kyrgyz">Romaniser les paroles kirghizes</string>
-    <string name="lyrics_romanize_serbian">Romaniser les paroles serbes</string>
-    <string name="lyrics_romanize_bulgarian">Romaniser les paroles bulgares</string>
-    <string name="line_by_line_option_title">Détecter la langue ligne par ligne</string>
-    <string name="line_by_line_option_desc">L\'alphabet cyrillique sera détecté ligne par ligne plutôt que sur l\'ensemble du titre</string>
-    <string name="line_by_line_dialog_title">Êtes-vous sûr ?</string>
-    <string name="line_by_line_dialog_desc">Il s\'agit d\'une fonctionnalité expérimentale dont le résultat est aléatoire.\n\nPar défaut, la langue est détectée à partir de l\'ensemble de la chanson. Lorsque cette option est activée, la détection s\'effectue ligne par ligne. Cela permet de prendre en charge les chansons multilingues, MAIS la langue détectée n\'est pas toujours correcte. Par exemple, une ligne en ukrainien ne contenant aucun caractère spécifique à cette langue pourrait être romanisée en russe.\n\nSi vous ne rencontrez aucun problème, il est recommandé de laisser cette option désactivée</string>
-    <string name="romanize_current_track">Romaniser la piste actuelle</string>
     <string name="edit_playlist_cover">Modifier la couverture de la playlist</string>
     <string name="edit_playlist_cover_note">REMARQUE : pour modifier la pochette d\'une playlist, votre compte doit être associé à un numéro de téléphone et avoir été vérifié sur YouTube Music</string>
     <string name="edit_playlist_cover_note_wait">Après avoir sélectionné une image, veuillez patienter quelques instants le temps que la nouvelle couverture apparaisse dans votre playlist</string>
@@ -161,7 +145,6 @@
     <string name="filter_uploaded">Téléchargés</string>
     <string name="updater">Mise à jour</string>
     <string name="check_for_updates">Vérifier automatiquement les mises à jour</string>
-    <string name="lyrics_romanize_macedonian">Romaniser les paroles en macédonien</string>
     <string name="update_notifications">Activer les notifications de mise à jour</string>
     <string name="update_available_title">Mise à jour disponible</string>
     <string name="update_channel_name">Mises à jour de l\'application</string>
@@ -179,7 +162,6 @@
     <string name="swipe_song_to_remove">Faites glisser pour supprimer le titre de la playlist</string>
     <string name="last_fm_send_likes">Synchroniser les favoris et les éléments non favoris</string>
     <string name="last_fm_send_likes_description">Ajoutez ou retirez des titres de vos favoris sur Last.fm lorsque vous les ajoutez ou les retirez de vos favoris dans Metrolist</string>
-    <string name="lyrics_romanize_chinese">Paroles chinoises romanisées</string>
     <string name="google_cast">Google Cast</string>
     <string name="google_cast_description">Diffusez du contenu audio sur Chromecast et d\'autres appareils compatibles avec Cast</string>
     <string name="hide_video_songs">Masquer les chansons vidéo</string>
@@ -526,7 +508,6 @@
     <string name="discord_buttons">Boutons</string>
     <string name="discord_button_1">Bouton 1</string>
     <string name="discord_button_2">Bouton 2</string>
-    <string name="discord_information_warning">Metrolist envoie le titre en cours de lecture à la passerelle Discord afin de mettre à jour votre profil enrichi. Toutes les données sont transmises directement de votre appareil à Discord — aucun serveur tiers n\'intervient. Votre jeton reste sur votre appareil et n\'est jamais partagé. Cependant, l\'utilisation d\'un jeton utilisateur pour les connexions via la passerelle n\'est pas officiellement prise en charge et peut constituer une violation des conditions d\'utilisation de Discord. Procédez à vos propres risques !</string>
     <string name="discord_activity_type">Type d\'activité</string>
     <string name="discord_activity_playing">Lire</string>
     <string name="discord_activity_listening">Écouter</string>
@@ -540,9 +521,6 @@
     <string name="discord_advanced_mode_description">Afficher les options de personnalisation supplémentaires de Rich Presence</string>
     <string name="player_background_solid">Solide</string>
     <string name="resume_on_bluetooth_connect">Reprendre la connexion Bluetooth</string>
-    <string name="lyrics_romanize_hindi">Romaniser les paroles en hindi</string>
-    <string name="lyrics_romanize_punjabi">Romaniser les paroles en pendjabi</string>
-    <string name="lyrics_romanize_as_main">Afficher les paroles romanisées comme paroles principales</string>
     <string name="credits_license_name">Licence publique générale GNU v3.0</string>
     <string name="credits_license_desc">Logiciel libre et open source. Vous pouvez l\'utiliser, l\'étudier, le partager et l\'améliorer</string>
     <string name="credits_discord">Serveur Discord</string>

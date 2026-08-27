@@ -151,22 +151,6 @@
         <item quantity="other">%d segons</item>
     </plurals>
     <string name="disable_load_more_when_repeat_all">Deshabilitar carregar més en estar repetint tot</string>
-    <string name="lyrics_romanization_cyrillic">Ciríl·lic</string>
-    <string name="lyrics_romanize_title">Romanització</string>
-    <string name="lyrics_romanization">Romanització de lletres</string>
-    <string name="lyrics_romanize_japanese">Romanitzar lletra en japonés</string>
-    <string name="lyrics_romanize_korean">Romanitzar lletres en coreà</string>
-    <string name="lyrics_romanize_chinese">Romanitzar lletres en xinés</string>
-    <string name="lyrics_romanize_russian">Romanitzar lletres en rus</string>
-    <string name="lyrics_romanize_ukrainian">Romanitzar lletres en ucraïnés</string>
-    <string name="lyrics_romanize_belarusian">Romanitzar lletres en bielorús</string>
-    <string name="lyrics_romanize_kyrgyz">Romanitzar lletres en kirguís</string>
-    <string name="lyrics_romanize_serbian">Romanitzar lletres en serbi</string>
-    <string name="lyrics_romanize_bulgarian">Romanitzar lletres en búlgar</string>
-    <string name="line_by_line_option_title">EXPERIMENTAL: Detectar llengua línia per línia</string>
-    <string name="line_by_line_option_desc">La llengua ciríl·lic serà detectada línia per línia en lloc de per a tota la cançó.</string>
-    <string name="line_by_line_dialog_title">Està segur?</string>
-    <string name="romanize_current_track">Romanitzar la pista actual</string>
     <string name="settings_section_ui">Interfície</string>
     <string name="settings_section_privacy">Privacitat i Seguretat</string>
     <string name="settings_section_player_content">Reproductor i Contingut</string>
@@ -181,7 +165,6 @@
     <string name="audio_offload">Habilitar descàrrega (offload)</string>
     <string name="google_cast">Google Cast</string>
     <string name="google_cast_description">Habilitar la transmissió d\'àudio a Chromecast i altres dispositius compatibles amb Cast</string>
-    <string name="lyrics_romanize_macedonian">Romanitzar lletra en macedoni</string>
     <string name="integrations">Integracions</string>
     <string name="username">Nom d\'usuari</string>
     <string name="password">Contrasenya</string>
@@ -269,7 +252,6 @@
     <string name="failed_to_parse_proxy">Error al processar la url del proxy.</string>
     <string name="playlist_add_local_to_synced_note">Nota: No es poden afegir cançons locals a llistes sincronitzades/remotes. Qualsevol altra combinació és acceptable</string>
     <string name="disable_load_more_when_repeat_all_desc">No carregar automàticament més cançons similars mentre està actiu el mode repetir tot</string>
-    <string name="line_by_line_dialog_desc">Es tracta d\'una característica experimental propensa a errades.\n\nPer defecte, la llengua es determina per a tota la cançó, però amb aquesta opció, en el seu lloc, es determinarà la línia per línia. Açò permetrà que cançons multi-llengua funcionen correctament PERÒ la llengua detectada pot no ser sempre correcta (per exemple, si hi ha una lletra en ucraïnés que no conté cap caràcter específic de l\'idioma pot ser romanitzada com a russa).\n\nSi no té cap problema, es recomana mantenir aquesta opció desactivada.</string>
     <string name="audio_offload_description">Utilitzar la direcció de descarrega (offload) per a la reproducció de àudio. Desactivar aquesta funció podria incrementar l\'ús d\'energia però podria ser beneficiós si està tenint problemes en la reproducció d\'àudio o en pos processat</string>
     <string name="cache_size_warning_message">Ha triat un límit de grandària de memòria cau inferior al que l\'aplicació està utilitzant actualment (%1$s). Si continua, l\'aplicació eliminarà alguns %2$s emmagatzemats per ajustar-se al nou límit. Continuar de tota manera?</string>
     <string name="wavy">Ondulat</string>
@@ -539,10 +521,6 @@
     <string name="discord_advanced_mode_description">Mostra opcions de personalització avançades per a Rich Presence</string>
     <string name="player_background_solid">Sòlid</string>
     <string name="resume_on_bluetooth_connect">Reprèn la connexió Bluetooth</string>
-    <string name="lyrics_romanize_hindi">Romanitza lletra en Hindi</string>
-    <string name="lyrics_romanize_punjabi">Romanitza lletra en Panjabi</string>
-    <string name="lyrics_romanize_as_main">Mostra lletres romanitzades principalment</string>
-    <string name="discord_information_warning">Aquesta funcionalitat utilitza la llibreria KizzyRPC per a connectar-se als ports de Discord i configurar el vostre estatus de Rich Presence. Encara que no s\'ha informat de cap suspensió de comptes per aquest tipus d\'ús, aquest mètode no està oficialment acceptat per Discord i es podria considerar una violació dels seus Termes d\'ús. El vostre token s\'extrau localment i mai s\'envia a servidors de terceres parts. Actue sota la seua pròpia consideració.</string>
     <string name="display_density">Densitat de pantalla</string>
     <string name="restart">Reinicia</string>
     <string name="restart_required">Cal reiniciar!</string>

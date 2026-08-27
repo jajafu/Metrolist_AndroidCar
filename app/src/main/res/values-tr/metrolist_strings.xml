@@ -96,8 +96,6 @@
     <string name="background_color">Arka plan rengi</string>
     <string name="new_player_design">Yeni oynatıcı tasarımı</string>
     <string name="lyrics_auto_scroll">Şarkı sözlerini otomatik kaydır</string>
-    <string name="lyrics_romanize_japanese">Japonca sözleri Latinleştir</string>
-    <string name="lyrics_romanize_korean">Korece sözleri Latinleştir</string>
     <string name="yt_sync">Hesapla otomatik eşitle</string>
     <string name="more_content">Daha fazla içerik</string>
     <string name="import_online">Bir M3U listesi içe aktar</string>
@@ -138,20 +136,6 @@
     <string name="proxy_username">Proxy kullanıcı adı</string>
     <string name="proxy_password">Proxy şifresi</string>
     <string name="enable_authentication">Kimlik doğrulamayı etkinleştir</string>
-    <string name="lyrics_romanization_cyrillic">Kiril</string>
-    <string name="lyrics_romanize_title">Latinleştirme</string>
-    <string name="lyrics_romanization">Şarkı sözü Latinleştirmesi</string>
-    <string name="lyrics_romanize_russian">Rusça sözleri Latinleştir</string>
-    <string name="lyrics_romanize_ukrainian">Ukraynaca sözleri Latinleştir</string>
-    <string name="lyrics_romanize_belarusian">Belarusça sözleri Latinleştir</string>
-    <string name="lyrics_romanize_kyrgyz">Kırgızca sözleri Latinleştir</string>
-    <string name="lyrics_romanize_serbian">Sırpça sözleri Latinleştir</string>
-    <string name="lyrics_romanize_bulgarian">Bulgarca sözleri Latinleştir</string>
-    <string name="line_by_line_option_title">Dili satır satır algıla</string>
-    <string name="line_by_line_option_desc">Kiril yazısı, şarkının tamamı üzerinden değil, satır satır algılanacaktır</string>
-    <string name="line_by_line_dialog_title">Emin misiniz?</string>
-    <string name="line_by_line_dialog_desc">Bu, başarılı veya başarısız olabilecek deneysel bir özelliktir.\n\nVarsayılan olarak dil tüm şarkı üzerinden belirlenir. Bu seçenek açık olduğunda dil satır satır algılanır. Bu sayede birden çok dil içeren şarkılar çalışabilir ANCAK algılanan dil her zaman doğru olmayabilir. Örneğin, Ukraynaca bir satır Ukraynacaya özgü karakter içermiyorsa, yanlışlıkla Rusça olarak Latinleştirilebilir.\n\nHerhangi bir sorun yaşamıyorsanız, bu seçeneği kapalı tutmanız önerilir</string>
-    <string name="romanize_current_track">Mevcut parçayı Latinleştir</string>
     <string name="audio_offload">Ses offload özelliğini etkinleştir</string>
     <string name="audio_offload_description">Oynatma için donanım ses offload yolunu kullanır. Bunu devre dışı bırakmak pil kullanımını artırabilir ancak oynatma veya ses işleme sorunları yaşıyorsanız yardımcı olabilir</string>
     <string name="uploaded_playlist">Yüklenenler</string>
@@ -163,7 +147,6 @@
     <string name="update_available_title">Güncelleme mevcut</string>
     <string name="update_channel_name">Uygulama güncellemeleri</string>
     <string name="update_channel_desc">Yeni uygulama sürümleri hakkında bildirimler</string>
-    <string name="lyrics_romanize_macedonian">Makedonca sözleri Latinleştir</string>
     <string name="integrations">Entegrasyonlar</string>
     <string name="username">Kullanıcı adı</string>
     <string name="password">Şifre</string>
@@ -179,7 +162,6 @@
     <string name="last_fm_send_likes_description">Metrolist\'te bir şarkıyı beğendiğinizde veya beğenmediğinizde bu Last.fm\'de güncellenir</string>
     <string name="primary_color_style">Ana renk</string>
     <string name="auto_scroll">Yeniden eşitle</string>
-    <string name="lyrics_romanize_chinese">Çince sözleri Latinleştir</string>
     <string name="google_cast">Google Cast</string>
     <string name="google_cast_description">Sesi Chromecast ve diğer Cast özellikli cihazlara aktarın</string>
     <string name="hide_video_songs">Video şarkılarını gizle</string>
@@ -522,7 +504,6 @@
     <string name="discord_buttons">Butonlar</string>
     <string name="discord_button_1">1. buton</string>
     <string name="discord_button_2">2. buton</string>
-    <string name="discord_information_warning">Metrolist, ne dinlediğinizi paylaşmak için Discord\'un herkese açık OAuth2 ve Gateway API\'lerini kullanır. Yetkilendirme, kodu aldıktan sonra kendini kapatan yerel bir tarayıcı oturumu üzerinden yapılır; üçüncü taraf sunuculara hiçbir şey gönderilmez. Token\'ınız bu cihazda şifrelenmiş tercihlerde saklanır ve asla paylaşılmaz. Metrolist, etkinliğinizi yayımlamak için doğrudan wss://gateway.discord.gg adresine bağlanır ve yalnızca gereken minimum kapsamı ister (sdk.social_layer_presence).</string>
     <string name="discord_activity_type">Etkinlik türü</string>
     <string name="discord_activity_playing">Oynuyor</string>
     <string name="discord_activity_listening">Dinliyor</string>
@@ -536,9 +517,6 @@
     <string name="discord_advanced_mode_description">Rich Presence\'ın her alanını yer tutucularla özelleştir</string>
     <string name="player_background_solid">Düz</string>
     <string name="resume_on_bluetooth_connect">Bluetooth bağlandığında oynatmayı sürdür</string>
-    <string name="lyrics_romanize_hindi">Hintçe sözleri Latinleştir</string>
-    <string name="lyrics_romanize_punjabi">Pencapça sözleri Latinleştir</string>
-    <string name="lyrics_romanize_as_main">Latinleştirilmiş sözleri ana metin olarak göster</string>
     <string name="display_density">Ekran yoğunluğu</string>
     <string name="restart">Yeniden başlat</string>
     <string name="restart_required">Yeniden başlatma gerekli!</string>

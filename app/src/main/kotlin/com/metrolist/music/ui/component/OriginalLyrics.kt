@@ -974,7 +974,7 @@ fun OriginalLyrics(
                             if (hasWordTimings && lyricsAnimationStyle == LyricsAnimationStyle.NONE) {
                                 val styledText =
                                     buildAnnotatedString {
-                                        item.words?.forEachIndexed { wordIndex, word ->
+                                        item.words.forEachIndexed { wordIndex, word ->
                                             val wordStartMs = (word.startTime * 1000).toLong()
                                             val wordEndMs = (word.endTime * 1000).toLong()
                                             val wordDuration = wordEndMs - wordStartMs
@@ -1037,7 +1037,7 @@ fun OriginalLyrics(
                             } else if (hasWordTimings && lyricsAnimationStyle == LyricsAnimationStyle.FADE) {
                                 val styledText =
                                     buildAnnotatedString {
-                                        item.words?.forEachIndexed { wordIndex, word ->
+                                        item.words.forEachIndexed { wordIndex, word ->
                                             val wordStartMs = (word.startTime * 1000).toLong()
                                             val wordEndMs = (word.endTime * 1000).toLong()
                                             val wordDuration = wordEndMs - wordStartMs
@@ -1113,7 +1113,7 @@ fun OriginalLyrics(
                             } else if (hasWordTimings && lyricsAnimationStyle == LyricsAnimationStyle.GLOW) {
                                 val styledText =
                                     buildAnnotatedString {
-                                        item.words?.forEachIndexed { wordIndex, word ->
+                                        item.words.forEachIndexed { wordIndex, word ->
                                             val wordStartMs = (word.startTime * 1000).toLong()
                                             val wordEndMs = (word.endTime * 1000).toLong()
                                             val wordDuration = wordEndMs - wordStartMs
@@ -1185,7 +1185,7 @@ fun OriginalLyrics(
                             } else if (hasWordTimings && lyricsAnimationStyle == LyricsAnimationStyle.SLIDE) {
                                 val styledText =
                                     buildAnnotatedString {
-                                        item.words?.forEachIndexed { wordIndex, word ->
+                                        item.words.forEachIndexed { wordIndex, word ->
                                             val wordStartMs = (word.startTime * 1000).toLong()
                                             val wordEndMs = (word.endTime * 1000).toLong()
                                             val wordDuration = wordEndMs - wordStartMs
@@ -1273,7 +1273,7 @@ fun OriginalLyrics(
                             } else if (hasWordTimings && lyricsAnimationStyle == LyricsAnimationStyle.KARAOKE) {
                                 val styledText =
                                     buildAnnotatedString {
-                                        item.words?.forEachIndexed { wordIndex, word ->
+                                        item.words.forEachIndexed { wordIndex, word ->
                                             val wordStartMs = (word.startTime * 1000).toLong()
                                             val wordEndMs = (word.endTime * 1000).toLong()
                                             val wordDuration = wordEndMs - wordStartMs
@@ -1363,7 +1363,7 @@ fun OriginalLyrics(
                             } else if (hasWordTimings && lyricsAnimationStyle == LyricsAnimationStyle.APPLE) {
                                 val styledText =
                                     buildAnnotatedString {
-                                        item.words?.forEachIndexed { wordIndex, word ->
+                                        item.words.forEachIndexed { wordIndex, word ->
                                             val wordStartMs = (word.startTime * 1000).toLong()
                                             val wordEndMs = (word.endTime * 1000).toLong()
                                             val wordDuration = wordEndMs - wordStartMs

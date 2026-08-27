@@ -46,8 +46,6 @@
     <string name="default_style">По подразбиране</string>
     <string name="lyrics_click_change">Смени текста на песента с клик</string>
     <string name="lyrics_auto_scroll">Автоматично превъртане на текст</string>
-    <string name="lyrics_romanize_japanese">Романизирай японски текстове</string>
-    <string name="lyrics_romanize_korean">Романизирай корейски текстове</string>
     <string name="slim_navbar">Тънка долна навигационна лента</string>
     <string name="auto_playlists">Автоматични плейлисти</string>
     <string name="show_liked_playlist">Покажи плейлист \"Харесани\"</string>
@@ -134,20 +132,6 @@
     <string name="enable_authentication">Активиране на удостоверяване</string>
     <string name="disable_load_more_when_repeat_all">Деактивиране на автоматичното зареждане при повтаряне на всички песни</string>
     <string name="disable_load_more_when_repeat_all_desc">Не изтегляйте автоматично още песни или подобно съдържание, когато е активирано „Повтаряне на всички“</string>
-    <string name="lyrics_romanization_cyrillic">Кирилица</string>
-    <string name="lyrics_romanize_title">Романизация</string>
-    <string name="lyrics_romanization">Романизация на текста на песните</string>
-    <string name="lyrics_romanize_russian">Романизиране на руски текстове</string>
-    <string name="lyrics_romanize_ukrainian">Романизиране на украински текстове</string>
-    <string name="lyrics_romanize_belarusian">Романизиране на беларуски текстове</string>
-    <string name="lyrics_romanize_kyrgyz">Романизиране на киргизки текстове</string>
-    <string name="lyrics_romanize_serbian">Романизиране на сръбски текстове</string>
-    <string name="lyrics_romanize_bulgarian">Романизиране на български текстове</string>
-    <string name="line_by_line_option_title">Откриване на език ред по ред</string>
-    <string name="line_by_line_option_desc">Текстът на кирилица ще се разпознава ред по ред, вместо за цялата песен</string>
-    <string name="line_by_line_dialog_title">Сигурен ли сте?</string>
-    <string name="line_by_line_dialog_desc">Това е експериментална функция, която може да не работи винаги.\n\nПо подразбиране езикът се определя от цялата песен, но когато тази опция е включена, той ще се определя ред по ред. Това позволява работа с многоезични песни, НО езикът може да не се разпознава правилно винаги (например, ако има украински текст без специфични за езика букви, той може да бъде романизиран като руски).\n\nАко нямате такива проблеми, препоръчително е да оставите тази опция изключена</string>
-    <string name="romanize_current_track">Романизиране на текущата песен</string>
     <string name="settings_section_ui">Интерфейс</string>
     <string name="settings_section_privacy">Поверителност и сигурност</string>
     <string name="settings_section_player_content">Плейър и съдържание</string>
@@ -161,7 +145,6 @@
     <string name="update_channel_desc">Известия за нови версии на приложението</string>
     <string name="audio_offload">Активиране на хардуерна аудио обработка</string>
     <string name="audio_offload_description">Използва хардуерна аудио обработка за възпроизвеждане. Изключването на тази опция може да увеличи разхода на батерията, но може да помогне, ако срещате проблеми при възпроизвеждането или при последващата обработка на звука</string>
-    <string name="lyrics_romanize_macedonian">Романизиране на македонските текстове</string>
     <string name="integrations">Интеграции</string>
     <string name="username">Потребителско име</string>
     <string name="password">Парола</string>
@@ -178,7 +161,6 @@
     <string name="primary_color_style">Основен цвят</string>
     <string name="tertiary_color_style">Третичен цвят</string>
     <string name="auto_scroll">Повторно синхронизиране</string>
-    <string name="lyrics_romanize_chinese">Романизиране на китайски текстове</string>
     <string name="google_cast">Google Cast</string>
     <string name="google_cast_description">Активиране на предаване на звук към Chromecast и други устройства поддържащи Cast</string>
     <string name="last_fm_send_likes">Изпращане на харесвания/нехаресвания</string>
@@ -337,7 +319,6 @@
     <string name="crossfade_desc">Намалява звука на текущата песен, докато следващата плавно се усилва</string>
     <string name="crossfade_duration">Продължителност на застъпването</string>
     <string name="crossfade_gapless">Изключи за албуми без паузи</string>
-    <string name="lyrics_romanize_punjabi">Романизиране на пенджабски текстове</string>
     <string name="lyrics_offset">Отместване на текста</string>
     <string name="audio_offload_disabled_by_crossfade">Изключено заради плавното отстъпване</string>
     <string name="speed">Скорост на произвеждане</string>

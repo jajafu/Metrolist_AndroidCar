@@ -104,8 +104,6 @@
     <string name="import_online">Importar una lista de reproducción M3U</string>
     <string name="playlist_add_local_to_synced_note">Nota: No es posible añadir canciones locales a listas de reproducción sincronizadas o remotas. Cualquier otra combinación es válida</string>
     <string name="new_player_design">Nuevo diseño del reproductor</string>
-    <string name="lyrics_romanize_japanese">Romanizar letras japonesas</string>
-    <string name="lyrics_romanize_korean">Romanizar letras coreanas</string>
     <string name="yt_sync">Sincronización automática con la cuenta</string>
     <string name="more_content">Más contenido</string>
     <string name="swipe_sensitivity">Sensibilidad al deslizar el mini reproductor</string>
@@ -135,20 +133,6 @@
     <string name="proxy_username">Nombre de usuario proxy</string>
     <string name="proxy_password">Contraseña de proxy</string>
     <string name="enable_authentication">Habilitar autenticación</string>
-    <string name="lyrics_romanization_cyrillic">Cirílico</string>
-    <string name="lyrics_romanize_title">Romanización</string>
-    <string name="lyrics_romanization">Romanización de letras</string>
-    <string name="lyrics_romanize_russian">Romanizar letras en ruso</string>
-    <string name="lyrics_romanize_ukrainian">Romanizar letras en ucraniano</string>
-    <string name="lyrics_romanize_belarusian">Romanizar letras en bielorruso</string>
-    <string name="lyrics_romanize_kyrgyz">Romanizar la letra del kirguís</string>
-    <string name="lyrics_romanize_serbian">Romanizar letras en serbio</string>
-    <string name="lyrics_romanize_bulgarian">Romanizar letras en búlgaro</string>
-    <string name="line_by_line_option_title">Detectar idioma línea por línea</string>
-    <string name="line_by_line_option_desc">El idioma cirílico se detectará línea por línea en lugar de toda la canción</string>
-    <string name="line_by_line_dialog_title">¿Está seguro?</string>
-    <string name="line_by_line_dialog_desc">Esta función es experimental y puede tener sus fallos.\n\nPor defecto, el idioma se determina a partir de la canción completa, pero con esta opción activada, se determinará línea por línea. Esto permitirá que las canciones multilingües funcionen, PERO el idioma podría no ser siempre correcto (por ejemplo, si hay una letra en ucraniano que no contiene letras específicas del idioma, podría romanizarse al ruso).\n\nSi no tienes problemas, se recomienda desactivar esta opción</string>
-    <string name="romanize_current_track">Romanizar la pista actual</string>
     <string name="edit_playlist_cover">Editar la portada de la lista de reproducción</string>
     <string name="edit_playlist_cover_note">Nota: Tu cuenta debe estar vinculada a un número de teléfono y verificada en YouTube Music para cambiar la portada de la lista de reproducción</string>
     <string name="edit_playlist_cover_note_wait">Después de seleccionar una imagen, espera un momento hasta que la nueva portada aparezca en la lista de reproducción</string>
@@ -161,7 +145,6 @@
     <string name="show_uploaded_playlist">Mostrar lista de reproducción «Subidas»</string>
     <string name="updater">Actualizador</string>
     <string name="check_for_updates">Buscar actualizaciones automáticamente</string>
-    <string name="lyrics_romanize_macedonian">Romanizar letras en macedonio</string>
     <string name="update_notifications">Habilitar notificaciones de actualización</string>
     <string name="update_available_title">Actualización disponible</string>
     <string name="update_channel_name">Actualizaciones de la app</string>
@@ -204,7 +187,6 @@
     <string name="cache_size_warning_title">¡Espera!</string>
     <string name="cache_size_warning_message">El límite que has elegido (%1$s) es menor que el que la aplicación usa actualmente. Si continúas, podrían eliminarse algunos %2$s almacenados en caché. ¿Quieres continuar de todos modos?</string>
     <string name="cache_size_warning_confirm">Continuar</string>
-    <string name="lyrics_romanize_chinese">Romanizar letras chinas</string>
     <string name="logging_in">Iniciando sesión…</string>
     <string name="download_playlist_desc">Descargar todas las canciones para reproducirlas sin conexión</string>
     <string name="remove_download_playlist_desc">Eliminar todas las canciones descargadas de esta lista de reproducción</string>
@@ -513,9 +495,6 @@
     <string name="discord_presence">Presencia</string>
     <string name="player_background_solid">Sólido</string>
     <string name="resume_on_bluetooth_connect">Reanudar al conectar Bluetooth</string>
-    <string name="lyrics_romanize_hindi">Romanizar letras en hindi</string>
-    <string name="lyrics_romanize_punjabi">Romanizar letras en panyabí</string>
-    <string name="lyrics_romanize_as_main">Mostrar letras romanizadas como principales</string>
     <string name="ai_translation_literal_desc">Traducir el significado al idioma de destino</string>
     <string name="ai_provider_openrouter_help">Visita https://openrouter.ai para modelos gratuitos y de pago</string>
     <string name="ai_provider_openai_help">Visita https://platform.openai.com/api-keys</string>
@@ -533,7 +512,6 @@
     <string name="discord_buttons">Botones</string>
     <string name="discord_button_1">Botón 1</string>
     <string name="discord_button_2">Botón 2</string>
-    <string name="discord_information_warning">Metrolist utiliza las API públicas de OAuth2 y Gateway de Discord para compartir lo que estás escuchando. La autorización se realiza mediante una sesión local del navegador que se cierra automáticamente tras capturar el código; no se envía nada a servidores de terceros. Tu token se almacena en este dispositivo en preferencias cifradas y nunca se comparte. Metrolist se conecta directamente a wss://gateway.discord.gg para publicar tu actividad y solo solicita el alcance mínimo necesario (sdk.social_layer_presence).</string>
     <string name="discord_activity_type">Tipo de actividad</string>
     <string name="discord_activity_playing">Jugando</string>
     <string name="discord_activity_listening">Escuchando</string>

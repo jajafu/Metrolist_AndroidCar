@@ -67,8 +67,6 @@
     <string name="swipe_song_to_add">Potiahnutím skladby doľava ju pridáte do frontu alebo doprava ju prehráte ako ďalšiu</string>
     <string name="lyrics_click_change">Zmena textu po kliknutí</string>
     <string name="lyrics_auto_scroll">Automatické posúvanie textu piesní</string>
-    <string name="lyrics_romanize_japanese">Romanizácia japonských textov</string>
-    <string name="lyrics_romanize_korean">Romanizácia kórejských textov</string>
     <string name="slim">Tenký</string>
     <string name="slim_navbar">Tenký spodný navigačný panel</string>
     <string name="auto_playlists">Automatické zoznamy skladieb</string>
@@ -137,20 +135,6 @@
     <string name="proxy_username">Používateľské meno proxy servera</string>
     <string name="proxy_password">Heslo proxy servera</string>
     <string name="enable_authentication">Povoliť overenie</string>
-    <string name="lyrics_romanization_cyrillic">Cyrilika</string>
-    <string name="lyrics_romanize_title">romanizácia</string>
-    <string name="lyrics_romanization">Romanizácia textov</string>
-    <string name="lyrics_romanize_russian">Romanizovať ruské texty</string>
-    <string name="lyrics_romanize_ukrainian">Romanizovať ukrajinské texty</string>
-    <string name="lyrics_romanize_belarusian">Romanizácia bieloruských textov</string>
-    <string name="lyrics_romanize_kyrgyz">Romanizovať kirgizské texty</string>
-    <string name="lyrics_romanize_serbian">Romanizovať srbské texty</string>
-    <string name="lyrics_romanize_bulgarian">Romanizovať bulharské texty</string>
-    <string name="line_by_line_option_title">EXPERIMENTÁLNE: Zistenie jazyka riadok po riadku</string>
-    <string name="line_by_line_option_desc">Cyrilika bude detekovaná riadok po riadku, nie v celej skladbe.</string>
-    <string name="line_by_line_dialog_title">Si si istý/á?</string>
-    <string name="line_by_line_dialog_desc">Toto je experimentálna funkcia, ktorá sa buď posúva dopredu, alebo dozadu.\n\nŠtandardne sa jazyk určuje z celej skladby, ale ak je táto možnosť zapnutá, bude sa určovať riadok po riadku. To umožní fungovanie viacjazyčných skladieb, ALE jazyk nemusí byť vždy správny (napríklad, ak existuje ukrajinský text, ktorý neobsahuje žiadne písmená špecifické pre ukrajinčinu, môže byť namiesto toho romanizovaný ako ruský).\n\nAk nemáte problémy, odporúča sa túto možnosť ponechať vypnutú.</string>
-    <string name="romanize_current_track">Romanizovať aktuálnu skladbu</string>
     <string name="show_uploaded_playlist">Zobraziť zoznam skladieb \"Nahrané\"</string>
     <string name="uploaded_playlist">Nahrané</string>
     <string name="filter_uploaded">Nahrané</string>
@@ -167,7 +151,6 @@
     <string name="update_channel_desc">Upozornenia na nové verzie</string>
     <string name="audio_offload">Povoliť odľahčenie</string>
     <string name="audio_offload_description">Na prehrávanie zvuku použite cestu pre odľahčenie zvuku. Zakázanie tejto funkcie môže zvýšiť spotrebu energie, ale môže byť užitočné, ak máte problémy s prehrávaním zvuku alebo následným spracovaním</string>
-    <string name="lyrics_romanize_macedonian">Romanizovať macedónske texty</string>
     <string name="swipe_song_to_remove">Prejdením prstom odstráňte skladbu zo zoznamu skladieb</string>
     <string name="integrations">Integrácie</string>
     <string name="username">Používateľské meno</string>
@@ -197,7 +180,6 @@
     <string name="shuffle_playlist_first">Najprv prehrávať playlist/album náhodne</string>
     <string name="shuffle_playlist_first_desc">Pri náhodnom prehrávaní najprv prehrávaj všetky skladby z pôvodného playlistu/alba, potom podobný obsah</string>
     <string name="show_wrapped_card">Zobraziť Wrapped kartu</string>
-    <string name="lyrics_romanize_chinese">Prepis čínskych textov do latinky</string>
     <string name="google_cast_description">Povoliť prehrávanie zvuku na Chromecast a d\'alšie zariadenia s podporou Cast</string>
     <string name="logging_in">Prihlasovanie…</string>
     <string name="hide_video_songs">Skryť skladby z videa</string>
@@ -290,11 +272,8 @@
     <string name="crossfade_gapless_desc">Nepoužívajte prelínanie, ak je album bez medzier</string>
     <string name="crossfade_beta_title">Funkcia beta</string>
     <string name="crossfade_beta_message">Prelínanie je nová funkcia a môže obsahovať chyby. Ak narazíte na nejaké problémy, nahláste ich.\n\nTáto funkcia z dôvodu technických obmedzení zakazuje prenos zvuku.</string>
-    <string name="lyrics_romanize_hindi">Romanizovať hindské texty</string>
-    <string name="lyrics_romanize_punjabi">Romanizovať pandžábske texty</string>
     <string name="lyrics_offset">Text skladby Offset</string>
     <string name="audio_offload_disabled_by_crossfade">Zakázané, pretože je aktívne prelínanie</string>
-    <string name="lyrics_romanize_as_main">Zobraziť romanizované lyriky ako hlavné</string>
     <string name="hide_youtube_shorts">Skryť YouTube Shorts</string>
     <string name="wrapped_thank_you">Ďakujeme za vypočutie</string>
     <string name="wrapped_special_thanks">Špeciálne poďakovanie MO Agamy za vytvorenie Metrolistu</string>

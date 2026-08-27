@@ -281,15 +281,6 @@
     <string name="crossfade_gapless_desc">אין לבצע מעבר בין קטעים (crossfade) אם האלבום ללא פערים</string>
     <string name="crossfade_beta_title">תכונת בטא</string>
     <string name="crossfade_beta_message">Crossfade היא תכונה חדשה וייתכן שיש בה באגים. אם אתם נתקלים בבעיות, אנא דווחו עליהן.\n\nתכונה זו מבטלת את ניתוק השמע עקב מגבלות טכניות.</string>
-    <string name="lyrics_romanization_cyrillic">קירילית</string>
-    <string name="lyrics_romanize_title">רומנטיזציה</string>
-    <string name="lyrics_romanization">רומניזציה של מילות השיר</string>
-    <string name="lyrics_romanize_japanese">מילים ביפנית רומניזציה</string>
-    <string name="lyrics_romanize_korean">מילים קוריאניות רומניות</string>
-    <string name="line_by_line_option_title">זיהוי שפה שורה אחר שורה</string>
-    <string name="line_by_line_option_desc">השפה הקירילית תזוהה שורה אחר שורה במקום השיר כולו.</string>
-    <string name="line_by_line_dialog_title">האם הנך בטוח?</string>
-    <string name="line_by_line_dialog_desc">זוהי תכונה ניסיונית, המבוססת על תוצאה של תקלה או חוסר התאמה.\n\nכברירת מחדל, השפה נקבעת לפי כל השיר, אך כאשר אפשרות זו מופעלת, היא תיקבע שורה אחר שורה. זה יאפשר לשירים מרובי שפות לפעול, אך ייתכן שהשפה לא תמיד תהיה נכונה (לדוגמה, אם יש מילת שיר אוקראינית שאינה מכילה אותיות ספציפיות לאוקראיניות, היא עשויה להיות כתובה לרוסית במקום זאת).\n\nאם אין לך בעיות, מומלץ להשאיר אפשרות זו כבויה.</string>
     <string name="lyrics_offset">קיזוז מילים</string>
     <string name="settings_section_ui">ממשק</string>
     <string name="settings_section_privacy">פרטיות ואבטחה</string>
@@ -307,7 +298,6 @@
     <string name="audio_offload_disabled_by_crossfade">מושבת מכיוון שמעבר בין-עיוות פעיל</string>
     <string name="google_cast">גוגל Cast</string>
     <string name="google_cast_description">הפעלת העברת אודיו ל-Chromecast ולמכשירים אחרים התומכים ב-Cast</string>
-    <string name="lyrics_romanize_as_main">הצג מילים שעברו רומיניזציה כראשי</string>
     <string name="integrations">אינטגרציות</string>
     <string name="username">שם משתמש</string>
     <string name="password">סיסמה</string>
@@ -651,7 +641,6 @@
     <string name="discord_buttons">כפתורים</string>
     <string name="discord_button_1">כפתור 1</string>
     <string name="discord_button_2">כפתור 2</string>
-    <string name="discord_information_warning">תכונה זו משתמשת בספריית KizzyRPC כדי להתחבר לשער של Discord ולהגדיר את סטטוס הנוכחות העשירה שלך. אמנם לא התרחשו השעיות ידועות של חשבון משימוש דומה, אך שיטה זו אינה נתמכת רשמית על ידי Discord ועשויה להיחשב כהפרה של תנאי השירות. האסימון שלך חולץ באופן מקומי ולעולם לא נשלח לשרתים של צד שלישי. המשך לפי שיקול דעתך.</string>
     <string name="discord_activity_type">סוג פעילות</string>
     <string name="discord_activity_playing">מנגן</string>
     <string name="discord_activity_listening">מקשיב</string>

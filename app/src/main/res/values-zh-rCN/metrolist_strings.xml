@@ -99,8 +99,6 @@
     <string name="new_player_design">新播放器设计</string>
     <string name="new_mini_player_design">新迷你播放器设计</string>
     <string name="lyrics_auto_scroll">自动滚动歌词</string>
-    <string name="lyrics_romanize_japanese">使用日文（罗马音）</string>
-    <string name="lyrics_romanize_korean">使用韩文（罗马音）</string>
     <string name="yt_sync">与账号自动同步</string>
     <string name="more_content">更多内容</string>
     <string name="import_online">导入 M3U 格式的播放列表</string>
@@ -131,20 +129,6 @@
     <string name="proxy_username">代理用户名</string>
     <string name="proxy_password">代理密码</string>
     <string name="enable_authentication">启用身份验证</string>
-    <string name="lyrics_romanization_cyrillic">罗马音设置</string>
-    <string name="lyrics_romanize_title">罗马化</string>
-    <string name="lyrics_romanization">歌词罗马化</string>
-    <string name="lyrics_romanize_russian">使用俄语（罗马音）</string>
-    <string name="lyrics_romanize_ukrainian">使用乌克兰语（罗马音）</string>
-    <string name="lyrics_romanize_belarusian">使用白俄罗斯语（罗马音）</string>
-    <string name="lyrics_romanize_kyrgyz">使用柯尔克孜语（罗马音）</string>
-    <string name="lyrics_romanize_serbian">使用塞尔维亚语（罗马音）</string>
-    <string name="lyrics_romanize_bulgarian">使用保加利亚语（罗马音）</string>
-    <string name="line_by_line_option_title">逐行检测语言</string>
-    <string name="line_by_line_option_desc">西里尔字母将逐行进行检测，而非对整首歌曲进行整体检测</string>
-    <string name="line_by_line_dialog_title">您确定吗？</string>
-    <string name="line_by_line_dialog_desc">这是一项效果不稳定的实验性功能。\n\n默认情况下，从整首歌曲中检测语言。启用此选项后，将改为逐行检测。这样可以支持多语言混唱歌曲，但检测到的语言可能并不总是正确的。例如，一段不含任何乌克兰语特有字符的乌克兰语歌词，可能会以俄语进行罗马化。\n\n如果您没有遇到任何问题，建议保持此选项关闭</string>
-    <string name="romanize_current_track">罗马化当前曲目</string>
     <string name="edit_playlist_cover">编辑播放列表封面</string>
     <string name="edit_playlist_cover_note">注意：您的 YouTube Music 账号必须绑定电话号码并通过验证才能更改播放列表封面</string>
     <string name="edit_playlist_cover_note_wait">选择图片后，请稍等片刻，新封面将出现在您的播放列表中</string>
@@ -165,7 +149,6 @@
     <string name="username">用户名</string>
     <string name="password">密码</string>
     <string name="lastfm_integration">Last.fm 集成</string>
-    <string name="lyrics_romanize_macedonian">使用马其顿语（罗马音）</string>
     <string name="enable_scrobbling">启用记录</string>
     <string name="lastfm_now_playing">发送“正在播放”状态</string>
     <string name="scrobbling_configuration">音乐记录配置</string>
@@ -189,7 +172,6 @@
     <string name="shuffle_playlist_first">先对播放列表或专辑进行随机播放</string>
     <string name="shuffle_playlist_first_desc">随机播放时，先播放当前播放列表或专辑中的所有歌曲，然后再播放相似内容的歌曲</string>
     <string name="show_wrapped_card">显示年度总结卡片</string>
-    <string name="lyrics_romanize_chinese">使用中文（罗马音）</string>
     <string name="google_cast">Google Cast</string>
     <string name="google_cast_description">向 Chromecast 和其他支持投屏功能的设备投屏音频</string>
     <string name="last_fm_send_likes">同步喜欢和取消喜欢</string>
@@ -518,7 +500,6 @@
     <string name="discord_buttons">按钮</string>
     <string name="discord_button_1">按钮 1</string>
     <string name="discord_button_2">按钮 2</string>
-    <string name="discord_information_warning">Metrolist 使用 Discord 的公共 OAuth2 和 Gateway API 来分享您当前正在收听的内容。授权通过本地浏览器会话进行，该会话在获取代码后会自动关闭——不会向第三方服务器发送任何信息。您的令牌存储在此设备的加密偏好设置中，绝不会被共享。Metrolist 直接连接到 wss://gateway.discord.gg 来发布您的活动，并且仅请求所需的最小权限范围（sdk.social_layer_presence）。</string>
     <string name="discord_activity_type">活动类型</string>
     <string name="discord_activity_playing">正在播放</string>
     <string name="discord_activity_listening">正在听</string>
@@ -531,9 +512,6 @@
     <string name="discord_advanced_mode">高级模式</string>
     <string name="discord_advanced_mode_description">使用占位符自定义 Rich Presence 的所有字段</string>
     <string name="resume_on_bluetooth_connect">蓝牙连接后恢复播放</string>
-    <string name="lyrics_romanize_hindi">使用印地语（罗马音）</string>
-    <string name="lyrics_romanize_punjabi">使用旁遮普语（罗马音）</string>
-    <string name="lyrics_romanize_as_main">将罗马化歌词设为主要显示</string>
     <string name="player_background_solid">纯色</string>
     <string name="display_density">显示密度</string>
     <string name="restart">重启</string>

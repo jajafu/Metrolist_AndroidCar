@@ -100,8 +100,6 @@
     <string name="information">資訊</string>
     <string name="dislikes">不喜歡</string>
     <string name="new_player_design">新播放器設計</string>
-    <string name="lyrics_romanize_japanese">羅馬化日文歌詞</string>
-    <string name="lyrics_romanize_korean">羅馬化韓文歌詞</string>
     <string name="yt_sync">自動與帳號同步</string>
     <string name="more_content">更多內容</string>
     <string name="swipe_sensitivity">迷你播放器滑動靈敏度</string>
@@ -129,20 +127,6 @@
     <string name="enable_authentication">開啟身份驗證</string>
     <string name="disable_load_more_when_repeat_all">開啟「重複全部」時停用「載入更多」</string>
     <string name="disable_load_more_when_repeat_all_desc">啟用「重複播放」模式時，停用「自動載入」更多歌曲和類似內容</string>
-    <string name="lyrics_romanization_cyrillic">西里爾</string>
-    <string name="lyrics_romanize_title">羅馬化</string>
-    <string name="lyrics_romanization">羅馬化歌詞</string>
-    <string name="lyrics_romanize_russian">羅馬化俄文歌詞</string>
-    <string name="lyrics_romanize_ukrainian">羅馬化烏克蘭文歌詞</string>
-    <string name="lyrics_romanize_belarusian">羅馬化白俄羅斯文歌詞</string>
-    <string name="lyrics_romanize_kyrgyz">羅馬化吉爾吉斯語歌詞</string>
-    <string name="lyrics_romanize_serbian">羅馬化塞爾維亞語歌詞</string>
-    <string name="lyrics_romanize_bulgarian">羅馬化白俄羅斯文歌詞</string>
-    <string name="line_by_line_option_title">逐行偵測語言</string>
-    <string name="line_by_line_option_desc">西里爾文將逐行偵測，而不是整首歌曲</string>
-    <string name="line_by_line_dialog_title">確定嗎？</string>
-    <string name="line_by_line_dialog_desc">這是一項不保證穩定性的實驗性功能。\n\n在預設情況下，系統會根據整首歌來判斷語言；但開啟此選項後，將改為逐行判斷。這可以支援多語言歌曲，但判斷結果未必完全準確（例如：如果一段烏克蘭語歌詞中不含該語言特有的字母，系統可能會將其誤判並以俄語羅馬化呈現）。\n\n如果目前使用沒有問題，建議維持關閉狀態</string>
-    <string name="romanize_current_track">將當前曲目羅馬化</string>
     <string name="settings_section_ui">介面</string>
     <string name="settings_section_privacy">私隱與安全性</string>
     <string name="settings_section_player_content">播放器和內容</string>
@@ -162,7 +146,6 @@
     <string name="update_channel_desc">新版本更新通知</string>
     <string name="audio_offload">啟動音訊卸載</string>
     <string name="audio_offload_description">使用卸載音訊路徑進行播放。停用此功能可能會增加耗電量，但若遇到音訊播放或後處理問題，建議將其關閉</string>
-    <string name="lyrics_romanize_macedonian">羅馬化馬其頓語歌詞</string>
     <string name="integrations">整合</string>
     <string name="username">使用者名稱</string>
     <string name="password">密碼</string>
@@ -191,7 +174,6 @@
     <string name="shuffle_playlist_first">隨機播放清單/專輯</string>
     <string name="shuffle_playlist_first_desc">隨機播放時，先播放原播放清單/專輯中的所有歌曲，然後再播放內容相似的歌曲</string>
     <string name="show_wrapped_card">展示「年度播放」卡片</string>
-    <string name="lyrics_romanize_chinese">中文歌詞羅馬化</string>
     <string name="google_cast_description">啟用向 Chromecast 和其他支援投影功能的裝置投屏音頻</string>
     <string name="logging_in">正在登錄…</string>
     <string name="hide_video_songs">隱藏帶影片的音樂</string>
@@ -387,7 +369,6 @@
     <string name="discord_activity_listening">聆聽</string>
     <string name="discord_activity_playing">玩耍</string>
     <string name="discord_activity_type">活動類型</string>
-    <string name="discord_information_warning">此功能使用 KizzyRPC 庫連接到 Discord 網關並設定您的 Rich Presence 狀態。雖然目前尚未發現因類似使用而被封鎖的情況，但此方法並非 Discord 官方支持，可能被視為違反服務條款。您的令牌將在本地提取，絕不會發送到第三方伺服器。請自行斟酌是否繼續操作。</string>
     <string name="discord_button_2">按鈕 2</string>
     <string name="discord_button_1">按鈕 1</string>
     <string name="discord_buttons">按鈕</string>
@@ -504,11 +485,8 @@
     <string name="crossfade_beta_title">測試版功能</string>
     <string name="crossfade_gapless">禁用無縫專輯功能</string>
     <string name="crossfade_beta_message">淡入淡出是一項新功能，可能會有一些問題。如果您遇到任何問題，請提交報告。\n\n注意：由於技術限制，此功能會停用音訊卸載</string>
-    <string name="lyrics_romanize_hindi">將印地語歌詞羅馬化</string>
-    <string name="lyrics_romanize_punjabi">將旁遮普語歌詞羅馬化</string>
     <string name="lyrics_offset">歌詞偏移</string>
     <string name="audio_offload_disabled_by_crossfade">因淡入淡出功能已啟用，此功能已停用</string>
-    <string name="lyrics_romanize_as_main">將羅馬拼音歌詞顯示為主要內容</string>
     <string name="hide_youtube_shorts">隱藏 YouTube Shorts</string>
     <string name="add_to_queue_desc">添加到播放列表底部</string>
     <string name="add_to_playlist_desc">加到播放列表</string>

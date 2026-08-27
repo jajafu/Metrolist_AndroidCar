@@ -96,8 +96,6 @@
     <string name="trending">Thịnh hành</string>
     <string name="share_lyrics">Chia sẻ lời bài hát</string>
     <string name="cached_playlist">Đã lưu vào bộ đệm</string>
-    <string name="lyrics_romanize_japanese">La-tinh hóa lời bài hát tiếng Nhật</string>
-    <string name="lyrics_romanize_korean">La-tinh hóa lời bài hát tiếng Hàn</string>
     <string name="yt_sync">Tự động đồng bộ tài khoản</string>
     <string name="more_content">Nội dung khác</string>
     <string name="playlist_add_local_to_synced_note">LƯU Ý: Không hỗ trợ thêm bài hát cục bộ vào danh sách phát đã đồng bộ hoặc danh sách phát từ xa. Mọi sự kết hợp khác đều hợp lệ</string>
@@ -134,20 +132,6 @@
     <string name="proxy_username">Tên người dùng proxy</string>
     <string name="proxy_password">Mật khẩu proxy</string>
     <string name="enable_authentication">Bật xác thực</string>
-    <string name="lyrics_romanization_cyrillic">Cyrillic</string>
-    <string name="lyrics_romanization">La-tinh hóa lời bài hát</string>
-    <string name="lyrics_romanize_title">La-tinh hóa</string>
-    <string name="lyrics_romanize_russian">La-tinh hóa lời bài hát tiếng Nga</string>
-    <string name="lyrics_romanize_ukrainian">La-tinh hóa lời bài hát tiếng Ukraine</string>
-    <string name="lyrics_romanize_belarusian">La-tinh hóa lời bài hát tiếng Belarus</string>
-    <string name="lyrics_romanize_kyrgyz">La-tinh hóa lời bài hát tiếng Kyrgyz</string>
-    <string name="lyrics_romanize_serbian">La-tinh hóa lời bài hát tiếng Serbia</string>
-    <string name="lyrics_romanize_bulgarian">La-tinh hóa lời bài hát tiếng Bulgaria</string>
-    <string name="line_by_line_option_title">Tự động nhận diện ngôn ngữ theo từng dòng</string>
-    <string name="line_by_line_option_desc">Chữ viết Kirin sẽ được nhận diện theo từng dòng thay vì trên toàn bộ bài hát</string>
-    <string name="line_by_line_dialog_title">Bạn có chắc không?</string>
-    <string name="line_by_line_dialog_desc">Đây là một tính năng thử nghiệm có thể hoạt động không ổn định.\n\nTheo mặc định, ngôn ngữ được nhận diện dựa trên toàn bộ bài hát. Khi bật tùy chọn này, ngôn ngữ sẽ được nhận diện theo từng dòng. Điều này cho phép các bài hát đa ngôn ngữ hoạt động chính xác hơn, NHƯNG ngôn ngữ được nhận diện có thể không phải lúc nào cũng đúng. Ví dụ: một dòng tiếng Ukraine không có các ký tự đặc trưng của tiếng Ukraine có thể bị phiên âm nhầm thành tiếng Nga.\n\nNếu bạn không gặp vấn đề gì, chúng tôi khuyên bạn nên tắt tùy chọn này</string>
-    <string name="romanize_current_track">La-tinh hóa lời bài hát hiện tại</string>
     <string name="choose_from_library">Chọn từ thư viện</string>
     <string name="remove_custom_image">Xoá ảnh bìa tùy chỉnh</string>
     <string name="audio_offload">Bật tính năng giảm tải âm thanh</string>
@@ -172,7 +156,6 @@
     <string name="shuffle_playlist_first">Phát ngẫu nhiên danh sách phát hoặc album đầu tiên</string>
     <string name="shuffle_playlist_first_desc">Khi kích hoạt phát ngẫu nhiên, nó sẽ phát tất cả các bài hát từ danh sách phát / Album trước, sau đó mới phát nội dung tương tự</string>
     <string name="show_wrapped_card">Hiển thị thẻ Wrapped</string>
-    <string name="lyrics_romanize_chinese">La-tinh hóa lời bài hát tiếng Trung</string>
     <string name="updater">Trình cập nhật</string>
     <string name="check_for_updates">Tự động kiểm tra cập nhật</string>
     <string name="update_notifications">Bật thông báo về cập nhật</string>
@@ -181,7 +164,6 @@
     <string name="update_channel_desc">Thông báo về phiên bản mới của ứng dụng</string>
     <string name="google_cast">Truyền</string>
     <string name="google_cast_description">Truyền âm thanh đến Chromecast và các thiết bị hỗ trợ Cast khác</string>
-    <string name="lyrics_romanize_macedonian">Phiên âm chữ Ma-xê-đô-ni-a (Macedonia) sang chữ Latinh</string>
     <string name="integrations">Tích hợp tiện ích</string>
     <string name="username">Tên người dùng</string>
     <string name="password">Mật khẩu</string>
@@ -411,10 +393,7 @@
     <string name="crossfade_gapless_desc">Bỏ qua hiệu ứng chuyển bài mượt cho các album được thiết kế để phát liền mạch</string>
     <string name="crossfade_beta_title">Tính năng thử nghiệm!</string>
     <string name="crossfade_beta_message">Chuyển bài mượt (Crossfade) là một tính năng mới và có thể còn lỗi. Nếu bạn gặp bất kỳ vấn đề nào, vui lòng báo cáo cho chúng tôi.\n\nLƯU Ý: Do giới hạn kỹ thuật, tính năng này sẽ tắt chức năng giảm tải âm thanh (audio offload)</string>
-    <string name="lyrics_romanize_hindi">La-tinh hóa lời bài hát Hindi</string>
-    <string name="lyrics_romanize_punjabi">La-tinh hóa lời bài hát Punjabi</string>
     <string name="audio_offload_disabled_by_crossfade">Đã bị vô hiệu hóa do tính năng chuyển bài mượt đang hoạt động</string>
-    <string name="lyrics_romanize_as_main">Hiện lời bài hát La-tinh hóa là chính</string>
     <string name="enable_scrobbling">Kích hoạt scrobbling</string>
     <string name="lastfm_now_playing">Gửi trạng thái Đang phát</string>
     <string name="last_fm_send_likes">Đồng bộ bài hát Yêu thích và Không yêu thích</string>
@@ -733,7 +712,6 @@
     <string name="discord_buttons">Nút</string>
     <string name="discord_button_1">Nút 1</string>
     <string name="discord_button_2">Nút 2</string>
-    <string name="discord_information_warning">Metrolist gửi thông tin bài hát bạn đang phát đến Discord Gateway để cập nhật Trạng thái hoạt động (Rich Presence). Mọi dữ liệu được truyền trực tiếp từ thiết bị của bạn đến Discord — không qua bất kỳ máy chủ bên thứ ba nào. Mã token của bạn được lưu trữ ngay trên thiết bị và không bao giờ bị chia sẻ. Tuy nhiên, việc sử dụng token người dùng (user token) để kết nối Gateway không được hỗ trợ chính thức và có thể vi phạm Điều khoản dịch vụ của Discord. Hãy cân nhắc trước khi tiếp tục!</string>
     <string name="discord_activity_type">Loại hoạt động</string>
     <string name="discord_activity_playing">Đang phát</string>
     <string name="discord_activity_listening">Đang nghe</string>

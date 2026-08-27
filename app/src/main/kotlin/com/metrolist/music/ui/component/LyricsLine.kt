@@ -228,7 +228,7 @@ internal fun LyricsLine(
 
                 val effectiveWords = if (item.words?.isNotEmpty() == true) {
                     item.words
-                } else if (mainText != null) {
+                } else {
                     remember(mainText, item.time) {
                         val words = mainText.split(Regex("\\s+")).filter { it.isNotBlank() }
                         val wordDurationSec = 0.18
@@ -243,9 +243,9 @@ internal fun LyricsLine(
                             )
                         }
                     }
-                } else null
+                }
 
-                if (isSynced && effectiveWords != null && (isActiveLine || abs(index - displayedCurrentLineIndex) <= 3) && mainText != null) {
+                if (isSynced && (isActiveLine || abs(index - displayedCurrentLineIndex) <= 3)) {
                     WordLevelLyrics(
                         mainText = mainText,
                         words = effectiveWords,
@@ -262,7 +262,7 @@ internal fun LyricsLine(
                     )
                 } else {
                     Text(
-                        text = mainText ?: "",
+                        text = mainText,
                         style = lyricStyle.copy(color = if (isActiveLine) expressiveAccent else lineColor),
                         modifier = Modifier.fillMaxWidth()
                     )

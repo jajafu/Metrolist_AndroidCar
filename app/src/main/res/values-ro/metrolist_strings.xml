@@ -54,8 +54,6 @@
     <string name="swipe_song_to_add">Glisează la stânga pentru a adăuga melodia la coadă sau la dreapta pentru a o reda următoarea</string>
     <string name="lyrics_click_change">Schimbă versurile la apăsare</string>
     <string name="lyrics_auto_scroll">Derulează automat versurile</string>
-    <string name="lyrics_romanize_japanese">Romanizează versurile în japoneză</string>
-    <string name="lyrics_romanize_korean">Romanizează versurile în coreeană</string>
     <string name="slim">Subțire</string>
     <string name="slim_navbar">Bară de navigare compactă</string>
     <string name="auto_playlists">Playlisturi automate</string>
@@ -135,20 +133,6 @@
     <string name="proxy_username">Nume de utilizator proxy</string>
     <string name="proxy_password">Parolă proxy</string>
     <string name="enable_authentication">Activează autentificarea</string>
-    <string name="lyrics_romanize_title">Romanizare</string>
-    <string name="lyrics_romanization">Romanizarea versurilor</string>
-    <string name="lyrics_romanize_russian">Romanizează versurile în rusă</string>
-    <string name="lyrics_romanize_ukrainian">Romanizează versurile în ucraineană</string>
-    <string name="lyrics_romanize_belarusian">Romanizează versurile în belarusă</string>
-    <string name="lyrics_romanize_kyrgyz">Romanizează versurile în kirghiză</string>
-    <string name="lyrics_romanize_serbian">Romanizează versurile în sârbă</string>
-    <string name="lyrics_romanize_bulgarian">Romanizează versurile în bulgară</string>
-    <string name="line_by_line_option_title">Detectează limba linie cu linie</string>
-    <string name="line_by_line_option_desc">Alfabetul chirilic va fi detectat linie cu linie în loc de în întreaga melodie</string>
-    <string name="line_by_line_dialog_title">Ești sigur(ă)?</string>
-    <string name="line_by_line_dialog_desc">Aceasta este o funcție experimentală cu posibilitate de succes sau eșec.\n\nÎn mod implicit, limba este determinată din întreaga melodie. Însă, cu această opțiune activată, va fi detectată linie cu linie. Acest lucru permite ca melodiile multilimbă să funcționeze, DAR limba detectată s-ar putea să nu fie mereu corectă. De exemplu, un vers în ucraineană care nu conține vreo literă specifică limbii ucrainene, ar putea fi romanizat în rusă.\n\nDacă nu întâmpini probleme, este recomandat să lași această opțiune dezactivată</string>
-    <string name="romanize_current_track">Romanizează pista curentă</string>
-    <string name="lyrics_romanization_cyrillic">Chirilic</string>
     <string name="edit_playlist_cover">Editează coperta playlistului</string>
     <string name="edit_playlist_cover_note">NOTĂ: Contul tău trebuie să fie asociat cu un număr de telefon verificat pe YouTube Music pentru a putea schimba coperta playlistului</string>
     <string name="edit_playlist_cover_note_wait">După selectarea unei imagini, așteaptă un moment pentru ca noua coperta să apară la playlistul tău</string>
@@ -161,7 +145,6 @@
     <string name="show_uploaded_playlist">Arată playlistul Încărcate</string>
     <string name="updater">Actualizator</string>
     <string name="check_for_updates">Verifică automat pentru actualizări</string>
-    <string name="lyrics_romanize_macedonian">Romanizează versurile în macedoniană</string>
     <string name="update_notifications">Activează notificările pentru actualizări</string>
     <string name="update_available_title">Actualizare disponibilă</string>
     <string name="update_channel_name">Actualizări ale aplicației</string>
@@ -182,7 +165,6 @@
     <string name="primary_color_style">Culoare principală</string>
     <string name="tertiary_color_style">Culoare terțiară</string>
     <string name="auto_scroll">Resincronizare</string>
-    <string name="lyrics_romanize_chinese">Romanizează versurile în chineză</string>
     <string name="google_cast">Google Cast</string>
     <string name="google_cast_description">Difuzează audio către Chromecast și alte dispozitive compatibile cu Cast</string>
     <string name="logging_in">Se conectează…</string>
@@ -526,7 +508,6 @@
     <string name="discord_buttons">Butoane</string>
     <string name="discord_button_1">Butonul 1</string>
     <string name="discord_button_2">Butonul 2</string>
-    <string name="discord_information_warning">Metrolist folosește API-urile publice OAuth2 și Gateway ale Discord pentru a partaja ceea ce asculți. Autorizarea se face printr-o sesiune locală de browser care se închide singură după capturarea codului — nimic nu este trimis serverelor terțe. Tokenul tău este stocat pe acest dispozitiv în preferințele criptate și nu este niciodată partajat. Metrolist se conectează direct către wss://gateway.discord.gg pentru a-ți face publică activitatea și cere doar scopul minim necesar (sdk.social_layer_presence).</string>
     <string name="discord_activity_type">Tipul activității</string>
     <string name="discord_activity_playing">Se joacă</string>
     <string name="discord_activity_listening">Ascultă</string>
@@ -539,9 +520,6 @@
     <string name="discord_advanced_mode">Mod avansat</string>
     <string name="discord_advanced_mode_description">Afișează opțiuni adiționale de personalizare pentru Rich Presence</string>
     <string name="resume_on_bluetooth_connect">Reia redarea la conectarea unui dispozitiv Bluetooth</string>
-    <string name="lyrics_romanize_hindi">Romanizează versurile în hindi</string>
-    <string name="lyrics_romanize_punjabi">Romanizează versurile în punjabi</string>
-    <string name="lyrics_romanize_as_main">Afișează versurile romanizate ca principale</string>
     <string name="player_background_solid">Solid</string>
     <string name="display_density">Densitatea afișajului</string>
     <string name="restart">Repornire</string>

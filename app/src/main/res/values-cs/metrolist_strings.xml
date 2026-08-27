@@ -105,8 +105,6 @@
     <string name="import_csv">Importovat playlist CSV</string>
     <string name="import_online">Importovat playlist M3U</string>
     <string name="playlist_add_local_to_synced_note">UPOZORNĚNÍ: Přidávání místních skladeb do synchronizovaných nebo vzdálených playlistů není podporováno. Jakákoli jiná kombinace je platná</string>
-    <string name="lyrics_romanize_japanese">Přepsat japonské texty do latinky</string>
-    <string name="lyrics_romanize_korean">Přepsat korejské texty do latinky</string>
     <string name="yt_sync">Automaticky synchronizovat s účtem</string>
     <string name="more_content">Další obsah</string>
     <string name="new_player_design">Nový vzhled přehrávače</string>
@@ -137,20 +135,6 @@
     <string name="proxy_username">Uživatelské jméno sítě proxy</string>
     <string name="proxy_password">Heslo sítě proxy</string>
     <string name="enable_authentication">Povolit přihlašování</string>
-    <string name="lyrics_romanization_cyrillic">Cyrilice</string>
-    <string name="lyrics_romanize_title">Přepis do latinky</string>
-    <string name="lyrics_romanization">Přepis textů do latinky</string>
-    <string name="lyrics_romanize_russian">Přepsat ruské texty do latinky</string>
-    <string name="lyrics_romanize_ukrainian">Přepsat ukrajinské texty do latinky</string>
-    <string name="lyrics_romanize_belarusian">Přepsat běloruské texty do latinky</string>
-    <string name="lyrics_romanize_kyrgyz">Přepsat kyrgyzské texty do latinky</string>
-    <string name="lyrics_romanize_serbian">Přepsat srbské texty do latinky</string>
-    <string name="lyrics_romanize_bulgarian">Přepsat bulharské texty do latinky</string>
-    <string name="line_by_line_option_title">Rozpoznávat jazyk po řádcích</string>
-    <string name="line_by_line_option_desc">Cyrilice bude vždy rozpoznávána řádek po řádku namísto celé skladby</string>
-    <string name="line_by_line_dialog_title">Jste si jisti?</string>
-    <string name="line_by_line_dialog_desc">Toto je experimentální funkce, která nemusí vždy fungovat správně.\n\nVe výchozím nastavení je jazyk rozpoznáván z celé písně. Po zapnutí této možnosti se bude určovat pro každý řádek zvlášť. To umožní fungování vícejazyčných písní, ALE jazyk nemusí být vždy určen správně (například pokud ukrajinský text neobsahuje žádná písmena specifická pro ukrajinštinu, může být chybně přepsán jako ruský).\n\nPokud jste nenarazili na žádné problémy, doporučujeme nechat tuto možnost vypnutou</string>
-    <string name="romanize_current_track">Přepsat aktuální skladbu do latinky</string>
     <string name="edit_playlist_cover">Upravit obal playlistu</string>
     <string name="edit_playlist_cover_note">UPOZORNĚNÍ: Pro změnu obalu alba musí být k vašemu účtu připojeno telefonní číslo a účet musí být ověřen na YouTube Music</string>
     <string name="edit_playlist_cover_note_wait">Po vybrání obrázku prosím počkejte, než se nový obal objeví ve vašem playlistu</string>
@@ -163,7 +147,6 @@
     <string name="show_uploaded_playlist">Zobrazit playlist Nahráno</string>
     <string name="updater">Aktualizační služba</string>
     <string name="check_for_updates">Automaticky kontrolovat aktualizace</string>
-    <string name="lyrics_romanize_macedonian">Přepsat makedonské texty do latinky</string>
     <string name="update_notifications">Povolit oznámení o aktualizacích</string>
     <string name="update_available_title">Je dostupná aktualizace</string>
     <string name="update_channel_name">Aktualizace aplikací</string>
@@ -181,7 +164,6 @@
     <string name="swipe_song_to_remove">Posuňte pro odstranění skladby z playlistu</string>
     <string name="last_fm_send_likes">Synchronizovat oblíbené</string>
     <string name="last_fm_send_likes_description">Přidat/odebrat srdíčko u skladby v Last.fm, když ji přidáte/odeberete z oblíbených v Metrolistu</string>
-    <string name="lyrics_romanize_chinese">Přepsat čínské texty do latinky</string>
     <string name="google_cast">Google Cast</string>
     <string name="google_cast_description">Streamovat zvuk do Chromecastu a dalších zařízení kompatibilních s protokolem Cast</string>
     <string name="hide_video_songs">Skrýt videoklipy</string>
@@ -511,9 +493,6 @@
     <string name="prevent_duplicate_tracks_in_queue">Zabránit duplikovaným skladbám ve frontě</string>
     <string name="prevent_duplicate_tracks_in_queue_desc">Při přidávání skladby, která se již ve frontě nachází, bude přesunuta z její předchozí pozice namísto jejího opětovného přidání</string>
     <string name="resume_on_bluetooth_connect">Pokračovat při připojení Bluetooth zařízení</string>
-    <string name="lyrics_romanize_hindi">Přepsat hindské texty do latinky</string>
-    <string name="lyrics_romanize_punjabi">Přepsat pandžábské texty do latinky</string>
-    <string name="lyrics_romanize_as_main">Zobrazit texty v latince jako hlavní</string>
     <string name="ai_translation_literal_desc">Přeloží význam do cílového jazyka</string>
     <string name="ai_translation_transcribed_desc">Převede výslovnost do cílového písma</string>
     <string name="ai_provider_help">Získat klíče API</string>
@@ -535,7 +514,6 @@
     <string name="discord_buttons">Tlačítka</string>
     <string name="discord_button_1">Tlačítko 1</string>
     <string name="discord_button_2">Tlačítko 2</string>
-    <string name="discord_information_warning">Metrolist využívá veřejné služby OAuth2 SDK a Gateway API Discordu ke sdílení toho, co posloucháte. Autorizace se provádí skrze lokální relaci prohlížeče, která se automaticky zavře po zaznamenání kódu – nic se neodesílá na servery třetích stran. Váš token je uložen na tomto zařízení v šifrovaných předvolbách a nikdy není sdílen. Metrolist se připojuje přímo k wss://gateway.discord.gg pro zveřejnění vaší aktivity, a žádá pouze o minimální vyžadovaný rozsah (sdk.social_layer_presence).</string>
     <string name="discord_activity_type">Typ aktivity</string>
     <string name="discord_activity_playing">Hraje</string>
     <string name="discord_activity_listening">Poslouchá</string>

@@ -57,8 +57,6 @@
     <string name="swipe_song_to_add">Deslize para a esquerda para adicionar a música à fila ou para a direita para reproduzir a próxima</string>
     <string name="lyrics_click_change">Alterar letras com um toque</string>
     <string name="lyrics_auto_scroll">Letras com scroll automático</string>
-    <string name="lyrics_romanize_japanese">Romanizar letras em japonês</string>
-    <string name="lyrics_romanize_korean">Romanizar letras em coreano</string>
     <string name="slim">Pequeno</string>
     <string name="slim_navbar">Barra estreita de navegação inferior</string>
     <string name="auto_playlists">Listas automáticas</string>
@@ -150,9 +148,6 @@
     <string name="proxy_username">Nome de utilizador proxy</string>
     <string name="proxy_password">Palavra-passe proxy</string>
     <string name="enable_authentication">Habilitar autenticação</string>
-    <string name="lyrics_romanization_cyrillic">Cirílica</string>
-    <string name="line_by_line_option_title">EXPERIMENTAL: Detetar língua linha por linha</string>
-    <string name="line_by_line_dialog_title">Tens a certeza?</string>
     <string name="settings_section_ui">Interface</string>
     <string name="settings_section_privacy">Privacidade &amp; Segurança</string>
     <string name="settings_section_player_content">Reprodutor &amp; Conteúdo</string>
@@ -204,23 +199,10 @@
     <string name="lyrics_glow_effect_desc">Adiciona uma animação brilhante e um efeito de ricochete à linha de letra ativa</string>
     <string name="shuffle_playlist_first_desc">Ao reproduzir aleatoriamente, reproduza primeiro todas as músicas da lista de reprodução/álbum original e, em seguida, conteúdo semelhante</string>
     <string name="show_wrapped_card">Mostrar cartão \"Wrapped\"</string>
-    <string name="lyrics_romanize_title">Romanização</string>
-    <string name="lyrics_romanization">Romanização de letras</string>
-    <string name="lyrics_romanize_chinese">Romaniza letras em mandarim</string>
-    <string name="lyrics_romanize_russian">Romanizar letras em russo</string>
-    <string name="lyrics_romanize_ukrainian">Romanizar letras em ucraniano</string>
-    <string name="lyrics_romanize_belarusian">Romanizar letras em bielorrusso</string>
-    <string name="lyrics_romanize_kyrgyz">Romanizar letras em quirguiz</string>
-    <string name="lyrics_romanize_serbian">Romanizar letras em sérvio</string>
-    <string name="lyrics_romanize_bulgarian">Romanizar letras em búlgaro</string>
-    <string name="line_by_line_option_desc">O idioma cirílico será detetado linha por linha, em vez de toda a música.</string>
-    <string name="line_by_line_dialog_desc">Esta é uma funcionalidade experimental que pode funcionar ou não. \n\nPor predefinição, o idioma é determinado a partir da música inteira, mas com esta opção ativada, ele será determinado linha por linha. Isso permitirá que músicas em vários idiomas funcionem, MAS o idioma pode nem sempre estar correto (por exemplo, se houver uma letra em ucraniano que não contenha letras específicas do ucraniano, ela pode ser romanizada como russo). \n\nSe não tiver problemas, recomenda-se manter esta opção desativada.</string>
-    <string name="romanize_current_track">Romanizar a faixa atual</string>
     <string name="update_channel_name">Atualizações da aplicação</string>
     <string name="audio_offload">Habilitar descarregamento</string>
     <string name="audio_offload_description">Use o caminho de descarregamento de áudio para reprodução de áudio. Desativar essa opção pode aumentar o consumo de energia, mas pode ser útil se você tiver problemas com a reprodução de áudio ou pós-processamento</string>
     <string name="google_cast_description">Ativar a transmissão de áudio para o Chromecast e outros dispositivos compatíveis com transmissão</string>
-    <string name="lyrics_romanize_macedonian">Romanizar letras em macedónio</string>
     <string name="integrations">Integrações</string>
     <string name="username">Utilizador</string>
     <string name="password">Palavra-passe</string>
@@ -452,8 +434,6 @@
     <string name="crossfade_beta_title">Definição em estado Beta!</string>
     <string name="mixes">Misturas</string>
     <string name="crossfade_beta_message">A transição gradual entre músicas (Crossfade) é uma nova funcionalidade e pode ter muitos erros. Se experienciares problemas, reporta eles se faz favor. \n\nNOTA: Esta funcionalidade desativa descarregamento de áudio devido a limitações técnicas</string>
-    <string name="lyrics_romanize_hindi">Romanizar letras em Hindi</string>
-    <string name="lyrics_romanize_punjabi">Romanizar letras em Panjabi</string>
     <string name="audio_offload_disabled_by_crossfade">Desativado porque o crossfade está ativo</string>
     <string name="speed">Velocidade de Reprodução</string>
 </resources>

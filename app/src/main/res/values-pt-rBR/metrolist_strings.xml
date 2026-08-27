@@ -103,8 +103,6 @@
     <string name="import_online">Importar uma playlist M3U</string>
     <string name="import_csv">Importar uma playlist CSV</string>
     <string name="playlist_add_local_to_synced_note">OBSERVAÇÃO: Adicionar músicas locais as playlist sincronizadas ou remotas não é suportado. Qualquer outra combinação é valida</string>
-    <string name="lyrics_romanize_japanese">Romanizar letras em Japonês</string>
-    <string name="lyrics_romanize_korean">Romanizar letras em Coreano</string>
     <string name="yt_sync">Sincronizar automaticamente com a conta</string>
     <string name="more_content">Mais conteúdo</string>
     <string name="new_player_design">Novo design do tocador</string>
@@ -138,20 +136,6 @@
     <string name="proxy_username">Nome do usuário da proxy</string>
     <string name="proxy_password">Senha da proxy</string>
     <string name="enable_authentication">Ativar autenticação</string>
-    <string name="lyrics_romanization_cyrillic">Alfabeto cirílico</string>
-    <string name="lyrics_romanize_title">Romanização</string>
-    <string name="lyrics_romanization">Romanização da letra</string>
-    <string name="lyrics_romanize_russian">Romanizar letras em Russo</string>
-    <string name="lyrics_romanize_ukrainian">Romanizar letras em Ucraniano</string>
-    <string name="lyrics_romanize_belarusian">Romanizar letras em Bielorrusso</string>
-    <string name="lyrics_romanize_kyrgyz">Romanizar letras em Quirguiz</string>
-    <string name="lyrics_romanize_serbian">Romanizar letras em Sérvio</string>
-    <string name="lyrics_romanize_bulgarian">Romanizar letras em Búlgaro</string>
-    <string name="line_by_line_option_title">Detectar idioma linha por linha</string>
-    <string name="line_by_line_option_desc">Escrita cirílica será detectada linha por linha em vez de ser detectada pela música inteira</string>
-    <string name="line_by_line_dialog_title">Tem certeza?</string>
-    <string name="line_by_line_dialog_desc">Este é um recurso experimental que pode acertar ou errar.\n\nPor padrão, o idioma é detectado pela música inteira. Com esta opção ativada, será detectado linha por linha. Isto permite que funcione em músicas em vários idiomas, MAS o idioma detectado pode nem sempre estar correto. Por exemplo, uma letra em Ucraniano que não contém nenhum caractere específico do Ucraniano pode ser romanizada como Russo.\n\nSe você não está experienciando nenhum problema, é recomendado manter esta opção desativada</string>
-    <string name="romanize_current_track">Romanizar faixa atual</string>
     <string name="choose_from_library">Escolher da biblioteca</string>
     <string name="remove_custom_image">Remover imagem customizada</string>
     <string name="audio_offload">Ativar descarga de áudio</string>
@@ -161,7 +145,6 @@
     <string name="show_uploaded_playlist">Mostrar playlist das Enviadas</string>
     <string name="updater">Atualizador</string>
     <string name="check_for_updates">Conferir se há atualizações automaticamente</string>
-    <string name="lyrics_romanize_macedonian">Romanizar letras em Macedônio</string>
     <string name="update_notifications">Ativar notificações de atualizações</string>
     <string name="update_available_title">Atualização disponível</string>
     <string name="update_channel_name">Atualizações do aplicativo</string>
@@ -180,7 +163,6 @@
     <string name="primary_color_style">Cor primária</string>
     <string name="tertiary_color_style">Cor terciária</string>
     <string name="auto_scroll">Sincronizar</string>
-    <string name="lyrics_romanize_chinese">Romanizar letras em Chinês</string>
     <string name="google_cast">Transmitir via Google Cast</string>
     <string name="google_cast_description">Transmitir áudio para o Chromecast e outros dispositivos compatíveis</string>
     <string name="last_fm_send_likes">Sincronizar Amado e Desamado</string>
@@ -531,7 +513,6 @@
     <string name="discord_activity_listening">Ouvindo</string>
     <string name="discord_activity_watching">Assistindo</string>
     <string name="discord_activity_competing">Competindo</string>
-    <string name="discord_information_warning">Metrolist envia a música tocando no momento para a Gateway do Discord para atualizar a sua Rich Presence. Todos os fatos vão diretamente do seu dispositivo para o Discord — nenhum servidor de terceiros está envolvido. Seu token continua no dispositivo e não é compartilhado. De qualquer maneira, usar um token para conexões de Gateway não é suportado oficialmente e pode violar os termos de serviço do Discord. Prossiga por sua responsabilidade!</string>
     <string name="discord_rpc_preview">Visualização de Rich Presence</string>
     <string name="discord_presence">Presença</string>
     <string name="discord_connect_description">Entre com o Discord para compartilhar o que você está ouvindo</string>
@@ -540,9 +521,6 @@
     <string name="discord_advanced_mode_description">Mostrar opções adicionais de personalização do Rich Presence</string>
     <string name="player_background_solid">Sólido</string>
     <string name="resume_on_bluetooth_connect">Retomar com conexão do Bluetooth</string>
-    <string name="lyrics_romanize_hindi">Romanizar letras em Hindi</string>
-    <string name="lyrics_romanize_punjabi">Romanizar letras em Punjabi</string>
-    <string name="lyrics_romanize_as_main">Mostrar letras romanizadas como principal</string>
     <string name="enable_lrclib_desc">Biblioteca de letras sincronizadas feitas pela comunidade</string>
     <string name="enable_kugou_desc">Pega as letras do KuGou, uma plataforma chinesa popular de música</string>
     <string name="youtube_music_lyrics_note">OBSERVAÇÃO: Letras do YouTube Music serão mostradas automaticamente quando não houver outras fontes disponíveis. As letras do YTM geralmente não são sincronizadas</string>

@@ -106,8 +106,6 @@
     <string name="import_csv">Імпортувати список відтворення у форматі CSV</string>
     <string name="playlist_add_local_to_synced_note">ПРИМІТКА: Додавання локальних пісень до синхронізованих або віддалених списків відтворення не підтримується. Усі інші комбінації можливі</string>
     <string name="new_player_design">Новий дизайн програвача</string>
-    <string name="lyrics_romanize_japanese">Романізувати японські тексти</string>
-    <string name="lyrics_romanize_korean">Романізувати корейські тексти</string>
     <string name="yt_sync">Автосинхронізація з акаунтом</string>
     <string name="more_content">Більше контенту</string>
     <string name="swipe_sensitivity">Чутливість проведення по мініпрогравачу</string>
@@ -137,20 +135,6 @@
     <string name="proxy_username">Ім\'я користувача проксі-сервера</string>
     <string name="proxy_password">Пароль проксі-сервера</string>
     <string name="enable_authentication">Увімкнути автентифікацію</string>
-    <string name="lyrics_romanization_cyrillic">Кирилица</string>
-    <string name="lyrics_romanize_title">Романізація</string>
-    <string name="lyrics_romanization">Романізація текстів пісень</string>
-    <string name="lyrics_romanize_russian">Романізувати російські тексти</string>
-    <string name="lyrics_romanize_ukrainian">Романізувати українські тексти</string>
-    <string name="lyrics_romanize_belarusian">Романізувати білоруські тексти</string>
-    <string name="lyrics_romanize_kyrgyz">Романізувати киргизькі тексти</string>
-    <string name="lyrics_romanize_serbian">Романізувати сербські тексти</string>
-    <string name="lyrics_romanize_bulgarian">Романізувати болгарські тексти</string>
-    <string name="line_by_line_option_title">Визначення мови рядок за рядком</string>
-    <string name="line_by_line_option_desc">Кирилиця розпізнаватиметься по рядках, а не по всій пісні</string>
-    <string name="line_by_line_dialog_title">Ви впевнені?</string>
-    <string name="line_by_line_dialog_desc">Це експериментальна функція, яка може працювати як з успіхом, так і з невдачею. \n\nЗа замовчуванням мова визначається на основі всієї пісні, але якщо ввімкнути цю опцію, вона буде визначатися по рядках. Це дозволить працювати з багатомовними піснями, АЛЕ мова може бути не завжди правильною (наприклад, якщо в українському тексті немає літер, характерних для української мови, він може бути транслітерований як російський). \n\nЯкщо у вас немає проблем, рекомендується залишити цю опцію вимкненою</string>
-    <string name="romanize_current_track">Романізувати поточну пісню</string>
     <string name="edit_playlist_cover">Редагувати обкладинку списку відтворення</string>
     <string name="edit_playlist_cover_note">Примітка: Щоб змінити обкладинку списку відтворення, ваш обліковий запис має бути пов’язаний з номером телефону та підтверджений у YouTube Music</string>
     <string name="edit_playlist_cover_note_wait">Після вибору зображення зачекайте трохи, поки нова обкладинка з’явиться у вашому списку відтворення</string>
@@ -163,7 +147,6 @@
     <string name="show_uploaded_playlist">Показати список відтворення \"Завантажено\"</string>
     <string name="updater">Оновлення</string>
     <string name="check_for_updates">Автоматично перевіряти наявність оновлень</string>
-    <string name="lyrics_romanize_macedonian">Романізувати македонські тексти</string>
     <string name="update_notifications">Увімкнути сповіщення про оновлення</string>
     <string name="update_available_title">Доступне оновлення</string>
     <string name="update_channel_name">Оновлення програм</string>
@@ -181,7 +164,6 @@
     <string name="swipe_song_to_remove">Проведіть пальцем по пісні, щоб вилучити її зі списку відтворення</string>
     <string name="last_fm_send_likes">Надіслати вподобання/не вподобання</string>
     <string name="last_fm_send_likes_description">Пісні, які подобається/не подобається, на Last.fm, коли вони вподобані/зняті з Metrolist</string>
-    <string name="lyrics_romanize_chinese">Романізувати китайські тексти</string>
     <string name="google_cast">Google Cast</string>
     <string name="google_cast_description">Увімкнути трансляцію аудіо на Chromecast та інші пристрої з підтримкою Cast</string>
     <string name="hide_video_songs">Приховати відеопісні</string>
@@ -459,7 +441,6 @@
     <string name="alarm_empty">Будильників немає. Створіть новий, щоб запускати відтворення за розкладом</string>
     <string name="alarm_next_trigger">Наступне спрацьовування</string>
     <string name="crossfade_beta_message">Функція «Перехресне згасання» є новою і може містити помилки. Якщо у вас виникнуть проблеми, будь ласка, повідомте про них.\n\nПРИМІТКА: Ця функція вимикає апаратне декодування аудіо через технічні обмеження</string>
-    <string name="lyrics_romanize_as_main">Показувати романізований текст як основний</string>
     <string name="eq_downloading">Завантаження…</string>
     <string name="import_from_file">Імпортувати з файлу</string>
     <string name="add_profile">Додати профіль</string>
@@ -533,8 +514,6 @@
     <string name="creating_room">Створення кімнати…</string>
     <string name="create">Створити</string>
     <string name="join">Приєднатися</string>
-    <string name="lyrics_romanize_hindi">Романізувати тексти на хінді</string>
-    <string name="lyrics_romanize_punjabi">Романізувати тексти на панджабі</string>
     <string name="show_interval_indicator">Показувати індикатор інтервалів</string>
     <string name="palette_purple">Фіолетовий</string>
     <string name="palette_indigo">Індиго</string>

@@ -76,8 +76,6 @@
     <string name="swipe_song_to_add">Geser ke kiri untuk menambahkan lagu ke antrean, atau ke kanan untuk memutarnya berikutnya</string>
     <string name="lyrics_click_change">Ganti lirik saat diketuk</string>
     <string name="lyrics_auto_scroll">Gulir otomatis lirik</string>
-    <string name="lyrics_romanize_japanese">Romanisasi lirik Jepang</string>
-    <string name="lyrics_romanize_korean">Romanisasi lirik Korea</string>
     <string name="slim">Ramping</string>
     <string name="slim_navbar">Sembunyikan label bilah navigasi bawah</string>
     <string name="auto_playlists">Playlist otomatis</string>
@@ -124,8 +122,6 @@
     <string name="hide_player_thumbnail_desc">Ganti gambar album dengan logo aplikasi di pemutar</string>
     <string name="edit_playlist_cover_note">CATATAN: Akun Anda harus ditautkan ke nomor telepon dan diverifikasi di YouTube Music untuk mengubah sampul playlist</string>
     <string name="enable_authentication">Aktifkan autentikasi</string>
-    <string name="line_by_line_dialog_title">Apakah Anda yakin?</string>
-    <string name="line_by_line_dialog_desc">Ini adalah fitur eksperimental yang hasilnya tidak menentu.\n\nSecara default, bahasa dideteksi dari keseluruhan lagu. Dengan opsi ini aktif, deteksi akan dilakukan baris per baris. Ini memungkinkan lagu multi-bahasa berfungsi, TETAPI bahasa yang terdeteksi mungkin tidak selalu benar. Misalnya, baris berbahasa Ukraina tanpa karakter khusus Ukraina mungkin diromanisasi sebagai bahasa Rusia.\n\nJika Anda tidak mengalami masalah apa pun, disarankan untuk menonaktifkan opsi ini</string>
     <string name="settings_section_privacy">Privasi &amp; Keamanan</string>
     <string name="settings_section_storage">Penyimpanan &amp; Data</string>
     <string name="settings_section_system">Sistem &amp; Tentang</string>
@@ -134,24 +130,12 @@
     <string name="config_proxy">Atur proksi</string>
     <string name="proxy_username">Username proksi</string>
     <string name="proxy_password">Password proksi</string>
-    <string name="lyrics_romanization">Romanisasi lirik</string>
-    <string name="lyrics_romanize_russian">Romanisasi lirik Rusia</string>
-    <string name="lyrics_romanize_ukrainian">Romanisasi lirik Ukraina</string>
-    <string name="lyrics_romanize_belarusian">Romanisasi lirik Belarus</string>
-    <string name="lyrics_romanize_kyrgyz">Romanisasi lirik Kirgiz</string>
-    <string name="lyrics_romanize_serbian">Romanisasi lirik Serbia</string>
-    <string name="lyrics_romanize_bulgarian">Romanisasi lirik Bulgaria</string>
-    <string name="line_by_line_option_title">Deteksi bahasa baris per baris</string>
-    <string name="line_by_line_option_desc">Aksara Kiril akan dideteksi baris per baris, bukan di seluruh lagu</string>
-    <string name="romanize_current_track">Romanisasi lirik lagu saat ini</string>
     <string name="settings_section_ui">Antarmuka</string>
     <string name="settings_section_player_content">Pemutar &amp; Konten</string>
     <string name="choose_from_library">Pilih dari galeri</string>
     <string name="audio_offload">Aktifkan audio offload</string>
     <string name="audio_offload_description">Menggunakan jalur audio offload perangkat keras untuk pemutaran. Menonaktifkan ini dapat meningkatkan penggunaan baterai, tetapi dapat membantu jika Anda mengalami masalah dengan pemutaran atau pemrosesan audio</string>
     <string name="remove_custom_image">Hapus gambar kustom</string>
-    <string name="lyrics_romanize_title">Romanisasi</string>
-    <string name="lyrics_romanization_cyrillic">Sirilik</string>
     <string name="uploaded_playlist">Diunggah</string>
     <string name="filter_uploaded">Diunggah</string>
     <string name="show_uploaded_playlist">Tampilkan playlist Diunggah</string>
@@ -159,7 +143,6 @@
     <string name="check_for_updates">Periksa pembaruan secara otomatis</string>
     <string name="update_notifications">Aktifkan notifikasi pembaruan</string>
     <string name="update_available_title">Pembaruan tersedia</string>
-    <string name="lyrics_romanize_macedonian">Romanisasi lirik Makedonia</string>
     <string name="integrations">Integrasi</string>
     <string name="lastfm_integration">Integrasi Last.fm</string>
     <string name="username">Username</string>
@@ -248,7 +231,6 @@
     <string name="error_playing">Kesalahan pemutaran</string>
     <string name="failed_to_parse_proxy">Gagal mengurai URL proksi</string>
     <string name="show_wrapped_card">Tampilkan kartu Wrapped</string>
-    <string name="lyrics_romanize_chinese">Romanisasi lirik Mandarin</string>
     <string name="google_cast">Google Cast</string>
     <string name="google_cast_description">Kirim audio ke Chromecast dan perangkat berkemampuan Cast lainnya</string>
     <string name="last_fm_send_likes">Sinkronkan Loved dan Unloved</string>
@@ -515,7 +497,6 @@
     <string name="discord_buttons">Tombol</string>
     <string name="discord_button_1">Tombol 1</string>
     <string name="discord_button_2">Tombol 2</string>
-    <string name="discord_information_warning">Metrolist mengirimkan lagu yang sedang Anda putar ke Gateway Discord untuk memperbarui Rich Presence Anda. Semua data dikirim langsung dari perangkat Anda ke Discord — tanpa melibatkan server pihak ketiga. Token Anda tetap tersimpan di perangkat dan tidak pernah dibagikan. Namun, penggunaan token pengguna untuk koneksi Gateway tidak didukung secara resmi dan mungkin melanggar Ketentuan Layanan Discord. Lanjutkan dengan risiko Anda sendiri!</string>
     <string name="discord_activity_type">Jenis aktivitas</string>
     <string name="discord_activity_playing">Bermain</string>
     <string name="discord_activity_listening">Mendengarkan</string>
@@ -532,9 +513,6 @@
     <string name="prevent_duplicate_tracks_in_queue_desc">Saat menambahkan lagu yang sudah ada di antrean, lagu tersebut akan dipindahkan dari posisi sebelumnya daripada ditambahkan lagi</string>
     <string name="resume_on_bluetooth_connect">Lanjutkan saat koneksi Bluetooth tersambung</string>
     <string name="player_background_solid">Pekat</string>
-    <string name="lyrics_romanize_hindi">Romanisasikan lirik Hindi</string>
-    <string name="lyrics_romanize_punjabi">Romanisasikan lirik Punjabi</string>
-    <string name="lyrics_romanize_as_main">Tampilkan lirik yang diromanisasi sebagai utama</string>
     <string name="display_density">Skala tampilan</string>
     <string name="restart">Mulai ulang</string>
     <string name="restart_required">Perlu dinyalakan ulang!</string>
