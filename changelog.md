@@ -4,6 +4,26 @@
 
 This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.60
+
+### 中文
+
+- 主選單以數位相框取代一起聽，直接開啟全螢幕照片頁；沒有照片時保持空白背景，音樂播放不中斷。
+- 相框提供透明控制層，顯示時鐘與歌曲資訊，並可使用上一首、下一首、選擇照片、設定與退出。
+- 支援多次加入單張照片、內部儲存或 USB 資料夾遞迴掃描、來源移除及清空選取；原始照片不會被複製或刪除。
+- 提供隨機不重複輪播、交叉淡入淡出、5／10／15／30／60 秒間隔、填滿或完整顯示，以及時鐘與歌曲資訊開關。
+- 相框採延遲初始化、限制圖片解碼尺寸並避免將照片留在共用快取；離開相框或進背景會停止載入與換片。失效來源可重新授權，USB 重接後可重新掃描。
+- 一起聽仍保留於設定 → 整合及選用的頂部工具列捷徑；資料庫結構與既有音樂播放核心不變。請於停車時使用相框，本功能不提供 Android Auto 照片顯示。
+
+### English
+
+- Replace Listen Together in the main menu with Photo frame, opening a full-screen photo page with a blank background before selection while music keeps playing.
+- Add transparent controls for the clock, song information, Previous/Next, photo selection, settings, and exit.
+- Support repeated photo selections, recursive device/USB folder scans, source removal, and clearing selections without copying or deleting original photos.
+- Add shuffled non-repeating playback, crossfades, 5/10/15/30/60-second intervals, fit/crop modes, and clock/song-information toggles.
+- Initialize the frame on demand, bound image decoding size, and bypass the shared photo cache; leaving the frame or backgrounding the app stops image loading and slideshow timers. Reselect inaccessible sources or rescan after reconnecting a USB drive.
+- Keep Listen Together under Settings → Integrations and its optional top-bar shortcut, without changing the database schema or existing music playback core. Use the frame while parked; photos are not displayed in Android Auto.
+
 ## 13.6.59
 
 ### 中文

@@ -45,7 +45,15 @@ sealed class Screens(
         route = "library"
     )
 
+    object PhotoFrame : Screens(
+        titleId = R.string.photo_frame,
+        iconIdInactive = R.drawable.insert_photo,
+        iconIdActive = R.drawable.insert_photo,
+        route = "photo_frame"
+    )
+
     companion object {
-        val MainScreens = listOf(Home, Search, ListenTogether, Library)
+        // A destination may be initialized before this companion (for example by a deep link).
+        val MainScreens by lazy { listOf(Home, Search, PhotoFrame, Library) }
     }
 }

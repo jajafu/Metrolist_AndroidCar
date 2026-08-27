@@ -1713,7 +1713,7 @@ fun AppearanceSettings(
                     Material3SettingsItem(
                         icon = painterResource(R.drawable.group_outlined),
                         title = { Text(stringResource(R.string.listen_together_in_top_bar)) },
-                        description = { Text(stringResource(R.string.listen_together_in_top_bar_desc)) },
+                        description = { Text(stringResource(R.string.photo_frame_listen_shortcut_desc)) },
                         trailingContent = {
                             Switch(
                                 checked = listenTogetherInTopBar,

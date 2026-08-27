@@ -25,6 +25,7 @@ import com.metrolist.music.R
 import com.metrolist.music.ui.component.IconButton
 import com.metrolist.music.ui.component.IntegrationCard
 import com.metrolist.music.ui.component.IntegrationCardItem
+import com.metrolist.music.ui.screens.Screens
 import com.metrolist.music.ui.utils.backToMain
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -41,6 +42,11 @@ fun IntegrationScreen(
         IntegrationCard(
             title = stringResource(R.string.general),
             items = listOf(
+                IntegrationCardItem(
+                    icon = painterResource(R.drawable.group_outlined),
+                    title = { Text(stringResource(R.string.listen_together)) },
+                    onClick = { navController.navigate(Screens.ListenTogether.route) }
+                ),
                 IntegrationCardItem(
                     icon = painterResource(R.drawable.discord),
                     title = { Text(stringResource(R.string.discord_integration)) },

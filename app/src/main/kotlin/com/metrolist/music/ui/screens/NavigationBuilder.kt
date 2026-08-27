@@ -99,6 +99,10 @@ fun NavGraphBuilder.navigationBuilder(
         LibraryScreen()
     }
 
+    composable(Screens.PhotoFrame.route) {
+        PhotoFrameScreen(navController)
+    }
+
     composable(Screens.ListenTogether.route) {
         ListenTogetherScreen(navController, showTopBar = false)
     }

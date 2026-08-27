@@ -710,14 +710,7 @@ class MainActivity : ComponentActivity() {
                 val (previousTab, setPreviousTab) = rememberSaveable { mutableStateOf("home") }
 
                 val (listenTogetherInTopBar) = rememberPreference(ListenTogetherInTopBarKey, defaultValue = false)
-                val navigationItems =
-                    remember(listenTogetherInTopBar) {
-                        if (listenTogetherInTopBar) {
-                            Screens.MainScreens.filter { it != Screens.ListenTogether }
-                        } else {
-                            Screens.MainScreens
-                        }
-                    }
+                val navigationItems = Screens.MainScreens
                 val routeIndexMap = remember(navigationItems) {
                     navigationItems.mapIndexed { i, s -> s.route to i }.toMap()
                 }
@@ -790,9 +783,9 @@ class MainActivity : ComponentActivity() {
 
                 val shouldShowNavigationBar =
                     remember(currentRoute, navigationItemRoutes) {
-                        currentRoute == null ||
+                        currentRoute != Screens.PhotoFrame.route && (currentRoute == null ||
                             navigationItemRoutes.contains(currentRoute) ||
-                            currentRoute!!.startsWith("search/")
+                            currentRoute!!.startsWith("search/"))
                     }
 
                 val isLandscape = configuration.containerDpSize.width > configuration.containerDpSize.height
@@ -1024,7 +1017,7 @@ class MainActivity : ComponentActivity() {
                         snackbarHost = { SnackbarHost(snackbarHostState) },
                         topBar = {
                             AnimatedVisibility(
-                                visible = shouldShowTopBar,
+                                visible = shouldShowTopBar && currentRoute != Screens.PhotoFrame.route,
                                 enter = fadeIn(animationSpec = tween(durationMillis = 300)),
                                 exit = fadeOut(animationSpec = tween(durationMillis = 200)),
                             ) {
@@ -1106,7 +1099,8 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         },
-                        bottomBar = {
+                        bottomBar = bottomBarContent@{
+                            if (currentRoute == Screens.PhotoFrame.route) return@bottomBarContent
                             val currentBackStackEntry = navController.currentBackStackEntry // reads reactively outside remember
 
                             val onNavItemClick: (Screens, Boolean) -> Unit =
@@ -1121,7 +1115,9 @@ class MainActivity : ComponentActivity() {
                                         if (playerBottomSheetState.isExpanded) {
                                             playerBottomSheetState.collapseSoft()
                                         }
-                                        if (isSelected) {
+                                        if (screen == Screens.PhotoFrame) {
+                                            navController.navigate(screen.route) { launchSingleTop = true }
+                                        } else if (isSelected) {
                                             val targetEntry =
                                                 try {
                                                     val route = navController.currentBackStackEntry?.destination?.route
@@ -1271,7 +1267,9 @@ class MainActivity : ComponentActivity() {
                                             playerBottomSheetState.collapseSoft()
                                         }
 
-                                        if (isSelected) {
+                                        if (screen == Screens.PhotoFrame) {
+                                            navController.navigate(screen.route) { launchSingleTop = true }
+                                        } else if (isSelected) {
                                             navController.currentBackStackEntry?.savedStateHandle?.set("scrollToTop", true)
                                             coroutineScope.launch {
                                                 topAppBarScrollBehavior.state.resetHeightOffset()
@@ -1297,7 +1295,7 @@ class MainActivity : ComponentActivity() {
                                     }
                                 }
 
-                            if (showRail && currentRoute != "wrapped") {
+                            if (showRail && currentRoute != "wrapped" && currentRoute != Screens.PhotoFrame.route) {
                                 AppNavigationRail(
                                     navigationItems = navigationItems,
                                     currentRoute = currentRoute,
