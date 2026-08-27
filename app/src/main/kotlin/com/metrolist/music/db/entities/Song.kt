@@ -60,8 +60,6 @@ constructor(
         get() = song.title
     override val thumbnailUrl: String?
         get() = song.thumbnailUrl
-    val romanizeLyrics: Boolean
-        get() = song.romanizeLyrics
 
     val isDownloaded: Boolean
         get() = song.isDownloaded
