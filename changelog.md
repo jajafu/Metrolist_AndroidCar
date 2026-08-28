@@ -4,6 +4,16 @@
 
 This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.62
+
+### 中文
+
+- 補齊數位相框的繁體中文介面，會跟隨系統語言顯示中文標題、按鈕、設定、錯誤提示與無障礙描述。
+
+### English
+
+- Complete the Traditional Chinese localization for Photo frame, including titles, buttons, settings, errors, and accessibility descriptions selected by the system language.
+
 ## 13.6.61
 
 ### 中文
