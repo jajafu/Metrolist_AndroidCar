@@ -1037,6 +1037,10 @@
     <string name="photo_frame_manifest_error">The photo index could not be loaded. Your source selections are preserved; rescan to rebuild the index.</string>
     <string name="photo_frame_previous">Previous song</string>
     <string name="photo_frame_next">Next song</string>
+    <string name="photo_frame_play">Play</string>
+    <string name="photo_frame_pause">Pause</string>
+    <string name="photo_frame_previous_photo">Previous photo</string>
+    <string name="photo_frame_next_photo">Next photo</string>
     <string name="photo_frame_exit">Exit photo frame</string>
     <string name="photo_frame_toggle_controls">Show or hide photo frame controls</string>
     <string name="photo_frame_cancel">Cancel</string>

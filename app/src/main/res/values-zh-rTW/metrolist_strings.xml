@@ -839,6 +839,10 @@
     <string name="photo_frame_manifest_error">無法載入照片索引。已保留來源選取項目；請重新掃描以重建索引。</string>
     <string name="photo_frame_previous">上一首歌曲</string>
     <string name="photo_frame_next">下一首歌曲</string>
+    <string name="photo_frame_play">播放</string>
+    <string name="photo_frame_pause">暫停</string>
+    <string name="photo_frame_previous_photo">上一張照片</string>
+    <string name="photo_frame_next_photo">下一張照片</string>
     <string name="photo_frame_exit">退出數位相框</string>
     <string name="photo_frame_toggle_controls">顯示或隱藏數位相框控制項</string>
     <string name="photo_frame_cancel">取消</string>

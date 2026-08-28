@@ -40,6 +40,16 @@ class PhotoFramePlaybackTest {
     }
 
     @Test
+    fun `previous and next walk the playback history`() {
+        val queue = FrameShuffleQueue(listOf("a", "b", "c"), Random(1))
+        val first = queue.next()
+        val second = queue.next()
+
+        assertEquals(first, queue.previous())
+        assertEquals(second, queue.next())
+    }
+
+    @Test
     fun `empty pool does not load or start a timer`() = runBlocking {
         val engine = PhotoFramePlayback<String>(load = { error("Unexpected image request") }, onUnreadable = {})
         var state: FramePlaybackState<String>? = null
@@ -57,6 +67,42 @@ class PhotoFramePlaybackTest {
         assertEquals(1, loads)
         assertEquals("a", state!!.current!!.uri)
         assertNull(state.incoming)
+    }
+
+    @Test
+    fun `manual next command advances without waiting for the interval`() = runBlocking {
+        val session = FramePlaybackSession(listOf("a", "b", "c"), Random(1))
+        val firstShown = CompletableDeferred<Unit>()
+        val secondShown = CompletableDeferred<Unit>()
+        val previousShown = CompletableDeferred<Unit>()
+        val shown = mutableListOf<String>()
+        val engine = PhotoFramePlayback<String>(
+            load = { it },
+            onUnreadable = {},
+            transitionMillis = 0,
+        )
+        val job = launch {
+            engine.play(session, 60_000) { state ->
+                state.current?.let { frame ->
+                    if (shown.lastOrNull() != frame.uri) {
+                        shown += frame.uri
+                        if (shown.size == 1) firstShown.complete(Unit)
+                        if (shown.size == 2) secondShown.complete(Unit)
+                        if (shown.size == 3) previousShown.complete(Unit)
+                    }
+                }
+            }
+        }
+
+        firstShown.await()
+        session.request(FramePlaybackCommand.NEXT)
+        secondShown.await()
+        session.request(FramePlaybackCommand.PREVIOUS)
+        previousShown.await()
+        job.cancelAndJoin()
+
+        assertNotEquals(shown[0], shown[1])
+        assertEquals(shown[0], shown[2])
     }
 
     @Test

@@ -74,6 +74,7 @@ import com.metrolist.music.LocalListenTogetherManager
 import com.metrolist.music.LocalPlayerConnection
 import com.metrolist.music.R
 import com.metrolist.music.listentogether.RoomRole
+import com.metrolist.music.photo.FramePlaybackCommand
 import com.metrolist.music.photo.FramePlaybackState
 import com.metrolist.music.photo.FramePlaybackSession
 import com.metrolist.music.photo.PhotoFramePlayback
@@ -209,8 +210,11 @@ fun PhotoFrameScreen(navController: NavHostController, viewModel: PhotoFrameView
                 FrameMusicControls(
                     showSongInfo = state.settings.showSongInfo,
                     canSelect = state.initialized && !busy,
+                    canNavigatePhotos = uris.size > 1,
                     onSelect = choosePhotos,
                     onSettings = { showSettings = true },
+                    onPreviousPhoto = { session.request(FramePlaybackCommand.PREVIOUS) },
+                    onNextPhoto = { session.request(FramePlaybackCommand.NEXT) },
                 )
                 val error = actionError ?: state.error
                 if (error != null) Text(stringResource(frameErrorMessage(error)), color = Color.White, style = MaterialTheme.typography.bodySmall)
@@ -257,11 +261,20 @@ private fun FrameClock(active: Boolean, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun FrameMusicControls(showSongInfo: Boolean, canSelect: Boolean, onSelect: () -> Unit, onSettings: () -> Unit) {
+private fun FrameMusicControls(
+    showSongInfo: Boolean,
+    canSelect: Boolean,
+    canNavigatePhotos: Boolean,
+    onSelect: () -> Unit,
+    onSettings: () -> Unit,
+    onPreviousPhoto: () -> Unit,
+    onNextPhoto: () -> Unit,
+) {
     val connection = LocalPlayerConnection.current
     val metadata = connection?.mediaMetadata?.collectAsStateWithLifecycle()?.value
     val canPrevious = connection?.canSkipPrevious?.collectAsStateWithLifecycle()?.value == true
     val canNext = connection?.canSkipNext?.collectAsStateWithLifecycle()?.value == true
+    val isPlaying = connection?.isEffectivelyPlaying?.collectAsStateWithLifecycle()?.value == true
     val role = LocalListenTogetherManager.current?.role?.collectAsStateWithLifecycle()?.value
     val ready = connection?.service?.isPlayerReady?.collectAsStateWithLifecycle()?.value == true
     val canControl = ready && metadata != null && role != RoomRole.GUEST
@@ -271,7 +284,14 @@ private fun FrameMusicControls(showSongInfo: Boolean, canSelect: Boolean, onSele
     }
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
         FrameIcon(R.drawable.skip_previous, R.string.photo_frame_previous, enabled = canControl && canPrevious) { connection?.seekToPrevious() }
+        FrameIcon(
+            if (isPlaying) R.drawable.pause else R.drawable.play,
+            if (isPlaying) R.string.photo_frame_pause else R.string.photo_frame_play,
+            enabled = canControl,
+        ) { connection?.togglePlayPause() }
         FrameIcon(R.drawable.skip_next, R.string.photo_frame_next, enabled = canControl && canNext) { connection?.seekToNext() }
+        FrameIcon(R.drawable.arrow_back, R.string.photo_frame_previous_photo, enabled = canNavigatePhotos, onClick = onPreviousPhoto)
+        FrameIcon(R.drawable.arrow_forward, R.string.photo_frame_next_photo, enabled = canNavigatePhotos, onClick = onNextPhoto)
         Spacer(Modifier.weight(1f))
         FrameIcon(R.drawable.insert_photo, R.string.photo_frame_pick_photos, enabled = canSelect, onClick = onSelect)
         FrameIcon(R.drawable.settings, R.string.photo_frame_settings, onClick = onSettings)

@@ -1,9 +1,12 @@
 package com.metrolist.music.photo
 
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.random.Random
 
@@ -15,6 +18,8 @@ internal class FrameShuffleQueue(uris: List<String>, private val random: Random 
     private var index = 0
     private var previous: String? = null
     private var lastReadable: String? = null
+    private val history = mutableListOf<String>()
+    private var historyIndex = -1
 
     fun markFailed(uri: String) {
         failed += uri
@@ -27,6 +32,13 @@ internal class FrameShuffleQueue(uris: List<String>, private val random: Random 
     }
 
     fun next(): String? {
+        while (historyIndex < history.lastIndex) {
+            val next = history[++historyIndex]
+            if (next !in failed) {
+                previous = next
+                return next
+            }
+        }
         while (true) {
             if (index >= round.size) {
                 val available = photos.filterNot { it in failed }
@@ -41,14 +53,33 @@ internal class FrameShuffleQueue(uris: List<String>, private val random: Random 
             }
             val next = round[index++]
             if (next !in failed) {
+                history += next
+                historyIndex = history.lastIndex
                 previous = next
                 return next
             }
         }
     }
+
+    fun previous(currentUri: String? = null): String? {
+        currentUri?.let { uri ->
+            history.lastIndexOf(uri).takeIf { it >= 0 }?.let { historyIndex = it }
+        }
+        while (historyIndex > 0) {
+            val previous = history[--historyIndex]
+            if (previous !in failed) {
+                this.previous = previous
+                return previous
+            }
+        }
+        return null
+    }
 }
 
 internal data class FrameImage<T>(val uri: String, val image: T)
+
+internal enum class FramePlaybackCommand { PREVIOUS, NEXT }
+
 internal data class FramePlaybackState<T>(
     val current: FrameImage<T>? = null,
     val incoming: FrameImage<T>? = null,
@@ -64,6 +95,15 @@ internal class FramePlaybackSession(uris: List<String>, random: Random = Random.
     var pendingUri: String? = null
     var intervalMillis = 0L
     var remainingMillis = 0L
+
+    private val commands = Channel<FramePlaybackCommand>(Channel.UNLIMITED)
+
+    fun request(command: FramePlaybackCommand) {
+        commands.trySend(command)
+    }
+
+    suspend fun awaitCommand(timeoutMillis: Long): FramePlaybackCommand? =
+        withTimeoutOrNull(timeoutMillis.coerceAtLeast(0L)) { commands.receive() }
 }
 
 /** Runs only inside a foreground screen effect. Cancellation releases both frames. */
@@ -85,7 +125,7 @@ internal class PhotoFramePlayback<T>(
         session: FramePlaybackSession,
         intervalMillis: Long,
         publish: (FramePlaybackState<T>) -> Unit,
-    ) {
+    ) = coroutineScope {
         if (session.intervalMillis != intervalMillis) {
             session.intervalMillis = intervalMillis
             session.remainingMillis = intervalMillis
@@ -118,6 +158,16 @@ internal class PhotoFramePlayback<T>(
             }
         }
 
+        suspend fun loadPrevious(): FrameImage<T>? {
+            var firstRequest = true
+            while (true) {
+                currentCoroutineContext().ensureActive()
+                val uri = queue.previous(if (firstRequest) session.currentUri else null) ?: return null
+                firstRequest = false
+                loadPhoto(uri)?.let { return it }
+            }
+        }
+
         var current = session.currentUri?.let { loadPhoto(it) }
         if (current == null) {
             current = loadNext()
@@ -126,31 +176,51 @@ internal class PhotoFramePlayback<T>(
         if (current == null) {
             session.currentUri = null
             publish(FramePlaybackState(exhausted = !session.empty))
-            return
+            return@coroutineScope
         }
         session.currentUri = current.uri
         publish(FramePlaybackState(current))
-        if (session.single) return
+        if (session.single) return@coroutineScope
 
         while (true) {
             val started = nowMillis()
-            val incoming: FrameImage<T>?
+            val preload = async { loadNext() }
+            var command: FramePlaybackCommand? = null
+            var incoming: FrameImage<T>? = null
             try {
-                incoming = loadNext()
-                if (incoming != null) {
-                    delay((session.remainingMillis - (nowMillis() - started)).coerceAtLeast(0))
+                command = session.awaitCommand(session.remainingMillis)
+                if (command == null) {
+                    incoming = preload.await()
+                    if (incoming != null) {
+                        delay((session.remainingMillis - (nowMillis() - started)).coerceAtLeast(0))
+                    }
+                } else if (command == FramePlaybackCommand.NEXT && preload.isCompleted) {
+                    incoming = preload.await()
+                } else {
+                    preload.cancel()
+                    session.pendingUri = null
+                    val requestedCommand = checkNotNull(command)
+                    incoming = when (requestedCommand) {
+                        FramePlaybackCommand.PREVIOUS -> loadPrevious()
+                        FramePlaybackCommand.NEXT -> loadNext()
+                    }
                 }
             } finally {
+                preload.cancel()
                 session.remainingMillis = (session.remainingMillis - (nowMillis() - started)).coerceAtLeast(0)
             }
             if (incoming == null) {
+                if (command == FramePlaybackCommand.PREVIOUS) {
+                    session.remainingMillis = intervalMillis
+                    continue
+                }
                 session.currentUri = null
                 publish(FramePlaybackState(exhausted = true))
-                return
+                return@coroutineScope
             }
             if (incoming.uri == current?.uri) {
                 session.pendingUri = null
-                return
+                return@coroutineScope
             }
             publish(FramePlaybackState(current, incoming))
             delay(transitionMillis)

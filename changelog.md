@@ -4,6 +4,16 @@
 
 This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.63
+
+### 中文
+
+- 數位相框新增播放／暫停、上一張與下一張照片控制；手動換片後會繼續自動輪播，音樂上一首／下一首控制維持原功能。
+
+### English
+
+- Add Play/Pause and previous/next photo controls to Photo frame. Manual navigation continues the automatic slideshow, while the existing music previous/next controls remain unchanged.
+
 ## 13.6.62
 
 ### 中文
