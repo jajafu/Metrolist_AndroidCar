@@ -4,6 +4,16 @@
 
 This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.65
+
+### 中文
+
+- 修正數位相框直式螢幕的控制列排版；設定與選擇照片按鈕不再被推到畫面外，窄螢幕會自動換行顯示。
+
+### English
+
+- Fix Photo frame controls on portrait screens. Settings and photo-selection buttons are no longer pushed off-screen; controls wrap automatically on narrow displays.
+
 ## 13.6.64
 
 ### 中文

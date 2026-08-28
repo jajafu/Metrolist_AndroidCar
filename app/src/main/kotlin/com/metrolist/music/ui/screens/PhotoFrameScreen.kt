@@ -12,6 +12,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -288,7 +289,11 @@ private fun FrameMusicControls(
         Text(metadata.title, color = Color.White, style = MaterialTheme.typography.titleLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
         Text(metadata.artists.joinToString { it.name }, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
         FrameIcon(R.drawable.skip_previous, R.string.photo_frame_previous, enabled = canControl && canPrevious) { connection?.seekToPrevious() }
         FrameIcon(
             if (isPlaying) R.drawable.pause else R.drawable.play,
@@ -298,7 +303,6 @@ private fun FrameMusicControls(
         FrameIcon(R.drawable.skip_next, R.string.photo_frame_next, enabled = canControl && canNext) { connection?.seekToNext() }
         FrameIcon(R.drawable.arrow_back, R.string.photo_frame_previous_photo, enabled = canNavigatePhotos, onClick = onPreviousPhoto)
         FrameIcon(R.drawable.arrow_forward, R.string.photo_frame_next_photo, enabled = canNavigatePhotos, onClick = onNextPhoto)
-        Spacer(Modifier.weight(1f))
         FrameIcon(R.drawable.insert_photo, R.string.photo_frame_pick_photos, enabled = canSelect, onClick = onSelect)
         FrameIcon(R.drawable.settings, R.string.photo_frame_settings, onClick = onSettings)
     }
