@@ -837,6 +837,7 @@
     <string name="photo_frame_storage_error">無法儲存變更。請確認可用儲存空間後再試。</string>
     <string name="photo_frame_invalid_image">此選取項目不是支援的圖片格式。</string>
     <string name="photo_frame_manifest_error">無法載入照片索引。已保留來源選取項目；請重新掃描以重建索引。</string>
+    <string name="photo_frame_picker_unavailable">此裝置沒有相容的檔案選擇器。請使用車機的檔案管理員，將照片或 USB 儲存空間提供給其他 App。</string>
     <string name="photo_frame_previous">上一首歌曲</string>
     <string name="photo_frame_next">下一首歌曲</string>
     <string name="photo_frame_play">播放</string>

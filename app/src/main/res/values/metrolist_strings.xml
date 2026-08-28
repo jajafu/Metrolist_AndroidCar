@@ -1035,6 +1035,7 @@
     <string name="photo_frame_storage_error">Could not save your changes. Check available storage and try again.</string>
     <string name="photo_frame_invalid_image">This selection is not a supported image.</string>
     <string name="photo_frame_manifest_error">The photo index could not be loaded. Your source selections are preserved; rescan to rebuild the index.</string>
+    <string name="photo_frame_picker_unavailable">This device does not provide a compatible file picker. Use its Files app to expose photos or USB storage to other apps.</string>
     <string name="photo_frame_previous">Previous song</string>
     <string name="photo_frame_next">Next song</string>
     <string name="photo_frame_play">Play</string>

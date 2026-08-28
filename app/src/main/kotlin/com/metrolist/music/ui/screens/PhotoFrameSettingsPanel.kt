@@ -212,4 +212,5 @@ internal fun frameErrorMessage(error: FrameError): Int = when (error) {
     FrameError.UNREADABLE -> R.string.photo_frame_unreadable
     FrameError.INVALID_IMAGE -> R.string.photo_frame_invalid_image
     FrameError.MANIFEST -> R.string.photo_frame_manifest_error
+    FrameError.PICKER_UNAVAILABLE -> R.string.photo_frame_picker_unavailable
 }

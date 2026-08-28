@@ -4,6 +4,16 @@
 
 This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.64
+
+### 中文
+
+- 針對車機相容性，照片選擇優先使用標準文件選擇器，失敗時改用系統內容選擇器；無相容選擇器時顯示明確提示，不再誤報為照片讀取錯誤。
+
+### English
+
+- Improve head-unit compatibility by preferring the standard document picker for photos and falling back to the system content picker. Show a clear message when no compatible picker exists instead of reporting a misleading photo-read error.
+
 ## 13.6.63
 
 ### 中文

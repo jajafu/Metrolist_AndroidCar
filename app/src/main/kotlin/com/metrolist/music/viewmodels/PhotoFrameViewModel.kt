@@ -37,7 +37,7 @@ class PhotoFrameViewModel @Inject constructor(private val catalog: PhotoCatalog)
     fun clear() = runOperation { catalog.clear() }
     fun updateSettings(settings: FrameSettings) = runOperation { catalog.updateSettings(settings) }
     fun cancelOperation() { operation?.cancel() }
-    fun reportPickerError() { _error.value = FrameError.UNREADABLE }
+    fun reportPickerError() { _error.value = FrameError.PICKER_UNAVAILABLE }
     fun dismissError() {
         _error.value = null
         catalog.clearError()

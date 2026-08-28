@@ -34,7 +34,7 @@ data class FrameSettings(
     )
 }
 
-enum class FrameError { STORAGE, PERMISSION, UNREADABLE, INVALID_IMAGE, MANIFEST }
+enum class FrameError { STORAGE, PERMISSION, UNREADABLE, INVALID_IMAGE, MANIFEST, PICKER_UNAVAILABLE }
 
 data class FrameCatalogState(
     val sources: List<FrameSource> = emptyList(),

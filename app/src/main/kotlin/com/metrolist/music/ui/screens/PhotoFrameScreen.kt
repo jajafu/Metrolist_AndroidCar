@@ -6,7 +6,6 @@ import android.content.ContextWrapper
 import android.text.format.DateFormat
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
@@ -95,7 +94,10 @@ fun PhotoFrameScreen(navController: NavHostController, viewModel: PhotoFrameView
     var showControls by rememberSaveable { mutableStateOf(true) }
     var replacingFolder by rememberSaveable { mutableStateOf<String?>(null) }
 
-    val pickPhotos = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia()) { uris ->
+    val openPhotos = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+        if (uris.isNotEmpty()) viewModel.addPhotos(uris)
+    }
+    val getPhotos = rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
         if (uris.isNotEmpty()) viewModel.addPhotos(uris)
     }
     val pickFolder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
@@ -104,9 +106,13 @@ fun PhotoFrameScreen(navController: NavHostController, viewModel: PhotoFrameView
     }
     val choosePhotos: () -> Unit = {
         try {
-            pickPhotos.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+            openPhotos.launch(arrayOf("image/*"))
         } catch (_: Exception) {
-            viewModel.reportPickerError()
+            try {
+                getPhotos.launch("image/*")
+            } catch (_: Exception) {
+                viewModel.reportPickerError()
+            }
         }
     }
     val exit: () -> Unit = {
