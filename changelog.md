@@ -4,6 +4,16 @@
 
 This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.66
+
+### 中文
+
+- 修正車機選取照片後立即顯示需要重新授權的問題；在選擇器回傳暫時 URI 權限的 callback 期間立即保存存取權，再進行非同步掃描。
+
+### English
+
+- Fix head units immediately reporting that photo access must be renewed. Picker URI grants are now persisted during the activity-result callback before asynchronous scanning begins.
+
 ## 13.6.65
 
 ### 中文

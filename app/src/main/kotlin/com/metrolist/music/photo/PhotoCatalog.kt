@@ -54,6 +54,11 @@ class PhotoCatalog internal constructor(
     private var scannedFolders = emptySet<String>()
     private val failedPhotos = hashSetOf<String>()
 
+    /** Persist picker grants while the activity result callback still owns the temporary grant. */
+    fun preparePhotoAccess(uris: List<Uri>) {
+        uris.distinct().forEach { documents.persistRead(it) }
+    }
+
     suspend fun initialize() = operation(initializeFirst = false) {
         if (!state.value.initialized) initializeLocked()
     }

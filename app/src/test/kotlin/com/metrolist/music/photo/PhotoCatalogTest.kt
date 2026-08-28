@@ -41,6 +41,15 @@ class PhotoCatalogTest {
     }
 
     @Test
+    fun `picker grants are persisted before asynchronous import starts`() {
+        val catalog = catalog()
+
+        catalog.preparePhotoAccess(listOf(image, image))
+
+        assertTrue(documents.hasPersistedRead(image))
+    }
+
+    @Test
     fun `picked photos append deduplicate and retain transient access until revoked`() = runBlocking {
         documents.persistable = false
         val catalog = catalog()

@@ -96,13 +96,22 @@ fun PhotoFrameScreen(navController: NavHostController, viewModel: PhotoFrameView
     var replacingFolder by rememberSaveable { mutableStateOf<String?>(null) }
 
     val openPhotos = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
-        if (uris.isNotEmpty()) viewModel.addPhotos(uris)
+        if (uris.isNotEmpty()) {
+            viewModel.preparePhotoAccess(uris)
+            viewModel.addPhotos(uris)
+        }
     }
     val getPhotos = rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
-        if (uris.isNotEmpty()) viewModel.addPhotos(uris)
+        if (uris.isNotEmpty()) {
+            viewModel.preparePhotoAccess(uris)
+            viewModel.addPhotos(uris)
+        }
     }
     val pickFolder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
-        if (uri != null) viewModel.addFolder(uri, replacingFolder)
+        if (uri != null) {
+            viewModel.preparePhotoAccess(listOf(uri))
+            viewModel.addFolder(uri, replacingFolder)
+        }
         replacingFolder = null
     }
     val choosePhotos: () -> Unit = {

@@ -30,6 +30,7 @@ class PhotoFrameViewModel @Inject constructor(private val catalog: PhotoCatalog)
         if (!state.value.initialized) runOperation { catalog.initialize() }
     }
 
+    fun preparePhotoAccess(uris: List<Uri>) = catalog.preparePhotoAccess(uris)
     fun addPhotos(uris: List<Uri>) = runOperation { catalog.addPhotos(uris); _generation.value++ }
     fun addFolder(uri: Uri, replaceUri: String?) = runOperation { catalog.addFolder(uri, replaceUri); _generation.value++ }
     fun rescan() = runOperation { catalog.rescan(); _generation.value++ }
