@@ -4,6 +4,18 @@
 
 This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.61
+
+### 中文
+
+- 延後 Listen Together 管理器與網路用戶端的建立，僅在開啟一起聽功能、整合設定或使用邀請連結時初始化，降低一般啟動時的記憶體與背景工作成本。
+- 保留播放服務的房間狀態同步與既有一起聽功能；初始化流程改為一次性，避免重複建立偏好與事件觀察工作。
+
+### English
+
+- Defer creation of the Listen Together manager and network client until the feature, its integration settings, or an invitation link is opened, reducing startup memory and background work for normal playback.
+- Preserve room-state handling in the playback service and existing Listen Together behavior while making initialization one-shot so preference and event observers cannot be duplicated.
+
 ## 13.6.60
 
 ### 中文

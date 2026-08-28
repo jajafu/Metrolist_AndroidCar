@@ -23,6 +23,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.dialog
 import androidx.navigation.navArgument
+import com.metrolist.music.MainActivity
 import com.metrolist.music.constants.DarkModeKey
 import com.metrolist.music.constants.PureBlackKey
 import com.metrolist.music.ui.screens.artist.ArtistAlbumsScreen
@@ -104,12 +105,14 @@ fun NavGraphBuilder.navigationBuilder(
     }
 
     composable(Screens.ListenTogether.route) {
+        (activity as? MainActivity)?.ensureListenTogetherManager()
         ListenTogetherScreen(navController, showTopBar = false)
     }
 
     composable(
         route = "listen_together_from_topbar",
     ) {
+        (activity as? MainActivity)?.ensureListenTogetherManager()
         ListenTogetherScreen(navController, showTopBar = true)
     }
 
@@ -372,6 +375,7 @@ fun NavGraphBuilder.navigationBuilder(
     }
 
     composable(route = "settings/integrations/listen_together") {
+        (activity as? MainActivity)?.ensureListenTogetherManager()
         ListenTogetherSettings(navController)
     }
 

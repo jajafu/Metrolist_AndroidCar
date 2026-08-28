@@ -166,6 +166,7 @@ import com.metrolist.music.constants.SkipSilenceInstantKey
 import com.metrolist.music.constants.SkipSilenceKey
 import com.metrolist.music.constants.StopMusicOnTaskClearKey
 import com.metrolist.music.db.MusicDatabase
+import com.metrolist.music.listentogether.ListenTogetherManager
 import com.metrolist.music.db.entities.Event
 import com.metrolist.music.db.entities.FormatEntity
 import com.metrolist.music.db.entities.LyricsEntity
@@ -293,9 +294,6 @@ class MusicService :
 
     @Inject
     lateinit var widgetManager: MetrolistWidgetManager
-
-    @Inject
-    lateinit var listenTogetherManager: com.metrolist.music.listentogether.ListenTogetherManager
 
     private lateinit var audioManager: AudioManager
     private var audioFocusRequest: AudioFocusRequest? = null
@@ -1193,9 +1191,9 @@ class MusicService :
                     prefs[CrossfadeGaplessKey] ?: true,
                 )
             },
-            listenTogetherManager.roomState,
-        ) { (enabled, duration, gapless), roomState ->
-            Triple(enabled && roomState == null, duration, gapless)
+            ListenTogetherManager.roomActive,
+        ) { (enabled, duration, gapless), roomActive ->
+            Triple(enabled && !roomActive, duration, gapless)
         }.distinctUntilChanged()
             .collect(scope) { (enabled, duration, gapless) ->
                 crossfadeEnabled = enabled

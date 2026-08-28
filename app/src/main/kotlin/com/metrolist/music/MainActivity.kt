@@ -161,6 +161,7 @@ import com.metrolist.music.constants.UseNewMiniPlayerDesignKey
 import com.metrolist.music.db.MusicDatabase
 import com.metrolist.music.db.entities.SearchHistory
 import com.metrolist.music.extensions.toEnum
+import com.metrolist.music.listentogether.ListenTogetherManager
 import com.metrolist.music.lyrics.LyricsProviderRegistry
 import com.metrolist.music.models.toMediaMetadata
 import com.metrolist.music.playback.DownloadUtil
@@ -215,6 +216,7 @@ import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.util.Locale
 import javax.inject.Inject
+import javax.inject.Provider
 
 @Suppress("DEPRECATION", "ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
 @AndroidEntryPoint
@@ -239,7 +241,24 @@ class MainActivity : ComponentActivity() {
     lateinit var syncUtils: SyncUtils
 
     @Inject
-    lateinit var listenTogetherManager: com.metrolist.music.listentogether.ListenTogetherManager
+    lateinit var listenTogetherManagerProvider: Provider<ListenTogetherManager>
+
+    /**
+     * Listen Together is an optional feature. Keep its manager out of the startup object graph
+     * until the user opens the feature or follows a Listen Together link.
+     */
+    private var activeListenTogetherManager by mutableStateOf<ListenTogetherManager?>(null)
+
+    internal fun ensureListenTogetherManager(): ListenTogetherManager {
+        activeListenTogetherManager?.let { return it }
+        return synchronized(this) {
+            activeListenTogetherManager ?: listenTogetherManagerProvider.get().also { manager ->
+                manager.initialize()
+                manager.setPlayerConnection(playerConnection)
+                activeListenTogetherManager = manager
+            }
+        }
+    }
 
     private lateinit var navController: NavHostController
     private var pendingIntent: Intent? = null
@@ -264,13 +283,13 @@ class MainActivity : ComponentActivity() {
                 if (service is MusicBinder) {
                     playerConnection = PlayerConnection(this@MainActivity, service, database, lifecycleScope)
                     playerConnectionSnapshot = playerConnection
-                    listenTogetherManager.setPlayerConnection(playerConnection)
+                    activeListenTogetherManager?.setPlayerConnection(playerConnection)
                 }
             }
 
             override fun onServiceDisconnected(name: ComponentName?) {
                 // Disconnect Listen Together manager
-                listenTogetherManager.setPlayerConnection(null)
+                activeListenTogetherManager?.setPlayerConnection(null)
                 playerConnection?.dispose()
                 // DO NOT null out playerConnection here - keep it for when service reconnects
                 // DO NOT update playerConnectionSnapshot - this is the key to preventing recomposition
@@ -285,7 +304,7 @@ class MainActivity : ComponentActivity() {
             Timber.tag("MainActivity").w(e, "Service was not bound when attempting to unbind in $source")
         } finally {
             isServiceBound = false
-            listenTogetherManager.setPlayerConnection(null)
+            activeListenTogetherManager?.setPlayerConnection(null)
             playerConnection?.dispose()
             // DO NOT null out playerConnection here - keep it for reconnection
             // DO NOT update playerConnectionSnapshot - this prevents UI recomposition
@@ -344,7 +363,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         if (isFinishing) {
-            listenTogetherManager.disconnect()
+            activeListenTogetherManager?.disconnect()
         }
         super.onDestroy()
         // Use effective playing state so Cast (local player paused, remote playing) is included.
@@ -382,9 +401,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         window.decorView.layoutDirection = View.LAYOUT_DIRECTION_LTR
         WindowCompat.setDecorFitsSystemWindows(window, false)
-
-        // Initialize Listen Together manager
-        listenTogetherManager.initialize()
 
         lifecycleScope.launch {
             dataStore.data
@@ -1006,7 +1022,7 @@ class MainActivity : ComponentActivity() {
                     LocalDownloadUtil provides downloadUtil,
                     LocalShimmerTheme provides ShimmerTheme,
                     LocalSyncUtils provides syncUtils,
-                    LocalListenTogetherManager provides listenTogetherManager,
+                    LocalListenTogetherManager provides activeListenTogetherManager,
                     LocalChangelogState provides showChangelog,
                 ) {
                     if (showChangelog.value) {
@@ -1045,7 +1061,10 @@ class MainActivity : ComponentActivity() {
                                                 )
                                             }
                                             if (listenTogetherInTopBar) {
-                                                IconButton(onClick = { navController.navigate("listen_together_from_topbar") }) {
+                                                IconButton(onClick = {
+                                                    ensureListenTogetherManager()
+                                                    navController.navigate("listen_together_from_topbar")
+                                                }) {
                                                     Icon(
                                                         painter = painterResource(R.drawable.group_outlined),
                                                         contentDescription = stringResource(R.string.together),
@@ -1495,11 +1514,12 @@ class MainActivity : ComponentActivity() {
         val isListenLink = uri.pathSegments.firstOrNull() == "listen" || uri.host?.equals("listen", ignoreCase = true) == true
         if (!listenCode.isNullOrBlank() && isListenLink) {
             coroutineScope.launch {
+                val manager = ensureListenTogetherManager()
                 val username =
                     withContext(Dispatchers.IO) {
                         dataStore.get(ListenTogetherUsernameKey, "")
                     }.ifBlank { "Guest" }
-                listenTogetherManager.joinRoom(listenCode, username)
+                manager.joinRoom(listenCode, username)
             }
             return
         }

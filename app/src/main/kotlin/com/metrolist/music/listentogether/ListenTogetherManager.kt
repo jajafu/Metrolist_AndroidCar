@@ -32,6 +32,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -74,6 +75,10 @@ class ListenTogetherManager
         companion object {
             private const val TAG = "ListenTogetherManager"
 
+            /** Lightweight playback signal consumed by MusicService without creating this manager. */
+            private val _roomActive = MutableStateFlow(false)
+            val roomActive: StateFlow<Boolean> = _roomActive
+
             private const val SOFT_SYNC_THRESHOLD_MS = 50L
             private const val HARD_SYNC_THRESHOLD_MS = 750L
             private const val DRIFT_CORRECTION_SPEED = 0.02f
@@ -81,10 +86,8 @@ class ListenTogetherManager
         }
 
         private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
-
-        init {
-            observePreferences()
-        }
+        private var initialized = false
+        private var roomStateObserverJob: Job? = null
 
         private var playerConnection: PlayerConnection? = null
         private var eventCollectorJob: Job? = null
@@ -372,11 +375,20 @@ class ListenTogetherManager
             }
         }
 
-        /**
-         * Initialize event collection. Should be called once at app start.
-         */
+        /** Initialize Listen Together observers the first time the feature is used. */
+        @Synchronized
         fun initialize() {
+            if (initialized) return
+            initialized = true
             Timber.tag(TAG).d("Initializing ListenTogetherManager")
+            observePreferences()
+            roomStateObserverJob =
+                scope.launch {
+                    roomState
+                        .map { it != null }
+                        .distinctUntilChanged()
+                        .collect { _roomActive.value = it }
+                }
             eventCollectorJob?.cancel()
             eventCollectorJob =
                 scope.launch {
