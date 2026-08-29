@@ -92,6 +92,7 @@ fun PhotoFrameScreen(navController: NavHostController, viewModel: PhotoFrameView
     val generation by viewModel.generation.collectAsStateWithLifecycle()
     var foreground by remember(lifecycle) { mutableStateOf(lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) }
     var showSettings by rememberSaveable { mutableStateOf(false) }
+    var showMediaBrowser by rememberSaveable { mutableStateOf(false) }
     var showControls by rememberSaveable { mutableStateOf(true) }
     var replacingFolder by rememberSaveable { mutableStateOf<String?>(null) }
 
@@ -128,7 +129,7 @@ fun PhotoFrameScreen(navController: NavHostController, viewModel: PhotoFrameView
     val exit: () -> Unit = {
         if (!navController.popBackStack()) navController.navigate(Screens.Home.route) { launchSingleTop = true }
     }
-    BackHandler(enabled = !showSettings, onBack = exit)
+    BackHandler(enabled = !showSettings && !showMediaBrowser, onBack = exit)
 
     DisposableEffect(lifecycle, viewModel) {
         val observer = LifecycleEventObserver { _, _ ->
@@ -153,13 +154,13 @@ fun PhotoFrameScreen(navController: NavHostController, viewModel: PhotoFrameView
         val session = remember(uris, generation) { FramePlaybackSession(uris) }
         // A cancelled decode can finish cleanup after its replacement has started.
         // Give each effect its own frame state so old cleanup cannot erase new images.
-        var slides by remember(session, width, height, state.settings.intervalSeconds, foreground, showSettings) {
+        var slides by remember(session, width, height, state.settings.intervalSeconds, foreground, showSettings, showMediaBrowser) {
             mutableStateOf(FramePlaybackState<coil3.Image>())
         }
         val fade = remember { Animatable(0f) }
 
-        LaunchedEffect(session, width, height, state.settings.intervalSeconds, foreground, showSettings) {
-            if (!foreground || showSettings) return@LaunchedEffect
+        LaunchedEffect(session, width, height, state.settings.intervalSeconds, foreground, showSettings, showMediaBrowser) {
+            if (!foreground || showSettings || showMediaBrowser) return@LaunchedEffect
             val playback = PhotoFramePlayback<coil3.Image>(
                 load = { uri ->
                     val contentUri = uri.toUri()
@@ -227,7 +228,7 @@ fun PhotoFrameScreen(navController: NavHostController, viewModel: PhotoFrameView
                     showSongInfo = state.settings.showSongInfo,
                     canSelect = state.initialized && !busy,
                     canNavigatePhotos = uris.size > 1,
-                    onSelect = choosePhotos,
+                    onSelect = { showMediaBrowser = true },
                     onSettings = { showSettings = true },
                     onPreviousPhoto = { session.request(FramePlaybackCommand.PREVIOUS) },
                     onNextPhoto = { session.request(FramePlaybackCommand.NEXT) },
@@ -238,12 +239,21 @@ fun PhotoFrameScreen(navController: NavHostController, viewModel: PhotoFrameView
             }
         }
     }
-    if (showSettings) {
+    if (showMediaBrowser) {
+        MediaStorePhotoBrowser(
+            onDismiss = { showMediaBrowser = false },
+            onPhotosSelected = { uris ->
+                showMediaBrowser = false
+                viewModel.addPhotos(uris)
+            },
+        )
+    } else if (showSettings) {
         PhotoFrameSettingsPanel(
             state = state,
             busy = busy,
             error = actionError ?: state.error,
             onDismiss = { showSettings = false; viewModel.dismissError() },
+            onBrowsePhotos = { showMediaBrowser = true },
             onPickPhotos = choosePhotos,
             onPickFolder = { source ->
                 replacingFolder = source?.uri

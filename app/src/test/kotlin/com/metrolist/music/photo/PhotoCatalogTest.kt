@@ -120,6 +120,7 @@ class PhotoCatalogTest {
         catalog.markUnreadable(photos.single().uri)
         assertEquals(photos, catalog.state.value.photos)
         assertTrue(catalog.state.value.sources.single().unavailable)
+        assertFalse(catalog.state.value.sources.single().needsPermission)
 
         catalog.removeSource(folder.toString())
         assertTrue(catalog.state.value.photos.isEmpty())

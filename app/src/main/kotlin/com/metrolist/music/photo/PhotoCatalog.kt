@@ -137,10 +137,21 @@ class PhotoCatalog internal constructor(
             val members = if (source.type == FrameSelectionType.PICKED_PHOTO) listOf(source.uri)
                 else folderPhotos.filter { it.sourceUri == source.uri }.map { it.uri }
             if (uri !in members) return@map source
-            val needsPermission = !documents.hasPersistedRead(source.uri.toUri())
+            val sourceUri = source.uri.toUri()
+            val needsPermission = if (source.type == FrameSelectionType.FOLDER) {
+                !documents.hasPersistedRead(sourceUri)
+            } else {
+                try {
+                    documents.picked(sourceUri)
+                    false
+                } catch (error: Exception) {
+                    rethrowCancellation(error)
+                    error is SecurityException
+                }
+            }
             val rootUnavailable = if (source.type == FrameSelectionType.FOLDER && !needsPermission) {
                 try {
-                    withTimeoutOrNull(3_000) { documents.folder(source.uri.toUri()) } == null
+                    withTimeoutOrNull(3_000) { documents.folder(sourceUri) } == null
                 } catch (error: Exception) {
                     rethrowCancellation(error)
                     true

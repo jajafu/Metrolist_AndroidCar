@@ -4,6 +4,18 @@
 
 This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.67
+
+### 中文
+
+- 數位相框新增按需載入的 MediaStore 照片瀏覽器，可分開檢視系統已建立索引的內部儲存與 USB／SD 儲存卷，分頁載入縮圖並一次勾選多張照片；原始照片不會複製到 App。
+- 照片權限只在開啟裝置瀏覽器時申請，未使用相框時不掃描儲存空間；縮圖不寫入共用快取，並保留原有系統檔案選擇器與資料夾選擇器作為相容備援。
+
+### English
+
+- Add an on-demand MediaStore browser to Photo frame. Browse indexed internal and USB/SD volumes separately, load thumbnails in pages, and select multiple photos without copying originals into the app.
+- Request photo access only when the device browser is opened and never scan storage at app startup. Browser thumbnails bypass shared caches, while the existing system file and folder pickers remain available as compatibility fallbacks.
+
 ## 13.6.66
 
 ### 中文

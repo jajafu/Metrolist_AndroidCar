@@ -51,6 +51,7 @@ internal fun PhotoFrameSettingsPanel(
     busy: Boolean,
     error: FrameError?,
     onDismiss: () -> Unit,
+    onBrowsePhotos: () -> Unit,
     onPickPhotos: () -> Unit,
     onPickFolder: (FrameSource?) -> Unit,
     onRescan: () -> Unit,
@@ -74,9 +75,15 @@ internal fun PhotoFrameSettingsPanel(
                 Text(stringResource(R.string.photo_frame_local_only), style = MaterialTheme.typography.bodyMedium)
             }
             item {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = onPickPhotos, enabled = enabled) {
-                        Text(stringResource(R.string.photo_frame_pick_photos))
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Button(onClick = onBrowsePhotos, enabled = enabled) {
+                        Text(stringResource(R.string.photo_browser_browse_device))
+                    }
+                    OutlinedButton(onClick = onPickPhotos, enabled = enabled) {
+                        Text(stringResource(R.string.photo_browser_system_picker))
                     }
                     OutlinedButton(onClick = { onPickFolder(null) }, enabled = enabled) {
                         Text(stringResource(R.string.photo_frame_pick_folder))
