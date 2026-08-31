@@ -47,11 +47,13 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -79,6 +81,7 @@ import coil3.request.ImageRequest
 import coil3.size.Precision
 import coil3.size.Scale
 import com.metrolist.music.R
+import com.metrolist.music.photo.MediaStoreAlbum
 import com.metrolist.music.photo.MediaStorePhoto
 import com.metrolist.music.photo.MediaStorePhotoSource
 import com.metrolist.music.photo.MediaStoreVolume
@@ -86,7 +89,9 @@ import com.metrolist.music.photo.MediaStoreVolumeKind
 import com.metrolist.music.photo.hasMediaStorePhotoAccess
 import com.metrolist.music.photo.mergeMediaStorePhotos
 import com.metrolist.music.photo.requiredMediaStorePhotoPermissions
+import com.metrolist.music.photo.updateMediaStoreFolderSelection
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
 
 private const val MediaStorePageSize = 80
 
@@ -97,12 +102,22 @@ internal fun MediaStorePhotoBrowser(
 ) {
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val scope = rememberCoroutineScope()
     val source = remember(context) { MediaStorePhotoSource(context.applicationContext) }
     val selected = remember { mutableStateListOf<String>() }
+    val selectedLookup by remember { derivedStateOf { selected.toHashSet() } }
     var permissionRevision by remember { mutableIntStateOf(0) }
     val hasAccess = remember(permissionRevision) { hasMediaStorePhotoAccess(context) }
     var volumes by remember { mutableStateOf(emptyList<MediaStoreVolume>()) }
     var selectedVolume by remember { mutableStateOf<MediaStoreVolume?>(null) }
+    var albums by remember { mutableStateOf(emptyList<MediaStoreAlbum>()) }
+    var selectedAlbum by remember { mutableStateOf<MediaStoreAlbum?>(null) }
+    val fullySelectedAlbums = remember { mutableStateListOf<String>() }
+    var albumsLoading by remember { mutableStateOf(false) }
+    var albumsError by remember { mutableStateOf(false) }
+    var albumRevision by remember { mutableIntStateOf(0) }
+    var bulkSelecting by remember { mutableStateOf(false) }
+    var bulkSelectionError by remember { mutableStateOf(false) }
     var photos by remember { mutableStateOf(emptyList<MediaStorePhoto>()) }
     var nextOffset by remember { mutableIntStateOf(0) }
     var hasMore by remember { mutableStateOf(false) }
@@ -128,6 +143,8 @@ internal fun MediaStorePhotoBrowser(
         if (!hasAccess) {
             volumes = emptyList()
             selectedVolume = null
+            albums = emptyList()
+            selectedAlbum = null
             photos = emptyList()
             return@LaunchedEffect
         }
@@ -138,6 +155,7 @@ internal fun MediaStorePhotoBrowser(
             selectedVolume = retained ?: available.firstOrNull()
             requestedOffset = 0
             requestRevision++
+            albumRevision++
             loadError = false
         } catch (error: Exception) {
             if (error is CancellationException) throw error
@@ -147,13 +165,31 @@ internal fun MediaStorePhotoBrowser(
         }
     }
 
-    LaunchedEffect(selectedVolume, requestRevision) {
+    LaunchedEffect(selectedVolume, albumRevision) {
+        val volume = selectedVolume ?: return@LaunchedEffect
+        albumsLoading = true
+        albumsError = false
+        try {
+            val available = source.loadAlbums(volume)
+            albums = available
+            selectedAlbum = selectedAlbum?.let { selected -> available.firstOrNull { it.id == selected.id } }
+        } catch (error: Exception) {
+            if (error is CancellationException) throw error
+            albums = emptyList()
+            selectedAlbum = null
+            albumsError = true
+        } finally {
+            albumsLoading = false
+        }
+    }
+
+    LaunchedEffect(selectedVolume, selectedAlbum?.id, requestRevision) {
         val volume = selectedVolume ?: return@LaunchedEffect
         val offset = requestedOffset
         loading = true
         loadError = false
         try {
-            val page = source.loadPage(volume, offset, MediaStorePageSize)
+            val page = source.loadPage(volume, offset, MediaStorePageSize, selectedAlbum?.id)
             photos = if (offset == 0) page.photos else mergeMediaStorePhotos(photos, page.photos)
             nextOffset = page.nextOffset
             hasMore = page.hasMore
@@ -195,9 +231,13 @@ internal fun MediaStorePhotoBrowser(
                                     onClick = {
                                         if (volume.name != selectedVolume?.name) {
                                             selectedVolume = volume
+                                            selectedAlbum = null
+                                            albums = emptyList()
                                             photos = emptyList()
                                             requestedOffset = 0
+                                            albumRevision++
                                             requestRevision++
+                                            bulkSelectionError = false
                                         }
                                     },
                                     label = { Text(mediaStoreVolumeLabel(volume)) },
@@ -206,9 +246,59 @@ internal fun MediaStorePhotoBrowser(
                             }
                         }
                     }
+                    MediaStoreAlbumControls(
+                        albums = albums,
+                        selectedAlbum = selectedAlbum,
+                        loading = albumsLoading,
+                        loadError = albumsError,
+                        bulkSelecting = bulkSelecting,
+                        bulkSelectionError = bulkSelectionError,
+                        fullySelected = selectedAlbum?.let { album -> albumKey(selectedVolume, album) in fullySelectedAlbums } == true,
+                        onSelectAlbum = { album ->
+                            if (album?.id != selectedAlbum?.id) {
+                                selectedAlbum = album
+                                photos = emptyList()
+                                requestedOffset = 0
+                                requestRevision++
+                                bulkSelectionError = false
+                            }
+                        },
+                        onRetry = { albumRevision++ },
+                        onToggleFolder = {
+                            val volume = selectedVolume ?: return@MediaStoreAlbumControls
+                            val album = selectedAlbum ?: return@MediaStoreAlbumControls
+                            val key = albumKey(volume, album)
+                            scope.launch {
+                                bulkSelecting = true
+                                bulkSelectionError = false
+                                try {
+                                    val folderUris = source.loadAlbumPhotos(volume, album.id).map(MediaStorePhoto::uri)
+                                    if (folderUris.isEmpty()) {
+                                        bulkSelectionError = true
+                                        return@launch
+                                    }
+                                    val shouldSelect = key !in fullySelectedAlbums
+                                    val updated = updateMediaStoreFolderSelection(selected, folderUris, shouldSelect)
+                                    selected.clear()
+                                    selected.addAll(updated)
+                                    if (shouldSelect) {
+                                        if (key !in fullySelectedAlbums) fullySelectedAlbums.add(key)
+                                    } else {
+                                        fullySelectedAlbums.remove(key)
+                                    }
+                                } catch (error: Exception) {
+                                    if (error is CancellationException) throw error
+                                    bulkSelectionError = true
+                                } finally {
+                                    bulkSelecting = false
+                                }
+                            }
+                        },
+                    )
                     MediaStorePhotoGrid(
                         photos = photos,
                         selected = selected,
+                        selectedLookup = selectedLookup,
                         loading = loading,
                         loadError = loadError,
                         hasMore = hasMore,
@@ -217,6 +307,7 @@ internal fun MediaStorePhotoBrowser(
                             requestedOffset = nextOffset
                             requestRevision++
                         },
+                        onPhotoDeselected = { fullySelectedAlbums.clear() },
                     )
                 }
             }
@@ -296,14 +387,123 @@ private fun MediaStorePermissionContent(onRequest: () -> Unit, onSettings: () ->
 }
 
 @Composable
+private fun MediaStoreAlbumControls(
+    albums: List<MediaStoreAlbum>,
+    selectedAlbum: MediaStoreAlbum?,
+    loading: Boolean,
+    loadError: Boolean,
+    bulkSelecting: Boolean,
+    bulkSelectionError: Boolean,
+    fullySelected: Boolean,
+    onSelectAlbum: (MediaStoreAlbum?) -> Unit,
+    onRetry: () -> Unit,
+    onToggleFolder: () -> Unit,
+) {
+    when {
+        loading && albums.isEmpty() -> Row(
+            Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            CircularProgressIndicator(Modifier.size(24.dp))
+            Text(stringResource(R.string.photo_browser_folders_loading))
+        }
+        loadError && albums.isEmpty() -> Row(
+            Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(horizontal = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                stringResource(R.string.photo_browser_folder_error),
+                Modifier.weight(1f),
+                color = MaterialTheme.colorScheme.error,
+            )
+            TextButton(onClick = onRetry, modifier = Modifier.heightIn(min = 48.dp)) {
+                Text(stringResource(R.string.retry))
+            }
+        }
+        albums.isNotEmpty() -> LazyRow(
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            item(key = "all-folders") {
+                FilterChip(
+                    selected = selectedAlbum == null,
+                    onClick = { onSelectAlbum(null) },
+                    label = { Text(stringResource(R.string.photo_browser_all_folders)) },
+                    modifier = Modifier.heightIn(min = 48.dp),
+                )
+            }
+            rowItems(albums, key = MediaStoreAlbum::id) { album ->
+                val name = album.name.ifBlank { stringResource(R.string.photo_browser_other_folder) }
+                val count = pluralStringResource(R.plurals.photo_browser_folder_photos, album.photoCount, album.photoCount)
+                FilterChip(
+                    selected = album.id == selectedAlbum?.id,
+                    onClick = { onSelectAlbum(album) },
+                    label = { Text("$name · $count", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    modifier = Modifier.heightIn(min = 48.dp),
+                )
+            }
+        }
+    }
+
+    selectedAlbum?.let { album ->
+        FlowRow(
+            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            val folderName = album.name.ifBlank { stringResource(R.string.photo_browser_other_folder) }
+            Text(
+                folderName,
+                Modifier.widthIn(min = 120.dp, max = 320.dp).padding(vertical = 12.dp),
+                style = MaterialTheme.typography.titleSmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            OutlinedButton(
+                onClick = onToggleFolder,
+                enabled = !bulkSelecting,
+                modifier = Modifier.heightIn(min = 48.dp),
+            ) {
+                if (bulkSelecting) {
+                    CircularProgressIndicator(Modifier.size(20.dp))
+                    Spacer(Modifier.size(8.dp))
+                }
+                Text(
+                    stringResource(
+                        when {
+                            bulkSelecting -> R.string.photo_browser_selecting_folder
+                            fullySelected -> R.string.photo_browser_deselect_folder
+                            else -> R.string.photo_browser_select_folder
+                        },
+                        album.photoCount,
+                    ),
+                )
+            }
+        }
+        if (bulkSelectionError) {
+            Text(
+                stringResource(R.string.photo_browser_folder_error),
+                Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+    }
+}
+
+@Composable
 private fun MediaStorePhotoGrid(
     photos: List<MediaStorePhoto>,
     selected: MutableList<String>,
+    selectedLookup: Set<String>,
     loading: Boolean,
     loadError: Boolean,
     hasMore: Boolean,
     onRetry: () -> Unit,
     onLoadMore: () -> Unit,
+    onPhotoDeselected: () -> Unit,
 ) {
     when {
         photos.isEmpty() && loading -> BrowserCenteredMessage {
@@ -330,9 +530,14 @@ private fun MediaStorePhotoGrid(
             gridItems(photos, key = MediaStorePhoto::uri) { photo ->
                 MediaStorePhotoTile(
                     photo = photo,
-                    selected = photo.uri in selected,
+                    selected = photo.uri in selectedLookup,
                     onToggle = {
-                        if (photo.uri in selected) selected.remove(photo.uri) else selected.add(photo.uri)
+                        if (photo.uri in selectedLookup) {
+                            selected.remove(photo.uri)
+                            onPhotoDeselected()
+                        } else {
+                            selected.add(photo.uri)
+                        }
                     },
                 )
             }
@@ -416,3 +621,5 @@ private fun mediaStoreVolumeLabel(volume: MediaStoreVolume): String = when (volu
     MediaStoreVolumeKind.REMOVABLE -> stringResource(R.string.photo_browser_external_storage, volume.name.take(8))
     MediaStoreVolumeKind.LEGACY -> stringResource(R.string.photo_browser_device_storage)
 }
+
+private fun albumKey(volume: MediaStoreVolume?, album: MediaStoreAlbum): String = "${volume?.name}:${album.id}"

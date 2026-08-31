@@ -4,6 +4,16 @@
 
 This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.68
+
+### 中文
+
+- Browse device 新增 MediaStore 目錄篩選，可一次選取或取消目前目錄內的所有照片；目錄只讀取系統索引與照片 URI，不複製圖片或建立額外縮圖快取。
+
+### English
+
+- Add MediaStore folder filtering to Browse device, with one-tap selection or deselection of every photo in the current folder. Folder discovery reads only the system index and photo URIs without copying images or creating extra thumbnail caches.
+
 ## 13.6.67
 
 ### 中文

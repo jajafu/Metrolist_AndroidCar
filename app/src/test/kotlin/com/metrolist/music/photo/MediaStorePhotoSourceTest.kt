@@ -60,4 +60,31 @@ class MediaStorePhotoSourceTest {
 
         assertEquals(listOf(first, second), mergeMediaStorePhotos(listOf(first), listOf(first, second)))
     }
+
+    @Test
+    fun `album summaries preserve folder order and count every member`() {
+        val entries = listOf(
+            MediaStoreAlbumEntry("camera", "Camera"),
+            MediaStoreAlbumEntry("camera", "Camera"),
+            MediaStoreAlbumEntry("screenshots", "Screenshots"),
+        )
+
+        assertEquals(
+            listOf(
+                MediaStoreAlbum("camera", "Camera", 2),
+                MediaStoreAlbum("screenshots", "Screenshots", 1),
+            ),
+            summarizeMediaStoreAlbums(entries.asSequence()),
+        )
+    }
+
+    @Test
+    fun `folder selection appends uniquely and can be removed together`() {
+        val original = listOf("content://media/1", "content://media/2")
+        val folder = listOf("content://media/2", "content://media/3")
+        val selected = updateMediaStoreFolderSelection(original, folder, select = true)
+
+        assertEquals(listOf("content://media/1", "content://media/2", "content://media/3"), selected)
+        assertEquals(listOf("content://media/1"), updateMediaStoreFolderSelection(selected, folder, select = false))
+    }
 }

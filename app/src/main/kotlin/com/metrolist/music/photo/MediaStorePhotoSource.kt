@@ -30,6 +30,17 @@ internal data class MediaStorePhoto(
     val name: String,
 )
 
+internal data class MediaStoreAlbum(
+    val id: String,
+    val name: String,
+    val photoCount: Int,
+)
+
+internal data class MediaStoreAlbumEntry(
+    val albumId: String,
+    val albumName: String,
+)
+
 internal data class MediaStorePhotoPage(
     val photos: List<MediaStorePhoto>,
     val nextOffset: Int,
@@ -57,19 +68,62 @@ internal class MediaStorePhotoSource(private val context: Context) {
         }
     }
 
-    suspend fun loadPage(volume: MediaStoreVolume, offset: Int, limit: Int): MediaStorePhotoPage = withContext(Dispatchers.IO) {
+    suspend fun loadAlbums(volume: MediaStoreVolume): List<MediaStoreAlbum> = withContext(Dispatchers.IO) {
+        val collection = collection(volume)
+        val projection = arrayOf(
+            MediaStore.Images.Media.BUCKET_ID,
+            MediaStore.Images.Media.BUCKET_DISPLAY_NAME,
+        )
+        val signal = CancellationSignal()
+        val cancellation = currentCoroutineContext().job.invokeOnCompletion { signal.cancel() }
+        try {
+            val cursor = requireNotNull(
+                resolver.query(
+                    collection,
+                    projection,
+                    null,
+                    null,
+                    "${MediaStore.Images.Media.DATE_ADDED} DESC, ${MediaStore.Images.Media._ID} DESC",
+                    signal,
+                ),
+            )
+            cursor.use {
+                val albumIdColumn = it.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_ID)
+                val albumNameColumn = it.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME)
+                summarizeMediaStoreAlbums(
+                    sequence {
+                        while (it.moveToNext()) {
+                            signal.throwIfCanceled()
+                            val albumId = it.getString(albumIdColumn)?.takeIf(String::isNotBlank) ?: continue
+                            yield(
+                                MediaStoreAlbumEntry(
+                                    albumId = albumId,
+                                    albumName = it.getString(albumNameColumn).orEmpty(),
+                                ),
+                            )
+                        }
+                    },
+                )
+            }
+        } finally {
+            cancellation.dispose()
+        }
+    }
+
+    suspend fun loadPage(
+        volume: MediaStoreVolume,
+        offset: Int,
+        limit: Int,
+        albumId: String? = null,
+    ): MediaStorePhotoPage = withContext(Dispatchers.IO) {
         require(offset >= 0)
         require(limit > 0)
-        val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            MediaStore.Images.Media.getContentUri(volume.name)
-        } else {
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-        }
+        val collection = collection(volume)
         val projection = arrayOf(MediaStore.Images.Media._ID, MediaStore.Images.Media.DISPLAY_NAME)
         val signal = CancellationSignal()
         val cancellation = currentCoroutineContext().job.invokeOnCompletion { signal.cancel() }
         try {
-            val result = queryPage(collection, projection, offset, limit + 1, signal)
+            val result = queryPage(collection, projection, albumId, offset, limit + 1, signal)
             result.cursor.use { cursor ->
                 val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
                 val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)
@@ -95,9 +149,53 @@ internal class MediaStorePhotoSource(private val context: Context) {
         }
     }
 
+    suspend fun loadAlbumPhotos(volume: MediaStoreVolume, albumId: String): List<MediaStorePhoto> = withContext(Dispatchers.IO) {
+        val collection = collection(volume)
+        val projection = arrayOf(MediaStore.Images.Media._ID, MediaStore.Images.Media.DISPLAY_NAME)
+        val signal = CancellationSignal()
+        val cancellation = currentCoroutineContext().job.invokeOnCompletion { signal.cancel() }
+        try {
+            val cursor = requireNotNull(
+                resolver.query(
+                    collection,
+                    projection,
+                    "${MediaStore.Images.Media.BUCKET_ID} = ?",
+                    arrayOf(albumId),
+                    "${MediaStore.Images.Media.DATE_ADDED} DESC, ${MediaStore.Images.Media._ID} DESC",
+                    signal,
+                ),
+            )
+            cursor.use {
+                val idColumn = it.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+                val nameColumn = it.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)
+                buildList(it.count) {
+                    while (it.moveToNext()) {
+                        signal.throwIfCanceled()
+                        val id = it.getLong(idColumn)
+                        add(
+                            MediaStorePhoto(
+                                uri = ContentUris.withAppendedId(collection, id).toString(),
+                                name = it.getString(nameColumn)?.takeIf(String::isNotBlank) ?: id.toString(),
+                            ),
+                        )
+                    }
+                }
+            }
+        } finally {
+            cancellation.dispose()
+        }
+    }
+
+    private fun collection(volume: MediaStoreVolume): Uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        MediaStore.Images.Media.getContentUri(volume.name)
+    } else {
+        MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+    }
+
     private fun queryPage(
         collection: Uri,
         projection: Array<String>,
+        albumId: String?,
         offset: Int,
         limit: Int,
         signal: CancellationSignal,
@@ -110,6 +208,10 @@ internal class MediaStorePhotoSource(private val context: Context) {
             putInt(ContentResolver.QUERY_ARG_SORT_DIRECTION, ContentResolver.QUERY_SORT_DIRECTION_DESCENDING)
             putInt(ContentResolver.QUERY_ARG_LIMIT, limit)
             putInt(ContentResolver.QUERY_ARG_OFFSET, offset)
+            if (albumId != null) {
+                putString(ContentResolver.QUERY_ARG_SQL_SELECTION, "${MediaStore.Images.Media.BUCKET_ID} = ?")
+                putStringArray(ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS, arrayOf(albumId))
+            }
         }
         return try {
             val cursor = requireNotNull(resolver.query(collection, projection, queryArgs, signal))
@@ -120,8 +222,8 @@ internal class MediaStorePhotoSource(private val context: Context) {
                 resolver.query(
                     collection,
                     projection,
-                    null,
-                    null,
+                    albumId?.let { "${MediaStore.Images.Media.BUCKET_ID} = ?" },
+                    if (albumId != null) arrayOf(albumId) else null,
                     "${MediaStore.Images.Media.DATE_ADDED} DESC, ${MediaStore.Images.Media._ID} DESC",
                     signal,
                 ),
@@ -163,3 +265,29 @@ internal fun mergeMediaStorePhotos(
     current: List<MediaStorePhoto>,
     page: List<MediaStorePhoto>,
 ): List<MediaStorePhoto> = (current + page).distinctBy(MediaStorePhoto::uri)
+
+internal fun summarizeMediaStoreAlbums(entries: Sequence<MediaStoreAlbumEntry>): List<MediaStoreAlbum> {
+    data class MutableAlbum(val id: String, val name: String, var count: Int)
+
+    val albums = linkedMapOf<String, MutableAlbum>()
+    entries.forEach { entry ->
+        val album = albums[entry.albumId]
+        if (album == null) {
+            albums[entry.albumId] = MutableAlbum(entry.albumId, entry.albumName, 1)
+        } else {
+            album.count++
+        }
+    }
+    return albums.values.map { MediaStoreAlbum(it.id, it.name, it.count) }
+}
+
+internal fun updateMediaStoreFolderSelection(
+    current: List<String>,
+    folderUris: List<String>,
+    select: Boolean,
+): List<String> = if (select) {
+    (current + folderUris).distinct()
+} else {
+    val removed = folderUris.toHashSet()
+    current.filterNot(removed::contains)
+}

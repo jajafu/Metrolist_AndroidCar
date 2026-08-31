@@ -1026,6 +1026,17 @@
     <string name="photo_browser_internal_storage">Internal storage</string>
     <string name="photo_browser_external_storage">USB / SD · %1$s</string>
     <string name="photo_browser_device_storage">Device and USB</string>
+    <string name="photo_browser_all_folders">All folders</string>
+    <string name="photo_browser_other_folder">Other folder</string>
+    <string name="photo_browser_folders_loading">Loading folders…</string>
+    <plurals name="photo_browser_folder_photos">
+        <item quantity="one">%1$d photo</item>
+        <item quantity="other">%1$d photos</item>
+    </plurals>
+    <string name="photo_browser_select_folder">Select folder (%1$d)</string>
+    <string name="photo_browser_deselect_folder">Deselect folder (%1$d)</string>
+    <string name="photo_browser_selecting_folder">Selecting folder (%1$d)…</string>
+    <string name="photo_browser_folder_error">This folder could not be read. Reconnect the storage device and try again.</string>
     <string name="photo_browser_loading">Loading photos…</string>
     <string name="photo_browser_empty">No indexed photos were found. Reconnect the USB drive and let the device finish scanning it.</string>
     <string name="photo_browser_load_error">Photos could not be read from this storage source.</string>
