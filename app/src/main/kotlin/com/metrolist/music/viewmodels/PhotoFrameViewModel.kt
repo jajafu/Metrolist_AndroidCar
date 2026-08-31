@@ -30,15 +30,12 @@ class PhotoFrameViewModel @Inject constructor(private val catalog: PhotoCatalog)
         if (!state.value.initialized) runOperation { catalog.initialize() }
     }
 
-    fun preparePhotoAccess(uris: List<Uri>) = catalog.preparePhotoAccess(uris)
     fun addPhotos(uris: List<Uri>) = runOperation { catalog.addPhotos(uris); _generation.value++ }
-    fun addFolder(uri: Uri, replaceUri: String?) = runOperation { catalog.addFolder(uri, replaceUri); _generation.value++ }
     fun rescan() = runOperation { catalog.rescan(); _generation.value++ }
     fun removeSource(uri: String) = runOperation { catalog.removeSource(uri) }
     fun clear() = runOperation { catalog.clear() }
     fun updateSettings(settings: FrameSettings) = runOperation { catalog.updateSettings(settings) }
     fun cancelOperation() { operation?.cancel() }
-    fun reportPickerError() { _error.value = FrameError.PICKER_UNAVAILABLE }
     fun dismissError() {
         _error.value = null
         catalog.clearError()

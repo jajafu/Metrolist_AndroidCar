@@ -18,7 +18,6 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -40,7 +39,6 @@ import com.metrolist.music.photo.FrameCatalogState
 import com.metrolist.music.photo.FrameError
 import com.metrolist.music.photo.FrameSelectionType
 import com.metrolist.music.photo.FrameSettings
-import com.metrolist.music.photo.FrameSource
 import com.metrolist.music.ui.component.Material3SettingsGroup
 import com.metrolist.music.ui.component.Material3SettingsItem
 
@@ -52,8 +50,6 @@ internal fun PhotoFrameSettingsPanel(
     error: FrameError?,
     onDismiss: () -> Unit,
     onBrowsePhotos: () -> Unit,
-    onPickPhotos: () -> Unit,
-    onPickFolder: (FrameSource?) -> Unit,
     onRescan: () -> Unit,
     onRemove: (String) -> Unit,
     onClear: () -> Unit,
@@ -75,19 +71,8 @@ internal fun PhotoFrameSettingsPanel(
                 Text(stringResource(R.string.photo_frame_local_only), style = MaterialTheme.typography.bodyMedium)
             }
             item {
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Button(onClick = onBrowsePhotos, enabled = enabled) {
-                        Text(stringResource(R.string.photo_browser_browse_device))
-                    }
-                    OutlinedButton(onClick = onPickPhotos, enabled = enabled) {
-                        Text(stringResource(R.string.photo_browser_system_picker))
-                    }
-                    OutlinedButton(onClick = { onPickFolder(null) }, enabled = enabled) {
-                        Text(stringResource(R.string.photo_frame_pick_folder))
-                    }
+                Button(onClick = onBrowsePhotos, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.photo_browser_browse_device))
                 }
                 if (state.sources.isEmpty()) Text(stringResource(R.string.photo_frame_empty))
             }
@@ -168,14 +153,6 @@ internal fun PhotoFrameSettingsPanel(
                     },
                     trailingContent = {
                         Row {
-                            if (source.needsPermission || source.unavailable) {
-                                IconButton(
-                                    onClick = { if (source.type == FrameSelectionType.FOLDER) onPickFolder(source) else onPickPhotos() },
-                                    enabled = enabled,
-                                ) {
-                                    Icon(painterResource(R.drawable.refresh), stringResource(R.string.photo_frame_reauthorize))
-                                }
-                            }
                             IconButton(onClick = { onRemove(source.uri) }, enabled = enabled) {
                                 Icon(painterResource(R.drawable.close), stringResource(R.string.photo_frame_remove, source.name))
                             }
@@ -219,5 +196,4 @@ internal fun frameErrorMessage(error: FrameError): Int = when (error) {
     FrameError.UNREADABLE -> R.string.photo_frame_unreadable
     FrameError.INVALID_IMAGE -> R.string.photo_frame_invalid_image
     FrameError.MANIFEST -> R.string.photo_frame_manifest_error
-    FrameError.PICKER_UNAVAILABLE -> R.string.photo_frame_picker_unavailable
 }

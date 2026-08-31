@@ -4,12 +4,16 @@ import android.net.Uri
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.mutablePreferencesOf
+import androidx.datastore.preferences.core.stringPreferencesKey
 import java.io.File
 import java.io.FileNotFoundException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -41,15 +45,6 @@ class PhotoCatalogTest {
     }
 
     @Test
-    fun `picker grants are persisted before asynchronous import starts`() {
-        val catalog = catalog()
-
-        catalog.preparePhotoAccess(listOf(image, image))
-
-        assertTrue(documents.hasPersistedRead(image))
-    }
-
-    @Test
     fun `picked photos append deduplicate and retain transient access until revoked`() = runBlocking {
         documents.persistable = false
         val catalog = catalog()
@@ -67,8 +62,7 @@ class PhotoCatalogTest {
 
     @Test
     fun `revoked folder grant retains source choice and avoids scan`() = runBlocking {
-        val catalog = catalog()
-        catalog.addFolder(folder)
+        val catalog = catalogWithLegacyFolder()
         documents.granted.clear()
         documents.scanCalls = 0
 
@@ -82,8 +76,7 @@ class PhotoCatalogTest {
 
     @Test
     fun `failed rescan preserves last complete manifest and can recover`() = runBlocking {
-        val catalog = catalog()
-        catalog.addFolder(folder)
+        val catalog = catalogWithLegacyFolder()
         val previous = manifest().read().manifest
         documents.scanError = FileNotFoundException("USB removed")
         catalog.rescan()
@@ -99,8 +92,7 @@ class PhotoCatalogTest {
 
     @Test
     fun `cancelled rescan keeps prior index and always clears scanning state`() = runBlocking {
-        val catalog = catalog()
-        catalog.addFolder(folder)
+        val catalog = catalogWithLegacyFolder()
         val previous = manifest().read().manifest
         documents.scanError = CancellationException("cancelled")
         try {
@@ -114,8 +106,7 @@ class PhotoCatalogTest {
 
     @Test
     fun `failed image preserves playback snapshot and source removal does not revoke grants`() = runBlocking {
-        val catalog = catalog()
-        catalog.addFolder(folder)
+        val catalog = catalogWithLegacyFolder()
         val photos = catalog.state.value.photos
         catalog.markUnreadable(photos.single().uri)
         assertEquals(photos, catalog.state.value.photos)
@@ -131,8 +122,7 @@ class PhotoCatalogTest {
     @Test
     fun `single corrupt image does not disable folder but unplugged root does`() = runBlocking {
         documents.childCount = 3
-        val catalog = catalog()
-        catalog.addFolder(folder)
+        val catalog = catalogWithLegacyFolder()
         val photos = catalog.state.value.photos
         catalog.markUnreadable(photos[0].uri)
         assertFalse(catalog.state.value.sources.single().unavailable)
@@ -151,6 +141,21 @@ class PhotoCatalogTest {
 
     private fun manifest() = PhotoFrameManifest(File(temporary.root, "index.json"))
     private fun catalog() = PhotoCatalog({ preferences }, { documents }, ::manifest)
+
+    private suspend fun catalogWithLegacyFolder(): PhotoCatalog {
+        documents.granted.add(folder)
+        preferences.updateData {
+            mutablePreferencesOf(
+                stringPreferencesKey("photo_frame_sources_v1") to Json.encodeToString(
+                    listOf(FrameSource(folder.toString(), "folder", FrameSelectionType.FOLDER)),
+                ),
+            )
+        }
+        return catalog().also {
+            it.initialize()
+            it.rescan()
+        }
+    }
 
     private class MemoryPreferences : DataStore<Preferences> {
         private val state = MutableStateFlow(emptyPreferences())

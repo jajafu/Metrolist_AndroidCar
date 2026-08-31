@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="local_history">Local</string>
     <string name="remote_history">Remote</string>
 
@@ -1010,7 +1010,6 @@
     <string name="photo_frame_local_only">Choose photos on this device or a connected USB drive. Use only while parked.</string>
     <string name="photo_frame_pick_photos">Choose photos</string>
     <string name="photo_browser_browse_device">Browse device</string>
-    <string name="photo_browser_system_picker">System picker</string>
     <string name="photo_browser_title">Device photos</string>
     <string name="photo_browser_close">Close device photos</string>
     <plurals name="photo_browser_selected">
@@ -1042,7 +1041,8 @@
     <string name="photo_browser_load_error">Photos could not be read from this storage source.</string>
     <string name="photo_browser_load_more">Load more</string>
     <string name="photo_browser_photo_description">Select photo %1$s</string>
-    <string name="photo_frame_pick_folder">Choose folder</string>
+    <!-- Retained while translated resource sets still contain the removed legacy picker copy. -->
+    <string name="photo_frame_pick_folder" tools:ignore="UnusedResources">Choose folder</string>
     <string name="photo_frame_empty">No photos selected. Add photos or a folder to start the slideshow.</string>
     <string name="photo_frame_scanning">Preparing photos: %1$d found</string>
     <string name="photo_frame_display">Display</string>
@@ -1063,12 +1063,12 @@
     <string name="photo_frame_not_scanned">Not scanned yet. Tap Rescan sources.</string>
     <string name="photo_frame_no_images">No images found in this folder.</string>
     <string name="photo_frame_failed_photos">%1$d of %2$d photos could not be read</string>
-    <string name="photo_frame_reauthorize">Select again to restore access</string>
+    <string name="photo_frame_reauthorize" tools:ignore="UnusedResources">Select again to restore access</string>
     <string name="photo_frame_remove">Remove %1$s from the frame</string>
     <string name="photo_frame_storage_error">Could not save your changes. Check available storage and try again.</string>
     <string name="photo_frame_invalid_image">This selection is not a supported image.</string>
     <string name="photo_frame_manifest_error">The photo index could not be loaded. Your source selections are preserved; rescan to rebuild the index.</string>
-    <string name="photo_frame_picker_unavailable">This device does not provide a compatible file picker. Use its Files app to expose photos or USB storage to other apps.</string>
+    <string name="photo_frame_picker_unavailable" tools:ignore="UnusedResources">This device does not provide a compatible file picker. Use its Files app to expose photos or USB storage to other apps.</string>
     <string name="photo_frame_previous">Previous song</string>
     <string name="photo_frame_next">Next song</string>
     <string name="photo_frame_play">Play</string>

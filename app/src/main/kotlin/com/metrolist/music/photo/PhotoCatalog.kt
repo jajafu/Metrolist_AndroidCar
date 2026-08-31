@@ -54,11 +54,6 @@ class PhotoCatalog internal constructor(
     private var scannedFolders = emptySet<String>()
     private val failedPhotos = hashSetOf<String>()
 
-    /** Persist picker grants while the activity result callback still owns the temporary grant. */
-    fun preparePhotoAccess(uris: List<Uri>) {
-        uris.distinct().forEach { documents.persistRead(it) }
-    }
-
     suspend fun initialize() = operation(initializeFirst = false) {
         if (!state.value.initialized) initializeLocked()
     }
@@ -78,31 +73,6 @@ class PhotoCatalog internal constructor(
             }
         }
         saveSources(sources.values.toList())
-    }
-
-    suspend fun addFolder(uri: Uri, replaceUri: String? = null) = operation {
-        if (!documents.persistRead(uri) && !documents.hasPersistedRead(uri)) {
-            setError(FrameError.PERMISSION)
-            return@operation
-        }
-        val folder = try {
-            documents.folder(uri)
-        } catch (error: Exception) {
-            rethrowCancellation(error)
-            setError(sourceError(error))
-            return@operation
-        }
-        val previous = state.value.sources.firstOrNull { it.uri == uri.toString() }
-        val source = FrameSource(
-            uri = uri.toString(),
-            name = folder.name,
-            type = FrameSelectionType.FOLDER,
-            photoCount = previous?.photoCount ?: 0,
-            scanned = uri.toString() in scannedFolders,
-        )
-        saveSources(state.value.sources.filterNot { it.uri == uri.toString() || it.uri == replaceUri } + source)
-        if (replaceUri != null && replaceUri != uri.toString()) pruneIndex()
-        scanSources(listOf(source))
     }
 
     suspend fun rescan() = operation {

@@ -5,8 +5,6 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.text.format.DateFormat
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
@@ -94,38 +92,6 @@ fun PhotoFrameScreen(navController: NavHostController, viewModel: PhotoFrameView
     var showSettings by rememberSaveable { mutableStateOf(false) }
     var showMediaBrowser by rememberSaveable { mutableStateOf(false) }
     var showControls by rememberSaveable { mutableStateOf(true) }
-    var replacingFolder by rememberSaveable { mutableStateOf<String?>(null) }
-
-    val openPhotos = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
-        if (uris.isNotEmpty()) {
-            viewModel.preparePhotoAccess(uris)
-            viewModel.addPhotos(uris)
-        }
-    }
-    val getPhotos = rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
-        if (uris.isNotEmpty()) {
-            viewModel.preparePhotoAccess(uris)
-            viewModel.addPhotos(uris)
-        }
-    }
-    val pickFolder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
-        if (uri != null) {
-            viewModel.preparePhotoAccess(listOf(uri))
-            viewModel.addFolder(uri, replacingFolder)
-        }
-        replacingFolder = null
-    }
-    val choosePhotos: () -> Unit = {
-        try {
-            openPhotos.launch(arrayOf("image/*"))
-        } catch (_: Exception) {
-            try {
-                getPhotos.launch("image/*")
-            } catch (_: Exception) {
-                viewModel.reportPickerError()
-            }
-        }
-    }
     val exit: () -> Unit = {
         if (!navController.popBackStack()) navController.navigate(Screens.Home.route) { launchSingleTop = true }
     }
@@ -254,16 +220,6 @@ fun PhotoFrameScreen(navController: NavHostController, viewModel: PhotoFrameView
             error = actionError ?: state.error,
             onDismiss = { showSettings = false; viewModel.dismissError() },
             onBrowsePhotos = { showMediaBrowser = true },
-            onPickPhotos = choosePhotos,
-            onPickFolder = { source ->
-                replacingFolder = source?.uri
-                try {
-                    pickFolder.launch(source?.uri?.toUri())
-                } catch (_: Exception) {
-                    replacingFolder = null
-                    viewModel.reportPickerError()
-                }
-            },
             onRescan = viewModel::rescan,
             onRemove = viewModel::removeSource,
             onClear = viewModel::clear,

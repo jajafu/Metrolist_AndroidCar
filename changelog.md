@@ -4,6 +4,18 @@
 
 This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.69
+
+### 中文
+
+- 移除在部分車機上無法正常工作的系統檔案選擇器、SAF 資料夾選擇器及重新授權入口；數位相框統一透過 Browse device 選取 MediaStore 已索引的照片或整個目錄。
+- 保留舊版本已保存照片與資料夾來源的讀取、重新掃描及移除相容性，不會複製原始照片。
+
+### English
+
+- Remove the system file picker, SAF folder picker, and reauthorization actions that fail on some head units. Photo frame now uses Browse device exclusively to select MediaStore-indexed photos or entire folders.
+- Preserve reading, rescanning, and removal compatibility for photo and folder sources saved by earlier versions without copying original photos.
+
 ## 13.6.68
 
 ### 中文
