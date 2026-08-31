@@ -24,6 +24,7 @@ class PhotoFrameViewModel @Inject constructor(private val catalog: PhotoCatalog)
     private val _generation = MutableStateFlow(0)
     val generation = _generation.asStateFlow()
     private var operation: Job? = null
+    private var settingsOperation: Job? = null
     private var operationId = 0L
 
     fun initialize() {
@@ -34,7 +35,18 @@ class PhotoFrameViewModel @Inject constructor(private val catalog: PhotoCatalog)
     fun rescan() = runOperation { catalog.rescan(); _generation.value++ }
     fun removeSource(uri: String) = runOperation { catalog.removeSource(uri) }
     fun clear() = runOperation { catalog.clear() }
-    fun updateSettings(settings: FrameSettings) = runOperation { catalog.updateSettings(settings) }
+    fun updateSettings(settings: FrameSettings) {
+        settingsOperation?.cancel()
+        settingsOperation = viewModelScope.launch {
+            try {
+                catalog.updateSettings(settings)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                _error.value = FrameError.STORAGE
+            }
+        }
+    }
     fun cancelOperation() { operation?.cancel() }
     fun dismissError() {
         _error.value = null

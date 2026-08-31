@@ -4,6 +4,18 @@
 
 This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.70
+
+### 中文
+
+- 補齊 Browse device 照片瀏覽器的繁體中文介面，包含權限、儲存空間、資料夾選取、載入狀態與錯誤提示。
+- 將輪播間隔改為 5／10／15／30／60 秒離散橫式拉桿；拖動時即時顯示秒數，放開後才儲存，且儲存時不再閃爍整個設定面板。
+
+### English
+
+- Complete the Traditional Chinese interface for the Browse device photo browser, including permissions, storage, folder selection, loading states, and errors.
+- Replace the slideshow interval tap cycle with a discrete horizontal slider for 5/10/15/30/60 seconds. It previews the value while dragging, saves on release, and no longer flashes the settings panel while persisting.
+
 ## 13.6.69
 
 ### 中文

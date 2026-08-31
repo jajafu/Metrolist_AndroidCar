@@ -18,12 +18,14 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -32,6 +34,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.metrolist.music.R
@@ -41,6 +44,7 @@ import com.metrolist.music.photo.FrameSelectionType
 import com.metrolist.music.photo.FrameSettings
 import com.metrolist.music.ui.component.Material3SettingsGroup
 import com.metrolist.music.ui.component.Material3SettingsItem
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -91,14 +95,15 @@ internal fun PhotoFrameSettingsPanel(
                     title = stringResource(R.string.photo_frame_display),
                     items = listOf(
                         Material3SettingsItem(
-                            title = { Text(stringResource(R.string.photo_frame_interval)) },
-                            trailingContent = { Text(stringResource(R.string.photo_frame_seconds, state.settings.intervalSeconds)) },
-                            enabled = enabled,
-                            onClick = {
-                                val intervals = listOf(5, 10, 15, 30, 60)
-                                val next = (intervals.indexOf(state.settings.intervalSeconds) + 1) % intervals.size
-                                onSettings(state.settings.copy(intervalSeconds = intervals[next]))
+                            title = {
+                                FrameIntervalSlider(
+                                    intervalSeconds = state.settings.intervalSeconds,
+                                    enabled = enabled,
+                                ) { intervalSeconds ->
+                                    onSettings(state.settings.copy(intervalSeconds = intervalSeconds))
+                                }
                             },
+                            enabled = enabled,
                         ),
                         Material3SettingsItem(
                             title = { Text(stringResource(R.string.photo_frame_fill)) },
@@ -185,10 +190,47 @@ internal fun PhotoFrameSettingsPanel(
 }
 
 @Composable
+private fun FrameIntervalSlider(
+    intervalSeconds: Int,
+    enabled: Boolean,
+    onIntervalChange: (Int) -> Unit,
+) {
+    val initialIndex = FrameIntervals.indexOf(intervalSeconds).coerceAtLeast(0)
+    var sliderPosition by rememberSaveable(intervalSeconds) { mutableFloatStateOf(initialIndex.toFloat()) }
+    val selectedIndex = sliderPosition.roundToInt().coerceIn(FrameIntervals.indices)
+    val selectedInterval = FrameIntervals[selectedIndex]
+    val label = stringResource(R.string.photo_frame_interval)
+    val valueLabel = stringResource(R.string.photo_frame_seconds, selectedInterval)
+
+    Column(Modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(label)
+            Text(valueLabel, style = MaterialTheme.typography.bodyMedium)
+        }
+        Slider(
+            value = sliderPosition,
+            onValueChange = { sliderPosition = it },
+            onValueChangeFinished = {
+                if (selectedInterval != intervalSeconds) onIntervalChange(selectedInterval)
+            },
+            valueRange = 0f..FrameIntervals.lastIndex.toFloat(),
+            steps = FrameIntervals.size - 2,
+            enabled = enabled,
+            modifier = Modifier.fillMaxWidth().semantics {
+                contentDescription = label
+                stateDescription = valueLabel
+            },
+        )
+    }
+}
+
+@Composable
 private fun FrameSettingSwitch(label: Int, checked: Boolean, enabled: Boolean, onCheckedChange: (Boolean) -> Unit) {
     val description = stringResource(label)
     Switch(checked, onCheckedChange, Modifier.semantics { contentDescription = description }, enabled = enabled)
 }
+
+private val FrameIntervals = listOf(5, 10, 15, 30, 60)
 
 internal fun frameErrorMessage(error: FrameError): Int = when (error) {
     FrameError.STORAGE -> R.string.photo_frame_storage_error
