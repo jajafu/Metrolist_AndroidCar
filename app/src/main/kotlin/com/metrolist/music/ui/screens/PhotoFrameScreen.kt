@@ -17,8 +17,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -185,12 +183,9 @@ fun PhotoFrameScreen(navController: NavHostController, viewModel: PhotoFrameView
                     .windowInsetsPadding(WindowInsets.safeDrawing).verticalScroll(rememberScrollState()).padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (state.settings.showClock) FrameClock(foreground, Modifier.weight(1f))
-                    else Spacer(Modifier.weight(1f))
-                    FrameIcon(R.drawable.close, R.string.photo_frame_exit, onClick = exit)
-                }
-                FrameMusicControls(
+                FrameOverlayContent(
+                    showClock = state.settings.showClock,
+                    clockActive = foreground,
                     showSongInfo = state.settings.showSongInfo,
                     canSelect = state.initialized && !busy,
                     canNavigatePhotos = uris.size > 1,
@@ -198,6 +193,7 @@ fun PhotoFrameScreen(navController: NavHostController, viewModel: PhotoFrameView
                     onSettings = { showSettings = true },
                     onPreviousPhoto = { session.request(FramePlaybackCommand.PREVIOUS) },
                     onNextPhoto = { session.request(FramePlaybackCommand.NEXT) },
+                    onExit = exit,
                 )
                 val error = actionError ?: state.error
                 if (error != null) Text(stringResource(frameErrorMessage(error)), color = Color.White, style = MaterialTheme.typography.bodySmall)
@@ -230,7 +226,7 @@ fun PhotoFrameScreen(navController: NavHostController, viewModel: PhotoFrameView
 }
 
 @Composable
-private fun FrameClock(active: Boolean, modifier: Modifier = Modifier) {
+private fun FrameClock(active: Boolean) {
     val context = LocalContext.current
     var time by remember { mutableStateOf(DateFormat.getTimeFormat(context).format(Date())) }
     LaunchedEffect(active) {
@@ -239,11 +235,19 @@ private fun FrameClock(active: Boolean, modifier: Modifier = Modifier) {
             delay(60_000L - System.currentTimeMillis() % 60_000L)
         }
     }
-    Text(time, modifier, color = Color.White, style = MaterialTheme.typography.headlineLarge)
+    val style = MaterialTheme.typography.headlineLarge
+    Text(
+        text = time,
+        color = Color.White,
+        maxLines = 1,
+        style = style.copy(fontSize = style.fontSize * 2f, lineHeight = style.lineHeight * 2f),
+    )
 }
 
 @Composable
-private fun FrameMusicControls(
+private fun FrameOverlayContent(
+    showClock: Boolean,
+    clockActive: Boolean,
     showSongInfo: Boolean,
     canSelect: Boolean,
     canNavigatePhotos: Boolean,
@@ -251,6 +255,7 @@ private fun FrameMusicControls(
     onSettings: () -> Unit,
     onPreviousPhoto: () -> Unit,
     onNextPhoto: () -> Unit,
+    onExit: () -> Unit,
 ) {
     val connection = LocalPlayerConnection.current
     val metadata = connection?.mediaMetadata?.collectAsStateWithLifecycle()?.value
@@ -260,9 +265,30 @@ private fun FrameMusicControls(
     val role = LocalListenTogetherManager.current?.role?.collectAsStateWithLifecycle()?.value
     val ready = connection?.service?.isPlayerReady?.collectAsStateWithLifecycle()?.value == true
     val canControl = ready && metadata != null && role != RoomRole.GUEST
-    if (showSongInfo && metadata != null) {
-        Text(metadata.title, color = Color.White, style = MaterialTheme.typography.titleLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
-        Text(metadata.artists.joinToString { it.name }, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    val titleStyle = MaterialTheme.typography.titleLarge
+    val artistStyle = MaterialTheme.typography.bodyLarge
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        if (showClock) FrameClock(clockActive)
+        if (showSongInfo && metadata != null) {
+            Text(
+                text = metadata.title,
+                color = Color.White,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = titleStyle.copy(fontSize = titleStyle.fontSize * 2f, lineHeight = titleStyle.lineHeight * 2f),
+            )
+            Text(
+                text = metadata.artists.joinToString { it.name },
+                color = Color.White,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = artistStyle.copy(fontSize = artistStyle.fontSize * 2f, lineHeight = artistStyle.lineHeight * 2f),
+            )
+        }
     }
     FlowRow(
         modifier = Modifier.fillMaxWidth(),
@@ -280,6 +306,7 @@ private fun FrameMusicControls(
         FrameIcon(R.drawable.arrow_forward, R.string.photo_frame_next_photo, enabled = canNavigatePhotos, onClick = onNextPhoto)
         FrameIcon(R.drawable.insert_photo, R.string.photo_frame_pick_photos, enabled = canSelect, onClick = onSelect)
         FrameIcon(R.drawable.settings, R.string.photo_frame_settings, onClick = onSettings)
+        FrameIcon(R.drawable.close, R.string.photo_frame_exit, onClick = onExit)
     }
 }
 
@@ -288,10 +315,10 @@ private fun FrameIcon(icon: Int, label: Int, enabled: Boolean = true, onClick: (
     IconButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = Modifier.size(48.dp),
+        modifier = Modifier.size(64.dp),
         colors = IconButtonDefaults.iconButtonColors(contentColor = Color.White, disabledContentColor = Color.White.copy(alpha = 0.38f)),
     ) {
-        Icon(painterResource(icon), stringResource(label), Modifier.size(24.dp))
+        Icon(painterResource(icon), stringResource(label), Modifier.size(48.dp))
     }
 }
 

@@ -4,6 +4,18 @@
 
 This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.71
+
+### 中文
+
+- 重新整理數位相框控制層：第一列依序顯示時鐘、歌名與歌手，第二列集中音樂、照片、選擇、設定及退出按鈕；兩列在空間不足時都會自動換行。
+- 將數位相框控制層文字與圖示放大為原本的兩倍，並保留適合車機操作的觸控範圍與按鈕間距。
+
+### English
+
+- Reorganize the Photo frame overlay into a clock/title/artist information row and a separate row for music, photo, selection, settings, and exit controls. Both rows wrap when space is limited.
+- Double the Photo frame overlay text and icon sizes while retaining touch-friendly target sizes and spacing for head units.
+
 ## 13.6.70
 
 ### 中文
