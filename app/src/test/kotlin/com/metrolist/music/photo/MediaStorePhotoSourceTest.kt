@@ -62,6 +62,61 @@ class MediaStorePhotoSourceTest {
     }
 
     @Test
+    fun `diagnostics match primary and exact removable MediaStore names`() {
+        val primary = StorageVolumeSnapshot("Internal", "external_primary", null, "mounted", "/storage/emulated/0", true, false)
+        val usb = StorageVolumeSnapshot("USB 4", "usb3", "ABCD-1234", "mounted", "/storage/USB3", false, true)
+        val mediaVolumes = listOf(
+            MediaStoreVolume("external_primary", MediaStoreVolumeKind.PRIMARY),
+            MediaStoreVolume("usb3", MediaStoreVolumeKind.REMOVABLE),
+        )
+
+        assertEquals(
+            mapOf("external_primary" to primary, "usb3" to usb),
+            resolveStorageVolumes(mediaVolumes, listOf(primary, usb)),
+        )
+    }
+
+    @Test
+    fun `diagnostics use sole removable storage when vendor names differ`() {
+        val usb = StorageVolumeSnapshot("USB 4", null, null, "mounted", null, false, true)
+
+        assertEquals(
+            mapOf("usb3" to usb),
+            resolveStorageVolumes(
+                listOf(MediaStoreVolume("usb3", MediaStoreVolumeKind.REMOVABLE)),
+                listOf(usb),
+            ),
+        )
+    }
+
+    @Test
+    fun `diagnostics do not guess between multiple unmatched removable devices`() {
+        val usb3 = StorageVolumeSnapshot("USB 3", null, null, "mounted", null, false, true)
+        val usb4 = StorageVolumeSnapshot("USB 4", null, null, "mounted", null, false, true)
+
+        assertTrue(
+            resolveStorageVolumes(
+                listOf(MediaStoreVolume("vendor_usb", MediaStoreVolumeKind.REMOVABLE)),
+                listOf(usb3, usb4),
+            ).isEmpty(),
+        )
+    }
+
+    @Test
+    fun `diagnostics ignore unmounted removable slots for sole device fallback`() {
+        val mountedUsb = StorageVolumeSnapshot("USB 4", null, null, "mounted", null, false, true)
+        val emptySlot = StorageVolumeSnapshot("USB 3", null, null, "unmounted", null, false, true)
+
+        assertEquals(
+            mapOf("usb3" to mountedUsb),
+            resolveStorageVolumes(
+                listOf(MediaStoreVolume("usb3", MediaStoreVolumeKind.REMOVABLE)),
+                listOf(mountedUsb, emptySlot),
+            ),
+        )
+    }
+
+    @Test
     fun `album summaries preserve folder order and count every member`() {
         val entries = listOf(
             MediaStoreAlbumEntry("camera", "Camera"),

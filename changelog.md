@@ -4,6 +4,18 @@
 
 This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.72
+
+### 中文
+
+- 裝置照片瀏覽器新增按需開啟的儲存裝置診斷，可顯示 Android SDK、系統儲存名稱、MediaStore volume、掛載狀態／路徑／UUID 與索引照片數量，協助判斷車機 USB 名稱映射及媒體索引問題。
+- 診斷只在使用者開啟時查詢系統資料庫，不遍歷 USB、不解碼縮圖，也不複製照片，因此不增加 App 啟動時的掃描或記憶體成本。
+
+### English
+
+- Add on-demand storage diagnostics to the device photo browser, showing Android SDK, system storage description, MediaStore volume, mount state/path/UUID, and indexed photo count to identify head-unit USB naming and media-index issues.
+- Diagnostics query the system database only when opened. They do not traverse USB storage, decode thumbnails, copy photos, or add startup scanning and memory cost.
+
 ## 13.6.71
 
 ### 中文

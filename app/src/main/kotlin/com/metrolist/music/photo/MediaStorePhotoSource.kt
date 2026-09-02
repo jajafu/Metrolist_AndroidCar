@@ -11,8 +11,12 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.CancellationSignal
+import android.os.Environment
+import android.os.storage.StorageManager
 import android.provider.MediaStore
 import androidx.core.content.ContextCompat
+import java.util.Locale
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.job
@@ -45,6 +49,22 @@ internal data class MediaStorePhotoPage(
     val photos: List<MediaStorePhoto>,
     val nextOffset: Int,
     val hasMore: Boolean,
+)
+
+internal data class StorageVolumeSnapshot(
+    val description: String,
+    val mediaStoreName: String?,
+    val uuid: String?,
+    val state: String,
+    val path: String?,
+    val primary: Boolean,
+    val removable: Boolean,
+)
+
+internal data class MediaStoreVolumeDiagnostic(
+    val volume: MediaStoreVolume,
+    val indexedPhotoCount: Int?,
+    val storage: StorageVolumeSnapshot?,
 )
 
 internal class MediaStorePhotoSource(private val context: Context) {
@@ -186,6 +206,54 @@ internal class MediaStorePhotoSource(private val context: Context) {
         }
     }
 
+    suspend fun loadVolumeDiagnostics(volumes: List<MediaStoreVolume>): List<MediaStoreVolumeDiagnostic> = withContext(Dispatchers.IO) {
+        val storageManager = context.getSystemService(StorageManager::class.java)
+        val storageVolumes = storageManager.storageVolumes.map { volume ->
+            StorageVolumeSnapshot(
+                description = volume.getDescription(context),
+                mediaStoreName = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) volume.mediaStoreVolumeName else null,
+                uuid = volume.uuid,
+                state = volume.state,
+                path = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) volume.directory?.absolutePath else null,
+                primary = volume.isPrimary,
+                removable = volume.isRemovable,
+            )
+        }
+        val resolvedStorage = resolveStorageVolumes(volumes, storageVolumes)
+        volumes.map { volume ->
+            val count = try {
+                countImages(volume)
+            } catch (error: Exception) {
+                if (error is CancellationException) throw error
+                null
+            }
+            MediaStoreVolumeDiagnostic(
+                volume = volume,
+                indexedPhotoCount = count,
+                storage = resolvedStorage[volume.name],
+            )
+        }
+    }
+
+    private suspend fun countImages(volume: MediaStoreVolume): Int {
+        val signal = CancellationSignal()
+        val cancellation = currentCoroutineContext().job.invokeOnCompletion { signal.cancel() }
+        return try {
+            requireNotNull(
+                resolver.query(
+                    collection(volume),
+                    arrayOf(MediaStore.Images.Media._ID),
+                    null,
+                    null,
+                    null,
+                    signal,
+                ),
+            ).use { it.count }
+        } finally {
+            cancellation.dispose()
+        }
+    }
+
     private fun collection(volume: MediaStoreVolume): Uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
         MediaStore.Images.Media.getContentUri(volume.name)
     } else {
@@ -265,6 +333,41 @@ internal fun mergeMediaStorePhotos(
     current: List<MediaStorePhoto>,
     page: List<MediaStorePhoto>,
 ): List<MediaStorePhoto> = (current + page).distinctBy(MediaStorePhoto::uri)
+
+internal fun resolveStorageVolumes(
+    mediaVolumes: List<MediaStoreVolume>,
+    storageVolumes: List<StorageVolumeSnapshot>,
+): Map<String, StorageVolumeSnapshot> {
+    val resolved = linkedMapOf<String, StorageVolumeSnapshot>()
+    mediaVolumes.firstOrNull { it.kind == MediaStoreVolumeKind.PRIMARY }?.let { primary ->
+        storageVolumes.firstOrNull(StorageVolumeSnapshot::primary)?.let { resolved[primary.name] = it }
+    }
+
+    val removableMedia = mediaVolumes.filter { it.kind == MediaStoreVolumeKind.REMOVABLE }
+    val removableStorage = storageVolumes.filter {
+        it.removable && !it.primary &&
+            (it.state == Environment.MEDIA_MOUNTED || it.state == Environment.MEDIA_MOUNTED_READ_ONLY)
+    }
+    removableMedia.forEach { media ->
+        removableStorage.firstOrNull { storage ->
+            storage.mediaStoreName.equals(media.name, ignoreCase = true) ||
+                normalizedVolumeId(storage.uuid) == normalizedVolumeId(media.name)
+        }?.let { resolved[media.name] = it }
+    }
+
+    val unmatchedMedia = removableMedia.filterNot { it.name in resolved }
+    val matchedStorage = resolved.values.toSet()
+    val unmatchedStorage = removableStorage.filterNot { it in matchedStorage }
+    if (unmatchedMedia.size == 1 && unmatchedStorage.size == 1) {
+        resolved[unmatchedMedia.single().name] = unmatchedStorage.single()
+    }
+    return resolved
+}
+
+private fun normalizedVolumeId(value: String?): String? = value
+    ?.lowercase(Locale.ROOT)
+    ?.replace("-", "")
+    ?.takeIf(String::isNotBlank)
 
 internal fun summarizeMediaStoreAlbums(entries: Sequence<MediaStoreAlbumEntry>): List<MediaStoreAlbum> {
     data class MutableAlbum(val id: String, val name: String, var count: Int)

@@ -34,6 +34,9 @@ import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
@@ -85,6 +88,7 @@ import com.metrolist.music.photo.MediaStoreAlbum
 import com.metrolist.music.photo.MediaStorePhoto
 import com.metrolist.music.photo.MediaStorePhotoSource
 import com.metrolist.music.photo.MediaStoreVolume
+import com.metrolist.music.photo.MediaStoreVolumeDiagnostic
 import com.metrolist.music.photo.MediaStoreVolumeKind
 import com.metrolist.music.photo.hasMediaStorePhotoAccess
 import com.metrolist.music.photo.mergeMediaStorePhotos
@@ -125,6 +129,7 @@ internal fun MediaStorePhotoBrowser(
     var loadError by remember { mutableStateOf(false) }
     var requestedOffset by remember { mutableIntStateOf(0) }
     var requestRevision by remember { mutableIntStateOf(0) }
+    var showDiagnostics by remember { mutableStateOf(false) }
 
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         permissionRevision++
@@ -205,7 +210,9 @@ internal fun MediaStorePhotoBrowser(
         Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
             MediaStoreBrowserTopBar(
                 selectedCount = selected.size,
+                diagnosticsEnabled = hasAccess && volumes.isNotEmpty(),
                 onDismiss = onDismiss,
+                onDiagnostics = { showDiagnostics = true },
                 onAdd = {
                     onPhotosSelected(selected.distinct().map(Uri::parse))
                 },
@@ -313,14 +320,24 @@ internal fun MediaStorePhotoBrowser(
             }
         }
     }
+    if (showDiagnostics) {
+        MediaStoreStorageDiagnosticsDialog(
+            source = source,
+            volumes = volumes,
+            onDismiss = { showDiagnostics = false },
+        )
+    }
 }
 
 @Composable
 private fun MediaStoreBrowserTopBar(
     selectedCount: Int,
+    diagnosticsEnabled: Boolean,
     onDismiss: () -> Unit,
+    onDiagnostics: () -> Unit,
     onAdd: () -> Unit,
 ) {
+    val diagnosticsLabel = "${stringResource(R.string.storage)} · ${stringResource(R.string.details)}"
     Row(
         Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 8.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -344,8 +361,106 @@ private fun MediaStoreBrowserTopBar(
                 )
             }
         }
+        IconButton(
+            onClick = onDiagnostics,
+            enabled = diagnosticsEnabled,
+            modifier = Modifier.size(48.dp),
+        ) {
+            Icon(painterResource(R.drawable.info), diagnosticsLabel)
+        }
         Button(onClick = onAdd, enabled = selectedCount > 0, modifier = Modifier.heightIn(min = 48.dp)) {
             Text(stringResource(R.string.photo_browser_add, selectedCount))
+        }
+    }
+}
+
+@Composable
+private fun MediaStoreStorageDiagnosticsDialog(
+    source: MediaStorePhotoSource,
+    volumes: List<MediaStoreVolume>,
+    onDismiss: () -> Unit,
+) {
+    var diagnostics by remember(volumes) { mutableStateOf(emptyList<MediaStoreVolumeDiagnostic>()) }
+    var loading by remember(volumes) { mutableStateOf(true) }
+    var failed by remember(volumes) { mutableStateOf(false) }
+    LaunchedEffect(source, volumes) {
+        loading = true
+        failed = false
+        try {
+            diagnostics = source.loadVolumeDiagnostics(volumes.filterNot { it.kind == MediaStoreVolumeKind.ALL })
+        } catch (error: Exception) {
+            if (error is CancellationException) throw error
+            diagnostics = emptyList()
+            failed = true
+        } finally {
+            loading = false
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(painterResource(R.drawable.storage), null) },
+        title = { Text("${stringResource(R.string.storage)} · ${stringResource(R.string.details)}") },
+        text = {
+            Column(
+                Modifier.widthIn(max = 640.dp).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text(
+                    "Android SDK ${android.os.Build.VERSION.SDK_INT}",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                when {
+                    loading -> Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                    failed -> Text(
+                        stringResource(R.string.photo_browser_load_error),
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                    else -> diagnostics.forEach { diagnostic ->
+                        MediaStoreStorageDiagnosticCard(diagnostic)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss, modifier = Modifier.heightIn(min = 48.dp)) {
+                Text(stringResource(R.string.close))
+            }
+        },
+    )
+}
+
+@Composable
+private fun MediaStoreStorageDiagnosticCard(diagnostic: MediaStoreVolumeDiagnostic) {
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+    ) {
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(mediaStoreVolumeLabel(diagnostic.volume), style = MaterialTheme.typography.titleMedium)
+            diagnostic.storage?.description?.takeIf(String::isNotBlank)?.let { description ->
+                Text(description, style = MaterialTheme.typography.bodyLarge)
+            }
+            Text("MediaStore · ${diagnostic.volume.name}", style = MaterialTheme.typography.bodyLarge)
+            diagnostic.indexedPhotoCount?.let { count ->
+                Text(
+                    pluralStringResource(R.plurals.photo_browser_folder_photos, count, count),
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+            } ?: Text(
+                stringResource(R.string.photo_browser_load_error),
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodyLarge,
+            )
+            diagnostic.storage?.let { storage ->
+                Text("State · ${storage.state}", style = MaterialTheme.typography.bodyLarge)
+                storage.path?.let { Text("Path · $it", style = MaterialTheme.typography.bodyLarge) }
+                storage.uuid?.let { Text("UUID · $it", style = MaterialTheme.typography.bodyLarge) }
+            }
         }
     }
 }
