@@ -127,10 +127,10 @@ fun PhotoFrameScreen(navController: NavHostController, viewModel: PhotoFrameView
             if (!foreground || showSettings || showMediaBrowser) return@LaunchedEffect
             val playback = PhotoFramePlayback<coil3.Image>(
                 load = { uri ->
-                    val contentUri = uri.toUri()
-                    require(contentUri.scheme == "content")
+                    val photoUri = uri.toUri()
+                    require(photoUri.scheme == "content" || photoUri.scheme == "file")
                     val request = ImageRequest.Builder(context)
-                        .data(contentUri)
+                        .data(photoUri)
                         .size(width, height)
                         .scale(Scale.FIT)
                         .precision(Precision.EXACT)

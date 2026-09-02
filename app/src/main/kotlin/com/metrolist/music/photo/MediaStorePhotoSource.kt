@@ -15,6 +15,7 @@ import android.os.Environment
 import android.os.storage.StorageManager
 import android.provider.MediaStore
 import androidx.core.content.ContextCompat
+import java.io.File
 import java.util.Locale
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -207,18 +208,7 @@ internal class MediaStorePhotoSource(private val context: Context) {
     }
 
     suspend fun loadVolumeDiagnostics(volumes: List<MediaStoreVolume>): List<MediaStoreVolumeDiagnostic> = withContext(Dispatchers.IO) {
-        val storageManager = context.getSystemService(StorageManager::class.java)
-        val storageVolumes = storageManager.storageVolumes.map { volume ->
-            StorageVolumeSnapshot(
-                description = volume.getDescription(context),
-                mediaStoreName = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) volume.mediaStoreVolumeName else null,
-                uuid = volume.uuid,
-                state = volume.state,
-                path = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) volume.directory?.absolutePath else null,
-                primary = volume.isPrimary,
-                removable = volume.isRemovable,
-            )
-        }
+        val storageVolumes = storageVolumeSnapshots(context)
         val resolvedStorage = resolveStorageVolumes(volumes, storageVolumes)
         volumes.map { volume ->
             val count = try {
@@ -230,9 +220,19 @@ internal class MediaStorePhotoSource(private val context: Context) {
             MediaStoreVolumeDiagnostic(
                 volume = volume,
                 indexedPhotoCount = count,
-                storage = resolvedStorage[volume.name],
+                storage = resolvedStorage[volume.name]?.let { storage ->
+                    storage.copy(path = storage.path ?: resolveDirectStorageRoot(volume, storage)?.absolutePath)
+                },
             )
         }
+    }
+
+    suspend fun directRemovableRoot(volume: MediaStoreVolume): DirectUsbRoot? = withContext(Dispatchers.IO) {
+        if (volume.kind != MediaStoreVolumeKind.REMOVABLE) return@withContext null
+        val storage = resolveStorageVolumes(listOf(volume), storageVolumeSnapshots(context))[volume.name]
+            ?: return@withContext null
+        val directory = resolveDirectStorageRoot(volume, storage) ?: return@withContext null
+        DirectUsbRoot(storage.description, directory.absolutePath)
     }
 
     private suspend fun countImages(volume: MediaStoreVolume): Int {
@@ -303,6 +303,58 @@ internal class MediaStorePhotoSource(private val context: Context) {
     private data class PageCursor(val cursor: Cursor, val rowsToSkip: Int)
 }
 
+internal fun storageVolumeSnapshots(context: Context): List<StorageVolumeSnapshot> {
+    val storageManager = context.getSystemService(StorageManager::class.java)
+    return storageManager.storageVolumes.map { volume ->
+        StorageVolumeSnapshot(
+            description = volume.getDescription(context),
+            mediaStoreName = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) volume.mediaStoreVolumeName else null,
+            uuid = volume.uuid,
+            state = volume.state,
+            path = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) volume.directory?.absolutePath else null,
+            primary = volume.isPrimary,
+            removable = volume.isRemovable,
+        )
+    }
+}
+
+internal fun resolveDirectStorageRoot(
+    volume: MediaStoreVolume,
+    storage: StorageVolumeSnapshot,
+    storageDirectory: File = File("/storage"),
+): File? {
+    if (!storage.removable || storage.primary ||
+        (storage.state != Environment.MEDIA_MOUNTED && storage.state != Environment.MEDIA_MOUNTED_READ_ONLY)
+    ) return null
+
+    val base = runCatching { storageDirectory.canonicalFile }.getOrNull() ?: return null
+    val systemPath = storage.path?.let(::File)
+    val identifiers = listOfNotNull(storage.uuid, storage.mediaStoreName, volume.name)
+        .mapNotNull(::normalizedVolumeId)
+        .toSet()
+    val candidates = buildList {
+        systemPath?.let(::add)
+        storageDirectory.listFiles()?.forEach(::add)
+    }
+    return candidates.asSequence()
+        .mapNotNull { runCatching { it.canonicalFile }.getOrNull() }
+        .filter { it.parentFile == base && it.isDirectory && it.canRead() }
+        .firstOrNull { candidate ->
+            candidate == systemPath?.let { runCatching { it.canonicalFile }.getOrNull() } ||
+                normalizedVolumeId(candidate.name) in identifiers
+        }
+}
+
+internal fun mountedDirectStorageRoots(context: Context): List<File> = storageVolumeSnapshots(context)
+    .asSequence()
+    .filter { it.removable && !it.primary }
+    .mapNotNull { storage ->
+        val name = storage.mediaStoreName ?: storage.uuid ?: return@mapNotNull null
+        resolveDirectStorageRoot(MediaStoreVolume(name, MediaStoreVolumeKind.REMOVABLE), storage)
+    }
+    .distinctBy { it.absolutePath }
+    .toList()
+
 @SuppressLint("InlinedApi")
 internal fun requiredMediaStorePhotoPermissions(sdk: Int = Build.VERSION.SDK_INT): Array<String> = when {
     sdk >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> arrayOf(
@@ -364,7 +416,7 @@ internal fun resolveStorageVolumes(
     return resolved
 }
 
-private fun normalizedVolumeId(value: String?): String? = value
+internal fun normalizedVolumeId(value: String?): String? = value
     ?.lowercase(Locale.ROOT)
     ?.replace("-", "")
     ?.takeIf(String::isNotBlank)

@@ -38,7 +38,7 @@ class PhotoCatalog internal constructor(
     @Inject
     constructor(@ApplicationContext context: Context) : this(
         { context.dataStore },
-        { AndroidFrameDocumentAccess(context.contentResolver) },
+        { AndroidFrameDocumentAccess(context) },
         { PhotoFrameManifest(File(context.filesDir, "photo_frame/index-v1.json")) },
     )
 

@@ -53,11 +53,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -84,6 +86,9 @@ import coil3.request.ImageRequest
 import coil3.size.Precision
 import coil3.size.Scale
 import com.metrolist.music.R
+import com.metrolist.music.photo.DirectUsbListing
+import com.metrolist.music.photo.DirectUsbPhotoSource
+import com.metrolist.music.photo.DirectUsbRoot
 import com.metrolist.music.photo.MediaStoreAlbum
 import com.metrolist.music.photo.MediaStorePhoto
 import com.metrolist.music.photo.MediaStorePhotoSource
@@ -130,12 +135,15 @@ internal fun MediaStorePhotoBrowser(
     var requestedOffset by remember { mutableIntStateOf(0) }
     var requestRevision by remember { mutableIntStateOf(0) }
     var showDiagnostics by remember { mutableStateOf(false) }
+    var directRoot by remember { mutableStateOf<DirectUsbRoot?>(null) }
+    var directRootLoading by remember { mutableStateOf(false) }
+    var directRootError by remember { mutableStateOf(false) }
 
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         permissionRevision++
     }
 
-    BackHandler(onBack = onDismiss)
+    BackHandler(enabled = directRoot == null, onBack = onDismiss)
     DisposableEffect(lifecycle) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) permissionRevision++
@@ -204,6 +212,17 @@ internal fun MediaStorePhotoBrowser(
         } finally {
             loading = false
         }
+    }
+
+    directRoot?.let { root ->
+        DirectUsbPhotoBrowser(
+            root = root,
+            selected = selected,
+            selectedLookup = selectedLookup,
+            onDismiss = { directRoot = null },
+            onAdd = { onPhotosSelected(selected.distinct().map(Uri::parse)) },
+        )
+        return
     }
 
     Surface(Modifier.fillMaxSize()) {
@@ -315,6 +334,25 @@ internal fun MediaStorePhotoBrowser(
                             requestRevision++
                         },
                         onPhotoDeselected = { fullySelectedAlbums.clear() },
+                        directBrowseEnabled = selectedVolume?.kind == MediaStoreVolumeKind.REMOVABLE,
+                        directBrowseLoading = directRootLoading,
+                        directBrowseError = directRootError,
+                        onDirectBrowse = {
+                            val volume = selectedVolume ?: return@MediaStorePhotoGrid
+                            scope.launch {
+                                directRootLoading = true
+                                directRootError = false
+                                try {
+                                    directRoot = source.directRemovableRoot(volume)
+                                    directRootError = directRoot == null
+                                } catch (error: Exception) {
+                                    if (error is CancellationException) throw error
+                                    directRootError = true
+                                } finally {
+                                    directRootLoading = false
+                                }
+                            }
+                        },
                     )
                 }
             }
@@ -361,12 +399,13 @@ private fun MediaStoreBrowserTopBar(
                 )
             }
         }
-        IconButton(
-            onClick = onDiagnostics,
-            enabled = diagnosticsEnabled,
-            modifier = Modifier.size(48.dp),
-        ) {
-            Icon(painterResource(R.drawable.info), diagnosticsLabel)
+        if (diagnosticsEnabled) {
+            IconButton(
+                onClick = onDiagnostics,
+                modifier = Modifier.size(48.dp),
+            ) {
+                Icon(painterResource(R.drawable.info), diagnosticsLabel)
+            }
         }
         Button(onClick = onAdd, enabled = selectedCount > 0, modifier = Modifier.heightIn(min = 48.dp)) {
             Text(stringResource(R.string.photo_browser_add, selectedCount))
@@ -619,6 +658,10 @@ private fun MediaStorePhotoGrid(
     onRetry: () -> Unit,
     onLoadMore: () -> Unit,
     onPhotoDeselected: () -> Unit,
+    directBrowseEnabled: Boolean,
+    directBrowseLoading: Boolean,
+    directBrowseError: Boolean,
+    onDirectBrowse: () -> Unit,
 ) {
     when {
         photos.isEmpty() && loading -> BrowserCenteredMessage {
@@ -634,6 +677,27 @@ private fun MediaStorePhotoGrid(
         photos.isEmpty() -> BrowserCenteredMessage {
             Icon(painterResource(R.drawable.hide_image), null, Modifier.size(48.dp))
             Text(stringResource(R.string.photo_browser_empty), Modifier.padding(top = 12.dp))
+            if (directBrowseEnabled) {
+                Button(
+                    onClick = onDirectBrowse,
+                    enabled = !directBrowseLoading,
+                    modifier = Modifier.padding(top = 16.dp).heightIn(min = 48.dp),
+                ) {
+                    if (directBrowseLoading) {
+                        CircularProgressIndicator(Modifier.size(20.dp))
+                        Spacer(Modifier.size(8.dp))
+                    }
+                    Text(stringResource(R.string.photo_browser_browse_device))
+                }
+                if (directBrowseError) {
+                    Text(
+                        stringResource(R.string.photo_browser_folder_error),
+                        Modifier.padding(top = 8.dp),
+                        color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
         }
         else -> LazyVerticalGrid(
             columns = GridCells.Adaptive(minSize = 132.dp),
@@ -669,6 +733,221 @@ private fun MediaStorePhotoGrid(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun DirectUsbPhotoBrowser(
+    root: DirectUsbRoot,
+    selected: MutableList<String>,
+    selectedLookup: Set<String>,
+    onDismiss: () -> Unit,
+    onAdd: () -> Unit,
+) {
+    val scope = rememberCoroutineScope()
+    val source = remember(root.path) { DirectUsbPhotoSource(root.path) }
+    var currentPath by rememberSaveable(root.path) { mutableStateOf(root.path) }
+    var listing by remember { mutableStateOf<DirectUsbListing?>(null) }
+    var loading by remember { mutableStateOf(true) }
+    var loadError by remember { mutableStateOf(false) }
+    var revision by remember { mutableIntStateOf(0) }
+    var bulkSelecting by remember { mutableStateOf(false) }
+    var bulkCount by remember { mutableIntStateOf(0) }
+    var bulkSelectionError by remember { mutableStateOf(false) }
+    val fullySelectedFolders = remember { mutableStateListOf<String>() }
+    val selectedFolderCounts = remember { mutableStateMapOf<String, Int>() }
+    val parentPath = remember(currentPath) { runCatching { source.parentOf(currentPath) }.getOrNull() }
+
+    BackHandler {
+        if (parentPath != null) currentPath = parentPath else onDismiss()
+    }
+    LaunchedEffect(currentPath, revision) {
+        loading = true
+        loadError = false
+        try {
+            listing = source.loadDirectory(currentPath)
+        } catch (error: Exception) {
+            if (error is CancellationException) throw error
+            listing = null
+            loadError = true
+        } finally {
+            loading = false
+        }
+    }
+
+    Surface(Modifier.fillMaxSize()) {
+        Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
+            MediaStoreBrowserTopBar(
+                selectedCount = selected.size,
+                diagnosticsEnabled = false,
+                onDismiss = {
+                    if (parentPath != null) currentPath = parentPath else onDismiss()
+                },
+                onDiagnostics = {},
+                onAdd = onAdd,
+            )
+            Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    IconButton(
+                        onClick = { parentPath?.let { currentPath = it } },
+                        enabled = parentPath != null && !bulkSelecting,
+                        modifier = Modifier.size(48.dp),
+                    ) {
+                        Icon(painterResource(R.drawable.arrow_upward), stringResource(R.string.back))
+                    }
+                    Column(Modifier.weight(1f)) {
+                        Text(root.name, style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(
+                            listing?.directory?.name ?: currentPath.substringAfterLast('/'),
+                            style = MaterialTheme.typography.titleMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+                OutlinedButton(
+                    onClick = {
+                        scope.launch {
+                            bulkSelecting = true
+                            bulkSelectionError = false
+                            bulkCount = listing?.photos?.size ?: 0
+                            try {
+                                val folderPhotos = source.loadFolderPhotos(currentPath) {}
+                                bulkCount = folderPhotos.size
+                                if (folderPhotos.isEmpty()) {
+                                    bulkSelectionError = true
+                                    return@launch
+                                }
+                                val uris = folderPhotos.map(MediaStorePhoto::uri)
+                                val shouldSelect = currentPath !in fullySelectedFolders
+                                val updated = updateMediaStoreFolderSelection(selected, uris, shouldSelect)
+                                selected.clear()
+                                selected.addAll(updated)
+                                if (shouldSelect) {
+                                    if (currentPath !in fullySelectedFolders) fullySelectedFolders.add(currentPath)
+                                    selectedFolderCounts[currentPath] = folderPhotos.size
+                                } else {
+                                    fullySelectedFolders.remove(currentPath)
+                                    selectedFolderCounts.remove(currentPath)
+                                }
+                            } catch (error: Exception) {
+                                if (error is CancellationException) throw error
+                                bulkSelectionError = true
+                            } finally {
+                                bulkSelecting = false
+                            }
+                        }
+                    },
+                    enabled = !loading && !loadError && !bulkSelecting,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                ) {
+                    if (bulkSelecting) {
+                        CircularProgressIndicator(Modifier.size(20.dp))
+                        Spacer(Modifier.size(8.dp))
+                    }
+                    Text(
+                        stringResource(
+                            when {
+                                bulkSelecting -> R.string.photo_browser_selecting_folder
+                                currentPath in fullySelectedFolders -> R.string.photo_browser_deselect_folder
+                                else -> R.string.photo_browser_select_folder
+                            },
+                            if (bulkSelecting) bulkCount else selectedFolderCounts[currentPath] ?: listing?.photos?.size ?: 0,
+                        ),
+                    )
+                }
+            }
+            if (bulkSelectionError) {
+                Text(
+                    stringResource(R.string.photo_browser_folder_error),
+                    Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+            when {
+                loading -> BrowserCenteredMessage {
+                    CircularProgressIndicator()
+                    Text(stringResource(R.string.photo_browser_loading), Modifier.padding(top = 12.dp))
+                }
+                loadError -> BrowserCenteredMessage {
+                    Text(stringResource(R.string.photo_browser_folder_error), color = MaterialTheme.colorScheme.error)
+                    Button(onClick = { revision++ }, modifier = Modifier.padding(top = 12.dp).heightIn(min = 48.dp)) {
+                        Text(stringResource(R.string.retry))
+                    }
+                }
+                else -> DirectUsbEntries(
+                    listing = listing,
+                    selected = selected,
+                    selectedLookup = selectedLookup,
+                    enabled = !bulkSelecting,
+                    onOpenDirectory = {
+                        currentPath = it
+                        bulkSelectionError = false
+                    },
+                    onPhotoDeselected = { fullySelectedFolders.clear() },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DirectUsbEntries(
+    listing: DirectUsbListing?,
+    selected: MutableList<String>,
+    selectedLookup: Set<String>,
+    enabled: Boolean,
+    onOpenDirectory: (String) -> Unit,
+    onPhotoDeselected: () -> Unit,
+) {
+    val entries = listing ?: return
+    if (entries.directories.isEmpty() && entries.photos.isEmpty()) {
+        BrowserCenteredMessage {
+            Icon(painterResource(R.drawable.hide_image), null, Modifier.size(48.dp))
+            Text(stringResource(R.string.photo_frame_no_images), Modifier.padding(top = 12.dp))
+        }
+        return
+    }
+    LazyVerticalGrid(
+        columns = GridCells.Adaptive(minSize = 132.dp),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(12.dp, 4.dp, 12.dp, 24.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        gridItems(entries.directories, key = { "folder:${it.path}" }) { directory ->
+            OutlinedButton(
+                onClick = { onOpenDirectory(directory.path) },
+                enabled = enabled,
+                modifier = Modifier.fillMaxWidth().aspectRatio(1f),
+                shape = RoundedCornerShape(12.dp),
+                contentPadding = PaddingValues(12.dp),
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(painterResource(R.drawable.storage), null, Modifier.size(40.dp))
+                    Text(directory.name, maxLines = 2, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
+                }
+            }
+        }
+        gridItems(entries.photos, key = MediaStorePhoto::uri) { photo ->
+            MediaStorePhotoTile(
+                photo = photo,
+                selected = photo.uri in selectedLookup,
+                onToggle = {
+                    if (!enabled) return@MediaStorePhotoTile
+                    if (photo.uri in selectedLookup) {
+                        selected.remove(photo.uri)
+                        onPhotoDeselected()
+                    } else {
+                        selected.add(photo.uri)
+                    }
+                },
+            )
         }
     }
 }

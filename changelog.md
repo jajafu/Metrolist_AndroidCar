@@ -4,6 +4,20 @@
 
 This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.73
+
+### 中文
+
+- 當車機已掛載 USB、但廠商 MediaStore 沒有建立照片索引時，空白 USB 頁面新增按需啟動的直接瀏覽備援，可逐層開啟目錄、勾選照片，或一次選取／取消整個目錄。
+- 直接瀏覽不寫死 USB 名稱，只接受系統回報為已掛載的卸除式儲存空間；平時只讀取目前目錄，選取整個目錄時才遞迴掃描，並保存原始檔案路徑而不複製照片到 App。
+- 加入路徑邊界與掛載狀態檢查，USB 拔除時會將照片標記為暫時無法讀取；重新連接並重新掃描後可繼續使用。
+
+### English
+
+- Add an on-demand direct-browser fallback to an empty mounted USB view when the vendor MediaStore has indexed no photos. Browse directories, select individual photos, or select/deselect a whole folder.
+- Discover removable storage from mounted system volumes instead of hardcoding a USB name. Read only the open directory during browsing, recurse only for whole-folder selection, and persist original file paths without copying photos into the app.
+- Validate mount state and canonical path boundaries. Photos become temporarily unavailable after USB removal and can be restored by reconnecting and rescanning.
+
 ## 13.6.72
 
 ### 中文

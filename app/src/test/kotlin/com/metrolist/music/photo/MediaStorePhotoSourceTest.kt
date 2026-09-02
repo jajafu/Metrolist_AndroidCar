@@ -4,6 +4,9 @@ import android.Manifest
 import android.app.Application
 import android.content.pm.PackageManager
 import android.os.Build
+import java.io.File
+import java.nio.file.Files
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -114,6 +117,80 @@ class MediaStorePhotoSourceTest {
                 listOf(mountedUsb, emptySlot),
             ),
         )
+    }
+
+    @Test
+    fun `direct storage fallback resolves mounted volume by vendor identifier`() {
+        val storageRoot = Files.createTempDirectory("photo-storage").toFile()
+        try {
+            val usb = File(storageRoot, "USB3").apply { mkdirs() }
+            val snapshot = StorageVolumeSnapshot("USB 4", null, "usb3", "mounted", null, false, true)
+
+            assertEquals(
+                usb.canonicalFile,
+                resolveDirectStorageRoot(
+                    MediaStoreVolume("usb3", MediaStoreVolumeKind.REMOVABLE),
+                    snapshot,
+                    storageRoot,
+                ),
+            )
+        } finally {
+            storageRoot.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `direct storage fallback rejects unmounted volume`() {
+        val storageRoot = Files.createTempDirectory("photo-storage").toFile()
+        try {
+            File(storageRoot, "USB3").mkdirs()
+            val snapshot = StorageVolumeSnapshot("USB 4", null, "USB3", "unmounted", null, false, true)
+
+            assertEquals(
+                null,
+                resolveDirectStorageRoot(
+                    MediaStoreVolume("usb3", MediaStoreVolumeKind.REMOVABLE),
+                    snapshot,
+                    storageRoot,
+                ),
+            )
+        } finally {
+            storageRoot.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `direct file validation prevents sibling path escape`() {
+        val root = Files.createTempDirectory("photo-usb").toFile()
+        val sibling = File(root.parentFile, "${root.name}-other").apply { mkdirs() }
+        try {
+            assertTrue(isFileWithinRoot(File(root, "photos/image.jpg"), root))
+            assertFalse(isFileWithinRoot(File(sibling, "image.jpg"), root))
+        } finally {
+            root.deleteRecursively()
+            sibling.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `direct browser reads one directory and scans subfolders only on request`() = runBlocking {
+        val root = Files.createTempDirectory("photo-usb").toFile()
+        try {
+            val album = File(root, "Album").apply { mkdirs() }
+            File(root, "cover.jpg").writeBytes(byteArrayOf(1))
+            File(root, "notes.txt").writeText("not a photo")
+            File(album, "nested.png").writeBytes(byteArrayOf(2))
+            val source = DirectUsbPhotoSource(root.absolutePath)
+
+            val listing = source.loadDirectory(root.absolutePath)
+            assertEquals(listOf("Album"), listing.directories.map(DirectUsbDirectory::name))
+            assertEquals(listOf("cover.jpg"), listing.photos.map(MediaStorePhoto::name))
+
+            val recursivelyFound = source.loadFolderPhotos(root.absolutePath) {}
+            assertEquals(setOf("cover.jpg", "nested.png"), recursivelyFound.map(MediaStorePhoto::name).toSet())
+        } finally {
+            root.deleteRecursively()
+        }
     }
 
     @Test

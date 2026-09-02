@@ -1,12 +1,16 @@
 package com.metrolist.music.photo
 
 import android.content.ContentResolver
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.CancellationSignal
+import android.os.SystemClock
 import android.provider.DocumentsContract
 import android.provider.OpenableColumns
+import android.webkit.MimeTypeMap
 import androidx.core.net.toUri
+import java.io.File
 import java.io.FileNotFoundException
 import java.io.IOException
 import kotlin.coroutines.resume
@@ -30,11 +34,15 @@ internal interface FrameDocumentAccess {
     suspend fun children(treeUri: Uri, directoryUri: String): List<FrameDocument>
 }
 
-internal class AndroidFrameDocumentAccess(private val resolver: ContentResolver) : FrameDocumentAccess {
-    override fun hasPersistedRead(uri: Uri): Boolean =
+internal class AndroidFrameDocumentAccess(private val context: Context) : FrameDocumentAccess {
+    private val resolver = context.contentResolver
+    private var directRoots = emptyList<File>()
+    private var directRootsExpiresAt = 0L
+
+    override fun hasPersistedRead(uri: Uri): Boolean = uri.scheme == ContentResolver.SCHEME_FILE ||
         resolver.persistedUriPermissions.any { it.uri == uri && it.isReadPermission }
 
-    override fun persistRead(uri: Uri): Boolean = try {
+    override fun persistRead(uri: Uri): Boolean = if (uri.scheme == ContentResolver.SCHEME_FILE) true else try {
         resolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
         true
     } catch (_: SecurityException) {
@@ -44,6 +52,7 @@ internal class AndroidFrameDocumentAccess(private val resolver: ContentResolver)
     }
 
     override suspend fun picked(uri: Uri): FrameDocument {
+        if (uri.scheme == ContentResolver.SCHEME_FILE) return pickedDirectFile(uri)
         requireContentUri(uri)
         val type = resolver.getType(uri) ?: throw InvalidFrameImageException()
         if (!type.startsWith("image/", ignoreCase = true)) throw InvalidFrameImageException()
@@ -104,6 +113,27 @@ internal class AndroidFrameDocumentAccess(private val resolver: ContentResolver)
         require(uri.scheme == ContentResolver.SCHEME_CONTENT) { "Photo selection must use a content URI" }
     }
 
+    private fun pickedDirectFile(uri: Uri): FrameDocument {
+        val file = uri.path?.let(::File)?.canonicalFile ?: throw InvalidFrameImageException()
+        val allowed = currentDirectRoots().any { root -> isFileWithinRoot(file, root) }
+        if (!allowed || !file.isFile || !file.canRead() || !isSupportedDirectImage(file)) {
+            throw FileNotFoundException()
+        }
+        val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(file.extension.lowercase())
+            ?.takeIf { it.startsWith("image/", ignoreCase = true) }
+            ?: "image/${file.extension.lowercase()}"
+        return FrameDocument(uri.toString(), file.name, mimeType)
+    }
+
+    private fun currentDirectRoots(): List<File> {
+        val now = SystemClock.elapsedRealtime()
+        if (now >= directRootsExpiresAt) {
+            directRoots = mountedDirectStorageRoots(context)
+            directRootsExpiresAt = now + DirectRootCacheMillis
+        }
+        return directRoots
+    }
+
     private suspend fun <T> queryCancellable(block: (CancellationSignal) -> T): T =
         suspendCancellableCoroutine { continuation ->
             val signal = CancellationSignal()
@@ -115,6 +145,14 @@ internal class AndroidFrameDocumentAccess(private val resolver: ContentResolver)
                 if (continuation.isActive) continuation.resumeWithException(error)
             }
         }
+}
+
+private const val DirectRootCacheMillis = 5_000L
+
+internal fun isFileWithinRoot(file: File, root: File): Boolean {
+    val checkedFile = runCatching { file.canonicalFile }.getOrNull() ?: return false
+    val checkedRoot = runCatching { root.canonicalFile }.getOrNull() ?: return false
+    return checkedFile == checkedRoot || checkedFile.path.startsWith(checkedRoot.path + File.separator)
 }
 
 internal suspend fun scanFrameFolder(
