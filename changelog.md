@@ -4,6 +4,20 @@
 
 This file records project-specific features, fixes, and build changes in `MusicCabin` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.77
+
+### 中文
+
+- Android 套件識別碼由 com.jajafu.metrolist.androidcar 改為 com.jajafu.musiccabin；Debug 套件為 com.jajafu.musiccabin.debug。啟動器搜尋與音樂庫捷徑同步指向新套件，檔案分享、車機封面 Provider 與辨識 action 隨新套件產生。
+- 這次會另行安裝為新的 App，無法覆蓋更新 13.6.76 或更早版本。本機設定、登入、下載與資料庫不會自動移轉；請重新登入、授予權限，並重新加入需要的小工具與捷徑，確認需保留的內容後再移除舊 App。
+- 保留資料庫結構、固定 Release 簽章與 MusicCabin 更新來源；之後使用新套件識別碼與相同簽章的版本可直接覆蓋更新。同步修正 README 與 Release 的升級說明。
+
+### English
+
+- Change the Android package ID from com.jajafu.metrolist.androidcar to com.jajafu.musiccabin, with com.jajafu.musiccabin.debug for Debug. Point launcher search and library shortcuts to the new package; file-sharing and car-artwork provider authorities and the recognition action follow the new ID.
+- This installs as a separate App and cannot update version 13.6.76 or earlier in place. Local settings, login, downloads, and database are not migrated automatically. Sign in again, grant permissions, and recreate needed widgets and shortcuts; check anything you want to keep before removing the old App.
+- Keep the database schema, fixed release signing key, and MusicCabin update source. Future releases with the new package ID and the same key can update in place. Align both READMEs and release upgrade guidance.
+
 ## 13.6.76
 
 ### 中文

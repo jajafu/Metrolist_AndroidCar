@@ -137,7 +137,7 @@ jobs:
             echo
             echo "## Build"
             echo "- FOSS Release APK signed with the project's fixed release key."
-            echo "- Supports in-place updates from earlier signed FOSS Release builds."
+            echo "- In-place updates require the same package ID and signing key; see the upgrade notes above for package changes."
 
             if [ -n "$PREVIOUS_TAG" ]; then
               echo

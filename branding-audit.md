@@ -1,6 +1,6 @@
 # MusicCabin branding audit
 
-Version: 13.6.76 (versionCode 225).
+Version: 13.6.77 (versionCode 226).
 
 ## Updated surfaces
 
@@ -10,7 +10,7 @@ Version: 13.6.76 (versionCode 225).
 | App, launcher aliases, system notification app label | One non-translatable `app_name` resource: `MusicCabin` |
 | About | MusicCabin title, project repository and license links; jajafu maintainer with Buy me a coffee button linking to `https://buymeacoffee.com/clifchi`; Mo Agamy moved into collaborators; upstream community links explicitly identified |
 | Widgets, recognition actions, Wrapped, Last.fm and Discord information | New default English brand resources prevent inherited translations from restoring the old brand |
-| Launcher search/library shortcuts | Target the existing release/debug application IDs |
+| Android package and launcher search/library shortcuts | Release: `com.jajafu.musiccabin`; Debug: `com.jajafu.musiccabin.debug`; shortcuts target the matching package |
 | Updater | MusicCabin Releases page and API; new and historical APK names accepted |
 | Player configuration and dates | Both Base64-encoded GitHub raw URLs now target MusicCabin |
 | OpenRouter and Discord defaults | MusicCabin client title, project link and default activity button |
@@ -23,7 +23,7 @@ Version: 13.6.76 (versionCode 225).
 
 ## Intentionally retained identifiers and history
 
-- `com.jajafu.metrolist.androidcar` and its debug suffix remain unchanged. There is no database schema change or migration.
+- Version 13.6.77 changes the package ID to `com.jajafu.musiccabin` and its debug suffix at the maintainer's request. Versions 13.6.52–13.6.76 used `com.jajafu.metrolist.androidcar`. Android installs the new package separately; old app data, permissions and pinned widgets/shortcuts are not automatically migrated. The database schema and release signing configuration are unchanged.
 - Kotlin namespaces, component names, intent actions, theme names, preference keys, encryption key aliases and `METROLIST_*` build overrides remain technical compatibility identifiers.
 - Original Metrolist copyrights, authorship, licenses, upstream dependency coordinates, the metroproto submodule and contributor links retain their real names and URLs.
 - `metrolist.cc` Listen Together links and `metrolistdiscord` OAuth callbacks belong to existing upstream services. The external Discord OAuth application remains the upstream registration; changing that registration requires its owner's account or a separately provisioned application.
@@ -44,5 +44,5 @@ Prompt used for each cover:
 - Resource reference audit: active old-brand text is limited to explicit upstream credits.
 - Reviewed launcher, store and Wrapped images and the six existing store screenshots for old brand lettering.
 - FOSS Debug assembly and both `UpdaterBrandingTest` cases passed. The tests cover new/historical APK selection and numeric version comparison with branded release titles.
-- APK manifest inspection confirms version 13.6.76 / 225, the unchanged debug application ID and MusicCabin labels for every packaged locale. The Releases API and both raw configuration endpoints return HTTP 200 and valid JSON.
+- Version 13.6.77 / 226 FOSS Debug assembly passed. Packaged manifest and shortcut XML inspection confirms `com.jajafu.musiccabin.debug`, four provider authorities under the new ID, the new recognition action, matching search/library shortcut targets, valid activity aliases, and MusicCabin labels for all 93 packaged locales. No old package ID remains in app sources or workflows. The earlier branding audit verified the Releases API and both raw configuration endpoints.
 - Device checks remain for launcher aliases/shortcuts, About, a playback notification and the updater download action; the available emulators were offline during this audit.
