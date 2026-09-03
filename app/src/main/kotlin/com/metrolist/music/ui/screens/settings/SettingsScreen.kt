@@ -234,7 +234,7 @@ fun SettingsScreen(
                 add(
                     Material3SettingsItem(
                         icon = painterResource(R.drawable.info),
-                        title = { Text(stringResource(R.string.about)) },
+                        title = { Text(stringResource(R.string.musiccabin_about)) },
                         onClick = { navController.navigate("settings/about") }
                     )
                 )

@@ -273,7 +273,7 @@ fun DiscordSettings(
                     Spacer(Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = stringResource(R.string.discord_information_warning),
+                            text = stringResource(R.string.musiccabin_discord_information_warning),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface,
                         )

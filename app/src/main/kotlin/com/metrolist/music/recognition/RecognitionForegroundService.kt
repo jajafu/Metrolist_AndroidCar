@@ -266,7 +266,7 @@ class RecognitionForegroundService : Service() {
             contentIntent = pendingIntent,
             largeIcon = null,
             actionIntent = pendingIntent,
-            actionTitle = getString(R.string.listen_on_metrolist),
+            actionTitle = getString(R.string.musiccabin_listen_on_app),
         )
 
         serviceScope.launch {
@@ -288,7 +288,7 @@ class RecognitionForegroundService : Service() {
                     contentIntent = pendingIntent,
                     largeIcon = coverBitmap,
                     actionIntent = pendingIntent,
-                    actionTitle = getString(R.string.listen_on_metrolist),
+                    actionTitle = getString(R.string.musiccabin_listen_on_app),
                 )
             }
             finishWithPersistentResult()

@@ -37,7 +37,7 @@ fun ConclusionPage(onClose: () -> Unit) {
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_launcher_foreground),
-                contentDescription = stringResource(R.string.wrapped_logo_content_description),
+                contentDescription = stringResource(R.string.musiccabin_wrapped_logo_content_description),
                 modifier = Modifier.size(96.dp),
                 tint = Color.White
             )

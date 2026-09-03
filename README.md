@@ -1,8 +1,8 @@
 [English](README.md) | [繁體中文](README.zh-TW.md)
 
-# Metrolist Android Car
+# MusicCabin
 
-Metrolist Android Car is a customized Android Car-oriented fork of [Metrolist](https://github.com/MetrolistGroup/Metrolist), an open-source YouTube Music client for Android.
+MusicCabin is a customized Android Car-oriented fork of [Metrolist](https://github.com/MetrolistGroup/Metrolist), an open-source YouTube Music client for Android.
 
 This fork is maintained by [jajafu](https://github.com/jajafu) and focuses on a more readable and practical in-car playback experience.
 
@@ -17,7 +17,7 @@ This fork is maintained by [jajafu](https://github.com/jajafu) and focuses on a 
 - The mini-player's add-to-playlist picker uses large adaptive playlist cards matching the library grid for easier in-car operation.
 - The home screen is reduced to category chips, 12 local quick-access items, account playlists, and at most three official YouTube recommendation sections, excluding “Listen again” and “Covers & remixes.” Expensive duplicate discovery, community, similar-content, mood-and-genre, random-order, and infinite-pagination sections are not loaded, and quick-access items remain safe if a song is removed during synchronization.
 - Charts and Explore show a retry action instead of an endless loading animation after a failed request, while Home always releases its loading and pull-to-refresh indicators after errors.
-- Branded the installed app as `Metrolist_AndroidCar` with a black music-car logo across the launcher, About screen, and playback notifications.
+- Uses the `MusicCabin` name and black music-car logo across the launcher, About screen, playback notifications, and store artwork.
 - Uses the dedicated Android package ID `com.jajafu.metrolist.androidcar`, allowing this fork and the original Metrolist app to be installed at the same time.
 - New playlists default to YouTube Music sync when the account and sync setting are active. Failed playlist creation, song additions, and song removals are stored outside the App database, retried automatically, and shown as pending in the playlist library; duplicate-song removals preserve the exact YouTube occurrence, new remote playlists receive a reconciliation grace period, duplicate remote playlists reconcile to one protected local record without losing downloaded songs, and large song-ID operations are split below SQLite limits.
 - Song like and unlike actions use one ordered, durable synchronization queue. Rapid opposite actions keep the latest state, failed YouTube updates remain pending across App restarts, and duplicate network requests are avoided. Remote reconciliation preserves the latest pending local choice while respecting remote changes when no local action remains; likes for device-local files never reach YouTube.
@@ -60,13 +60,15 @@ Build the FOSS release variant locally with:
 ./gradlew :app:assembleFossRelease
 ```
 
-The manually triggered GitHub Actions workflow builds only the FOSS release APK and publishes it to this repository's GitHub Releases. Release notes are generated automatically from the actual commits since the previous release and are refreshed when an existing release is rerun. The workflow requires the fixed Android signing secrets `RELEASE_KEYSTORE_BASE64`, `RELEASE_STORE_PASSWORD`, `RELEASE_KEY_ALIAS`, and `RELEASE_KEY_PASSWORD`; do not commit the keystore or passwords.
+GitHub Actions workflows run manually. The release workflow builds only the FOSS Release APK and publishes `MusicCabin-v<version>-car.apk` to this repository's GitHub Releases. Release notes use the matching version entry in `changelog.md` and are refreshed when an existing release is rerun. The workflow requires the fixed Android signing secrets `RELEASE_KEYSTORE_BASE64`, `RELEASE_STORE_PASSWORD`, `RELEASE_KEY_ALIAS`, and `RELEASE_KEY_PASSWORD`; do not commit the keystore or passwords. Player configuration synchronization also runs manually.
 
-The in-app updater checks [this repository's releases](https://github.com/jajafu/Metrolist_AndroidCar/releases) and opens the matching APK download for confirmation. Android still requires the user to approve installation.
+The in-app updater checks [this repository's releases](https://github.com/jajafu/MusicCabin/releases) and opens the matching APK download for confirmation. Android still requires the user to approve installation.
 
 Release names may include the `-car` suffix; the updater compares their numeric version components with the installed app version, so the current release is not reported as a new update.
 
 Starting with version `13.6.52`, this fork uses the dedicated package ID `com.jajafu.metrolist.androidcar` and can coexist with the original Metrolist app. Android treats it as a new App, so installing it over `13.6.51` or earlier will not migrate that package's local settings, login, downloads, or database automatically. Sign in again after the one-time transition and keep or remove the old installation as needed. Later FOSS Release APKs with this package ID and the same signing key can update in place.
+
+Version `13.6.75` completes the MusicCabin rebrand. The package ID and release signing key stay the same, so existing signed releases update in place with settings, login, downloads, and the database preserved. The updater accepts both MusicCabin and older APK filenames. New playlist exports and saved images use `MusicCabinExports` and `Pictures/MusicCabin`; existing files remain in their original locations. Brand-related text uses new English resources to prevent inherited translations from restoring the old name.
 
 ## Original project and acknowledgements
 

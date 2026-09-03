@@ -562,7 +562,7 @@ private fun SuccessState(
                     modifier = Modifier.size(18.dp),
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(stringResource(R.string.play_on_app))
+                Text(stringResource(R.string.musiccabin_play_on_app))
             }
 
             FilledTonalButton(

@@ -1,8 +1,8 @@
 [English](README.md) | [繁體中文](README.zh-TW.md)
 
-# Metrolist Android Car
+# MusicCabin
 
-Metrolist Android Car 是 [Metrolist](https://github.com/MetrolistGroup/Metrolist) 的 Android車機導向客製分支。Metrolist 是一個開源的 Android YouTube Music 用戶端。
+MusicCabin 是 [Metrolist](https://github.com/MetrolistGroup/Metrolist) 的 Android車機導向客製分支。Metrolist 是一個開源的 Android YouTube Music 用戶端。
 
 本分支由 [jajafu](https://github.com/jajafu) 維護，主要改善車載使用時的播放介面、可讀性與操作體驗。
 
@@ -17,7 +17,7 @@ Metrolist Android Car 是 [Metrolist](https://github.com/MetrolistGroup/Metrolis
 - 迷你播放器的新增至播放清單選擇器改用與音樂庫一致的大型自適應格狀卡片，方便車機操作。
 - 首頁精簡為分類按鈕、12 個本機快速存取項目、帳號播放列表，以及最多 3 個 YouTube 官方推薦區塊，並排除「再聽一次」與「翻唱與重混」；不再載入重複且耗費資源的每日探索、社區、相似內容、情境與類型、隨機排序及無限分頁區塊，且同步期間歌曲遭移除時，快速存取項目仍可安全顯示。
 - 排行榜與探索頁載入失敗時會顯示重試操作，不再無限顯示載入動畫；首頁遇到錯誤時也一定會結束載入與下拉重新整理指示。
-- 將已安裝的 App 品牌化為 `Metrolist_AndroidCar`，在啟動器、關於頁面與播放通知中使用黑色音樂車 Logo。
+- 在啟動器、關於頁面、播放通知與商店素材統一使用 `MusicCabin` 名稱與黑色音樂車 Logo。
 - 使用專屬 Android 套件識別碼 `com.jajafu.metrolist.androidcar`，可與原始 Metrolist App 同時安裝。
 - 帳號已登入且同步功能開啟時，新播放列表預設同步至 YouTube Music。播放列表建立、歌曲加入或移除失敗時，待處理操作會儲存在 App 資料庫以外、自動重試，並在播放列表音樂庫顯示待同步數量；移除重複歌曲時會保留正確的 YouTube 項目識別碼，新建立的遠端播放列表也有同步寬限時間，重複遠端播放列表會整併為一個受保護的本機記錄且不遺失已下載歌曲，大量歌曲 ID 操作則會分批執行以低於 SQLite 限制。
 - 歌曲按讚與取消按讚會使用單一、有順序且可持久保存的同步佇列。快速反向操作只保留最後狀態，YouTube 更新失敗時會跨 App 重啟保留待處理項目，並避免重複網路請求。遠端核對會保留最新的本機待處理選擇，沒有本機操作時則接受遠端變更；裝置本機歌曲的按讚不會送往 YouTube。
@@ -60,13 +60,15 @@ Metrolist Android Car 是 [Metrolist](https://github.com/MetrolistGroup/Metrolis
 ./gradlew :app:assembleFossRelease
 ```
 
-手動觸發的 GitHub Actions workflow 只會建置 FOSS Release APK，並發布到本專案的 GitHub Releases。Release notes 會依上一版 Release 之後的實際提交內容自動產生；重新執行既有版本時也會更新日誌。Workflow 需要固定的 Android 簽章 Secrets：`RELEASE_KEYSTORE_BASE64`、`RELEASE_STORE_PASSWORD`、`RELEASE_KEY_ALIAS` 與 `RELEASE_KEY_PASSWORD`；請勿提交 keystore 或密碼。
+GitHub Actions workflow 均為手動執行。發版 workflow 只會建置 FOSS Release APK，並將 `MusicCabin-v<version>-car.apk` 發布到本專案的 GitHub Releases。Release notes 使用 `changelog.md` 的對應版本內容；重新執行既有版本時也會更新日誌。Workflow 需要固定的 Android 簽章 Secrets：`RELEASE_KEYSTORE_BASE64`、`RELEASE_STORE_PASSWORD`、`RELEASE_KEY_ALIAS` 與 `RELEASE_KEY_PASSWORD`；請勿提交 keystore 或密碼。播放器設定同步也改為手動執行。
 
-App 內更新器會檢查[本專案的 Releases](https://github.com/jajafu/Metrolist_AndroidCar/releases)，並開啟符合版本的 APK 下載頁供確認。Android 仍會要求使用者核准安裝。
+App 內更新器會檢查[本專案的 Releases](https://github.com/jajafu/MusicCabin/releases)，並開啟符合版本的 APK 下載頁供確認。Android 仍會要求使用者核准安裝。
 
 Release 名稱可能包含 `-car` 後綴；更新器會比較版本中的數字部分，因此目前版本不會被誤判為有新更新。
 
 從 `13.6.52` 起，本分支使用專屬套件識別碼 `com.jajafu.metrolist.androidcar`，可與原始 Metrolist App 同時安裝。Android 會將它視為新的 App，因此從 `13.6.51` 或更早版本轉換時，舊套件的本機設定、登入、下載及資料庫不會自動移轉；完成這次轉換後請重新登入，並可依需要保留或移除舊安裝。之後使用此套件識別碼及相同簽章金鑰的 FOSS Release APK 可以直接覆蓋更新。
+
+`13.6.75` 完成 MusicCabin 品牌更名。套件識別碼與 Release 簽章金鑰維持不變，既有正式版可直接覆蓋更新，保留設定、登入、下載與資料庫。更新器同時支援 MusicCabin 與舊版 APK 檔名。新的播放清單匯出與儲存圖片分別使用 `MusicCabinExports` 和 `Pictures/MusicCabin`，既有檔案仍保留於原位置。品牌相關文字改用新的英文資源，避免既有翻譯帶回舊名稱。
 
 ## 原始專案與致謝
 

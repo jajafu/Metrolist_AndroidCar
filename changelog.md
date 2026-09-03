@@ -1,8 +1,26 @@
-# Metrolist AndroidCar 變更日誌 / Changelog
+# MusicCabin 變更日誌 / Changelog
 
-本檔案記錄 `Metrolist_AndroidCar` 專案自 `13.6.0` 起的客製功能、修正與建置變更。上游 Metrolist 的同步內容未在此重複列出。
+本檔案記錄 `MusicCabin` 專案自 `13.6.0` 起的客製功能、修正與建置變更。上游 Metrolist 的同步內容未在此重複列出。
 
-This file records project-specific features, fixes, and build changes in `Metrolist_AndroidCar` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
+This file records project-specific features, fixes, and build changes in `MusicCabin` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
+
+## 13.6.75
+
+### 中文
+
+- 統一 App、啟動器、關於頁面、通知、桌面小工具、年度回顧、錯誤報告與匯出素材的 MusicCabin 品牌，並同步 README、商店圖示與專案連結。
+- 更新器與播放器設定改用 jajafu/MusicCabin 的 GitHub 來源；新的 Release 與 APK 使用 MusicCabin 名稱，更新器仍可辨識舊版 APK。
+- 保留 Android 套件識別碼 com.jajafu.metrolist.androidcar、資料庫結構與固定 Release 簽章設定；既有正式版可直接覆蓋更新，無須搬移資料。新匯出使用 MusicCabinExports 與 Pictures/MusicCabin，舊檔案保持原位置。
+- 保留原始 Metrolist 作者署名及上游服務協定。品牌相關文字改用新的英文資源，避免既有翻譯覆蓋新名稱；其他翻譯不變。
+- 修正啟動器搜尋與音樂庫捷徑的目標套件；依專案規則將播放器設定同步 workflow 改為僅手動執行。
+
+### English
+
+- Unify MusicCabin branding across the app, launcher, About screen, notifications, widgets, Wrapped, crash reports, and exports; align both READMEs, store icons, and project links.
+- Point the updater and player configuration sources to jajafu/MusicCabin. Use MusicCabin release titles and APK names while retaining support for older APK filenames.
+- Preserve com.jajafu.metrolist.androidcar, the database schema, and fixed release signing configuration for in-place upgrades without data migration. New exports use MusicCabinExports and Pictures/MusicCabin; existing files stay where they are.
+- Retain original Metrolist credits and upstream service protocols. Brand-related text uses new English resources so inherited translations cannot restore the old name; other translations are unchanged.
+- Correct the target package of launcher search and library shortcuts; make the player configuration sync workflow manual-only as required by the project rules.
 
 ## 13.6.73
 

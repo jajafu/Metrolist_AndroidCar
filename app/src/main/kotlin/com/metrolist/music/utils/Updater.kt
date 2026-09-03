@@ -39,8 +39,8 @@ object Updater {
     private var cachedAllReleases: List<ReleaseInfo> = emptyList()
     
     private const val CHECK_INTERVAL_MILLIS = 2 * 60 * 60 * 1000L // 2 hours
-    const val GITHUB_RELEASES_URL = "https://github.com/jajafu/Metrolist_AndroidCar/releases"
-    private const val GITHUB_API_BASE = "https://api.github.com/repos/jajafu/Metrolist_AndroidCar"
+    const val GITHUB_RELEASES_URL = "https://github.com/jajafu/MusicCabin/releases"
+    private const val GITHUB_API_BASE = "https://api.github.com/repos/jajafu/MusicCabin"
 
     private fun versionParts(version: String): List<Int> {
         return Regex("\\d+")
@@ -89,7 +89,7 @@ object Updater {
     /**
      * Parse release assets from GitHub API response
      */
-    private fun parseAssets(assetsArray: JSONArray): List<ReleaseAsset> {
+    internal fun parseAssets(assetsArray: JSONArray): List<ReleaseAsset> {
         val assets = mutableListOf<ReleaseAsset>()
         
         for (i in 0 until assetsArray.length()) {
@@ -104,6 +104,8 @@ object Updater {
             
             // Parse architecture and variant from filename
             val (arch, variant) = when {
+                name.startsWith("MusicCabin-v") && name.endsWith("-car.apk") -> "universal" to "foss"
+                // Older published APKs remain available after the repository rename.
                 name == "Metrolist.apk" -> "universal" to "foss"
                 name == "Metrolist-with-Google-Cast.apk" -> "universal" to "gms"
                 name.startsWith("Metrolist-AndroidCar-") && name.endsWith(".apk") -> "universal" to "foss"

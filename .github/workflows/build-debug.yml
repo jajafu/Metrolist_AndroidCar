@@ -1,4 +1,4 @@
-name: Build & Release Foss
+name: Build & Release MusicCabin Foss
 
 on:
   workflow_dispatch:
@@ -68,8 +68,8 @@ jobs:
         id: apk
         run: |
           VERSION_NAME="${{ steps.version.outputs.version_name }}"
-          RELEASE_NAME="Metrolist-AndroidCar-v${VERSION_NAME}-car.apk"
-          ARTIFACT_NAME="Metrolist-AndroidCar-v${VERSION_NAME}-car"
+          RELEASE_NAME="MusicCabin-v${VERSION_NAME}-car.apk"
+          ARTIFACT_NAME="MusicCabin-v${VERSION_NAME}-car"
           cp app/build/outputs/apk/foss/release/app-foss-release.apk "$RUNNER_TEMP/$RELEASE_NAME"
           echo "artifact_name=$ARTIFACT_NAME" >> "$GITHUB_OUTPUT"
           echo "release_name=$RELEASE_NAME" >> "$GITHUB_OUTPUT"
@@ -129,7 +129,7 @@ jobs:
           )"
 
           {
-            echo "# Metrolist Android Car $TAG"
+            echo "# MusicCabin $TAG"
             echo
             echo "## What's changed"
             tail -n +2 "$CHANGELOG_SECTION"
@@ -154,6 +154,7 @@ jobs:
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release edit "$TAG" \
               --repo "$GITHUB_REPOSITORY" \
+              --title "MusicCabin $TAG" \
               --notes-file "$NOTES_FILE" \
               --latest
 
@@ -172,6 +173,6 @@ jobs:
           gh release create "$TAG" "$APK" \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
-            --title "$TAG" \
+            --title "MusicCabin $TAG" \
             --notes-file "$NOTES_FILE" \
             --latest

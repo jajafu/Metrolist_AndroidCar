@@ -368,7 +368,7 @@ fun LastFMSettings(
                 ),
                 Material3SettingsItem(
                     title = { Text(stringResource(R.string.last_fm_send_likes)) },
-                    description = { stringResource(R.string.last_fm_send_likes_description) },
+                    description = { stringResource(R.string.musiccabin_last_fm_send_likes_description) },
                     trailingContent = {
                         Switch(
                             checked = useSendLikes,

@@ -31,7 +31,7 @@ object PlayerDatesStore {
     private const val TAG = "Metrolist_CipherDates"
 
     private val REMOTE_URL by lazy {
-        val encoded = "aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL2phamFmdS9NZXRyb2xpc3RfQW5kcm9pZENhci9tYWluL2FwcC9zcmMvbWFpbi9hc3NldHMvcGxheWVyX2RhdGVzLmpzb24="
+        val encoded = "aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL2phamFmdS9NdXNpY0NhYmluL21haW4vYXBwL3NyYy9tYWluL2Fzc2V0cy9wbGF5ZXJfZGF0ZXMuanNvbg=="
         String(Base64.decode(encoded, Base64.DEFAULT), StandardCharsets.UTF_8)
     }
 

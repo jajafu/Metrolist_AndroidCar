@@ -1,12 +1,12 @@
-# 以 AI 代理的身分操作 _AndroidCar
+# 以 AI 代理的身分操作 MusicCabin
 
-Metrolist_AndroidCar 是一個使用 Kotlin 開發的第三方 YouTube Music 客戶端，緊密遵循 Material 3 設計規範。
+MusicCabin 是一個使用 Kotlin 開發的第三方 YouTube Music 客戶端，緊密遵循 Material 3 設計規範。
 
 ## 專案操作規則
 
 1. 開始工作前，務必先從 `main` 分支拉取最新變更，以減少合併衝突。
 2. 提交名稱應清晰明確，格式為：`type(scope): short description`。例如：`feat(ui): add dark mode support`。可選填 scope。
-3. 所有字串編輯請修改 `Metrolist/app/src/main/res/values/metrolist_strings.xml` 檔案，**不要**修改 `Metrolist/app/src/main/res/values/strings.xml`。請勿碰觸專案中其他的 `strings.xml` 或 `metrolist_strings.xml` 檔案。**只**編輯預設（英文）的 `metrolist_strings.xml` 檔案，**不要**編輯其他語言版本。
+3. 所有字串編輯請修改 `app/src/main/res/values/metrolist_strings.xml` 檔案，**不要**修改 `app/src/main/res/values/strings.xml`。請勿碰觸專案中其他的 `strings.xml` 或 `metrolist_strings.xml` 檔案。**只**編輯預設（英文）的 `metrolist_strings.xml` 檔案，**不要**編輯其他語言版本。
 4. 請遵循 Kotlin 與 Android 開發的最佳實務。
 5. **不要**修改 APP 的資料庫結構。
 
@@ -31,7 +31,7 @@ Metrolist_AndroidCar 是一個使用 Kotlin 開發的第三方 YouTube Music 客
 0. 初次建置前，連同 submodule 複製本 repository：
 
    ```bash
-   git clone --recurse-submodules https://github.com/jajafu/Metrolist_AndroidCar.git
+   git clone --recurse-submodules https://github.com/jajafu/MusicCabin.git
    ```
 
 1. 修改程式碼後，應建置應用程式以確保無編譯錯誤。請在專案根目錄執行以下指令：

@@ -74,7 +74,7 @@ class CrashActivity : ComponentActivity() {
         try {
             // Create crash log file
             val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
-            val fileName = "metrolist_crash_$timestamp.txt"
+            val fileName = "musiccabin_crash_$timestamp.txt"
             val crashFile = File(cacheDir, fileName)
             crashFile.writeText(crashLog)
             
@@ -89,7 +89,7 @@ class CrashActivity : ComponentActivity() {
             val shareIntent = Intent(Intent.ACTION_SEND).apply {
                 type = "text/plain"
                 putExtra(Intent.EXTRA_STREAM, uri)
-                putExtra(Intent.EXTRA_SUBJECT, getString(R.string.crash_report_subject))
+                putExtra(Intent.EXTRA_SUBJECT, getString(R.string.musiccabin_crash_report_subject))
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
             
@@ -99,7 +99,7 @@ class CrashActivity : ComponentActivity() {
             val shareIntent = Intent(Intent.ACTION_SEND).apply {
                 type = "text/plain"
                 putExtra(Intent.EXTRA_TEXT, crashLog)
-                putExtra(Intent.EXTRA_SUBJECT, getString(R.string.crash_report_subject))
+                putExtra(Intent.EXTRA_SUBJECT, getString(R.string.musiccabin_crash_report_subject))
             }
             startActivity(Intent.createChooser(shareIntent, getString(R.string.crash_share_title)))
         }

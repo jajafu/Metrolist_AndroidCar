@@ -104,9 +104,8 @@ android {
         applicationId = applicationIdOverride ?: baseApplicationId
         minSdk = 26
         targetSdk = 36
-        versionCode = 223
-        versionName = "13.6.74"
-        resValue("string", "app_name", "Metrolist_AndroidCar")
+        versionCode = 224
+        versionName = "13.6.75"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true

@@ -107,7 +107,7 @@ private val projectMaintainer = Contributor(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 private val leadDeveloper = Contributor(
     name = "Mo Agamy",
-    roleRes = R.string.credits_lead_developer,
+    roleRes = R.string.musiccabin_upstream_developer,
     githubHandle = "mostafaalagamy",
     polygon = MaterialShapes.Cookie9Sided,
     favoriteSongVideoId = "Mh2JWGWvy_Y"
@@ -120,10 +120,10 @@ private val collaborators = listOf(
 )
 
 private val communityLinks = listOf(
-    CommunityLink(R.string.credits_discord, R.drawable.discord, "https://discord.com/invite/zrdbeRG2Mt"),
-    CommunityLink(R.string.credits_telegram, R.drawable.telegram, "https://t.me/metrolistapp"),
-    CommunityLink(R.string.credits_view_repo, R.drawable.github, "https://github.com/MetrolistGroup/Metrolist"),
-    CommunityLink(R.string.credits_license_name, R.drawable.info, "https://github.com/MetrolistGroup/Metrolist/blob/main/LICENSE")
+    CommunityLink(R.string.musiccabin_upstream_discord, R.drawable.discord, "https://discord.com/invite/zrdbeRG2Mt"),
+    CommunityLink(R.string.musiccabin_upstream_telegram, R.drawable.telegram, "https://t.me/metrolistapp"),
+    CommunityLink(R.string.credits_view_repo, R.drawable.github, "https://github.com/jajafu/MusicCabin"),
+    CommunityLink(R.string.credits_license_name, R.drawable.info, "https://github.com/jajafu/MusicCabin/blob/main/LICENSE")
 )
 
 private fun handleEasterEggClick(
@@ -412,7 +412,7 @@ fun AboutScreen(
                             letterSpacing = (-0.5).sp
                         )
                         Text(
-                            text = stringResource(R.string.credits_lead_developer),
+                            text = stringResource(R.string.musiccabin_upstream_developer),
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.SemiBold
@@ -537,7 +537,7 @@ fun AboutScreen(
     }
 
     TopAppBar(
-        title = { Text(stringResource(R.string.about)) },
+        title = { Text(stringResource(R.string.musiccabin_about)) },
         navigationIcon = {
             IconButton(
                 onClick = navController::navigateUp,
