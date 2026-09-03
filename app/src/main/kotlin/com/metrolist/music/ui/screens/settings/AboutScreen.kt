@@ -86,12 +86,6 @@ private data class Contributor(
     val favoriteSongVideoId: String? = null
 )
 
-private data class CommunityLink(
-    val labelRes: Int,
-    val iconRes: Int,
-    val url: String
-)
-
 private val projectMaintainer = Contributor(
     name = "jajafu",
     roleRes = R.string.credits_project_maintainer,
@@ -111,13 +105,6 @@ private val collaborators = listOf(
     ),
     Contributor(name = "Adriel O'Connel", roleRes = R.string.credits_collaborator, githubHandle = "adrielGGmotion", sponsorUrl = "https://github.com/sponsors/adrielGGmotion", polygon = MaterialShapes.Cookie4Sided, favoriteSongVideoId = "m2zUrruKjDQ"),
     Contributor(name = "Nyx", roleRes = R.string.credits_collaborator, githubHandle = "nyxiereal", sponsorUrl = "https://github.com/sponsors/nyxiereal", polygon = MaterialShapes.Cookie12Sided, favoriteSongVideoId = "zselaN6zPXw"),
-)
-
-private val communityLinks = listOf(
-    CommunityLink(R.string.musiccabin_upstream_discord, R.drawable.discord, "https://discord.com/invite/zrdbeRG2Mt"),
-    CommunityLink(R.string.musiccabin_upstream_telegram, R.drawable.telegram, "https://t.me/metrolistapp"),
-    CommunityLink(R.string.credits_view_repo, R.drawable.github, "https://github.com/jajafu/MusicCabin"),
-    CommunityLink(R.string.credits_license_name, R.drawable.info, "https://github.com/jajafu/MusicCabin/blob/main/LICENSE")
 )
 
 private fun handleEasterEggClick(
@@ -418,32 +405,6 @@ fun AboutScreen(
             }
         )
 
-        Spacer(Modifier.height(32.dp))
-
-        // Community & Info using standard Group
-        Material3SettingsGroup(
-            title = stringResource(R.string.community_and_info),
-            items = communityLinks.map { link ->
-                Material3SettingsItem(
-                    icon = painterResource(link.iconRes),
-                    title = { Text(stringResource(link.labelRes), fontWeight = FontWeight.SemiBold) },
-                    description = if (link.labelRes == R.string.credits_license_name) {
-                        { Text(stringResource(R.string.credits_license_desc)) }
-                    } else null,
-                    onClick = { uriHandler.openUri(link.url) }
-                )
-            }
-        )
-
-        Spacer(Modifier.height(48.dp))
-        
-        Text(
-            text = stringResource(R.string.stands_with_palestine),
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        
         Spacer(Modifier.height(48.dp))
     }
 

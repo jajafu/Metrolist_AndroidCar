@@ -1,6 +1,6 @@
 # MusicCabin branding audit
 
-Version: 13.6.77 (versionCode 226).
+Version: 13.6.78 (versionCode 227).
 
 ## Updated surfaces
 
@@ -8,7 +8,7 @@ Version: 13.6.77 (versionCode 226).
 | --- | --- |
 | GitHub repository and origin | `jajafu/MusicCabin`; repository description identifies MusicCabin and acknowledges Metrolist |
 | App, launcher aliases, system notification app label | One non-translatable `app_name` resource: `MusicCabin` |
-| About | MusicCabin title, project repository and license links; jajafu maintainer with Buy me a coffee button linking to `https://buymeacoffee.com/clifchi`; Mo Agamy moved into collaborators; upstream community links explicitly identified |
+| About | MusicCabin title; jajafu maintainer with Buy me a coffee button linking to `https://buymeacoffee.com/clifchi`; Mo Agamy in collaborators; community/info section and Palestine footer removed |
 | Widgets, recognition actions, Wrapped, Last.fm and Discord information | New default English brand resources prevent inherited translations from restoring the old brand |
 | Android package and launcher search/library shortcuts | Release: `com.jajafu.musiccabin`; Debug: `com.jajafu.musiccabin.debug`; shortcuts target the matching package |
 | Updater | MusicCabin Releases page and API; new and historical APK names accepted |

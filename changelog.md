@@ -4,6 +4,18 @@
 
 This file records project-specific features, fixes, and build changes in `MusicCabin` from `13.6.0` onward. Upstream Metrolist synchronization changes are not repeated here.
 
+## 13.6.78
+
+### 中文
+
+- 帳號圖示開啟的帳號設定中，隱藏「點擊以顯示 Token」與「更多內容」項目；原有 Token 編輯、顯示與登入瀏覽設定邏輯保留在程式中。
+- About MusicCabin 頁面移除非必要的「社區與資訊」區塊及「這個計畫支持巴勒斯坦」頁尾文字，保留維護者、合作者與贊助入口。
+
+### English
+
+- Hide the “tap to show token” and “More content” entries from the account dialog while keeping their existing token editor, reveal, and login-for-browse logic in the code.
+- Remove the non-essential “Community & Info” section and “This project stands with Palestine” footer from About MusicCabin, keeping maintainer, collaborator, and sponsorship entries.
+
 ## 13.6.77
 
 ### 中文

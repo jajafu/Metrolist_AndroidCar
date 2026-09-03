@@ -306,6 +306,8 @@ fun AccountSettings(
         Spacer(Modifier.height(8.dp))
 
         Material3SettingsGroup(
+            // Keep the token and More content handlers intact for compatibility, but do not
+            // expose these advanced options in the account dialog.
             items = listOf(
                 Material3SettingsItem(
                     title = {
@@ -369,7 +371,7 @@ fun AccountSettings(
                     },
                     enabled = isLoggedIn
                 )
-            ),
+            ).drop(2),
             useLowContrast = true
         )
 
