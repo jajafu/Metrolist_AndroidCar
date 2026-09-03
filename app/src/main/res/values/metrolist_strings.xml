@@ -1096,5 +1096,6 @@
     <string name="photo_frame_listen_shortcut_desc">Show a Listen Together shortcut in the top bar. Photo frame remains in the main menu.</string>
     <string name="musiccabin_upstream_discord">Upstream Metrolist Discord server</string>
     <string name="musiccabin_upstream_telegram">Upstream Metrolist Telegram channel</string>
-    <string name="musiccabin_upstream_developer">Original Metrolist developer</string>
+    <string name="musiccabin_buy_me_a_coffee">Buy me a coffee</string>
+    <string name="musiccabin_support_contributor">Support %1$s</string>
 </resources>

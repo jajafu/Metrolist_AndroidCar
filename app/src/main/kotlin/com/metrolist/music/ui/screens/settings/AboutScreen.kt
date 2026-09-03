@@ -6,7 +6,6 @@
 package com.metrolist.music.ui.screens.settings
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +15,7 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -27,15 +27,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -43,7 +40,6 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -53,10 +49,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
@@ -102,19 +96,19 @@ private val projectMaintainer = Contributor(
     name = "jajafu",
     roleRes = R.string.credits_project_maintainer,
     githubHandle = "jajafu",
-)
-
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-private val leadDeveloper = Contributor(
-    name = "Mo Agamy",
-    roleRes = R.string.musiccabin_upstream_developer,
-    githubHandle = "mostafaalagamy",
-    polygon = MaterialShapes.Cookie9Sided,
-    favoriteSongVideoId = "Mh2JWGWvy_Y"
+    sponsorUrl = "https://buymeacoffee.com/clifchi",
 )
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 private val collaborators = listOf(
+    Contributor(
+        name = "Mo Agamy",
+        roleRes = R.string.credits_collaborator,
+        githubHandle = "mostafaalagamy",
+        sponsorUrl = "https://buymeacoffee.com/mostafaalagamy",
+        polygon = MaterialShapes.Cookie9Sided,
+        favoriteSongVideoId = "Mh2JWGWvy_Y",
+    ),
     Contributor(name = "Adriel O'Connel", roleRes = R.string.credits_collaborator, githubHandle = "adrielGGmotion", sponsorUrl = "https://github.com/sponsors/adrielGGmotion", polygon = MaterialShapes.Cookie4Sided, favoriteSongVideoId = "m2zUrruKjDQ"),
     Contributor(name = "Nyx", roleRes = R.string.credits_collaborator, githubHandle = "nyxiereal", sponsorUrl = "https://github.com/sponsors/nyxiereal", polygon = MaterialShapes.Cookie12Sided, favoriteSongVideoId = "zselaN6zPXw"),
 )
@@ -182,35 +176,6 @@ private fun ContributorAvatar(
             fallback = fallback,
             error = fallback,
         )
-    }
-}
-
-@Composable
-private fun DeveloperSocials(
-    uriHandler: androidx.compose.ui.platform.UriHandler
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        FilledTonalButton(
-            onClick = { uriHandler.openUri("https://metrolist.cc") },
-            modifier = Modifier.weight(1f).height(48.dp)
-        ) {
-            Icon(painterResource(R.drawable.language), contentDescription = null)
-        }
-        FilledTonalButton(
-            onClick = { uriHandler.openUri("https://github.com/mostafaalagamy") },
-            modifier = Modifier.weight(1f).height(48.dp)
-        ) {
-            Icon(painterResource(R.drawable.github), contentDescription = null)
-        }
-        FilledTonalButton(
-            onClick = { uriHandler.openUri("https://www.instagram.com/mostafaalagamy") },
-            modifier = Modifier.weight(1f).height(48.dp)
-        ) {
-            Icon(painterResource(R.drawable.instagram), contentDescription = null)
-        }
     }
 }
 
@@ -364,87 +329,33 @@ fun AboutScreen(
             ),
         )
 
-        Spacer(Modifier.height(24.dp))
-
-        // Lead Developer Hero Card
-        ElevatedCard(
-            shape = RoundedCornerShape(32.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
+        projectMaintainer.sponsorUrl?.let { sponsorUrl ->
+            Spacer(Modifier.height(12.dp))
+            Button(
+                onClick = { uriHandler.openUri(sponsorUrl) },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                shape = CircleShape,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ),
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(20.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    var leadClickCount by remember(leadDeveloper.name) { mutableIntStateOf(0) }
-            
-                    ContributorAvatar(
-                        avatarUrl = leadDeveloper.avatarUrl,
-                        sizeDp = 110,
-                        shape = leadDeveloper.polygon?.toShape() ?: CircleShape,
-                        contentDescription = leadDeveloper.name,
-                        onClick = {
-                            handleEasterEggClick(
-                                clickCount = leadClickCount,
-                                favoriteSongVideoId = leadDeveloper.favoriteSongVideoId,
-                                coroutineScope = coroutineScope,
-                                snackbarHostState = snackbarHostState,
-                                playerConnection = playerConnection,
-                                wannaPlayStr = wannaPlayStr,
-                                yeahStr = yeahStr,
-                                onCountUpdate = { leadClickCount = it }
-                            )
-                        }
-                    )
-
-                    Column(
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = leadDeveloper.name,
-                            style = MaterialTheme.typography.headlineLarge,
-                            fontWeight = FontWeight.Black,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            lineHeight = 38.sp,
-                            letterSpacing = (-0.5).sp
-                        )
-                        Text(
-                            text = stringResource(R.string.musiccabin_upstream_developer),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
-                
-                Spacer(Modifier.height(24.dp))
-                
-                DeveloperSocials(uriHandler)
-                
-                Spacer(Modifier.height(16.dp))
-                
-                Button(
-                    onClick = { uriHandler.openUri("https://buymeacoffee.com/mostafaalagamy") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = CircleShape,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
-                    )
-                ) {
-                    Icon(painterResource(R.drawable.buymeacoffee), contentDescription = null, modifier = Modifier.size(20.dp))
-                    Spacer(Modifier.width(12.dp))
-                    Text(stringResource(R.string.buy_mo_a_coffee), fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
-                }
+                Icon(
+                    painter = painterResource(R.drawable.buymeacoffee),
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                )
+                Spacer(Modifier.width(12.dp))
+                Text(
+                    text = stringResource(R.string.musiccabin_buy_me_a_coffee),
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 16.sp,
+                )
             }
         }
 
         Spacer(Modifier.height(32.dp))
-        
-        // Collaborators section - back to Material3SettingsGroup
+
         Material3SettingsGroup(
             title = stringResource(R.string.credits_collaborators_section),
             items = collaborators.map { contributor ->
@@ -482,12 +393,12 @@ fun AboutScreen(
                                     onClick = { uriHandler.openUri(contributor.sponsorUrl) },
                                     shape = CircleShape,
                                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                                    modifier = Modifier.size(36.dp)
+                                    modifier = Modifier.size(48.dp)
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
                                         Icon(
                                             painter = painterResource(R.drawable.buymeacoffee),
-                                            contentDescription = null,
+                                            contentDescription = stringResource(R.string.musiccabin_support_contributor, contributor.name),
                                             modifier = Modifier.size(20.dp),
                                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
