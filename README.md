@@ -35,6 +35,7 @@ This fork is maintained by [jajafu](https://github.com/jajafu) and focuses on a 
 - Artwork supplied to notifications, lock-screen metadata, and car media controls is copied into an independently owned software bitmap, preventing image-cache recycling from crashing Media3 during rapid track changes.
 - Parallel downloads share a thread-safe URL cache, preventing duplicate resolution and cache races.
 - Security hardening limits cleartext Listen Together connections to local-network servers, isolates private widget actions from exported update receivers, and grants custom media commands only to trusted controllers.
+- Android Auto browses large libraries in pages of at most 100 items, with a More content folder for clients that request the entire list. Local search filters in SQL and loads at most 100 matches; full playlist playback preserves song order and repeated entries while loading database relationships in batches. Browse artwork uses on-demand local image URIs with bounded cover size and disk caching instead of preloading every cover or embedding image files, reducing memory pressure and out-of-memory crash risk.
 
 ## Features
 

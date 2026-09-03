@@ -77,7 +77,7 @@ import java.util.Locale
  * Unsafe pattern: @Query("SELECT * FROM song WHERE id = " + userInput) // DO NOT USE
  */
 @Dao
-interface DatabaseDao {
+interface DatabaseDao : AndroidAutoDao {
     @Query("SELECT * FROM song WHERE id = :songId LIMIT 1")
     suspend fun songEntity(songId: String): SongEntity?
 
